@@ -1,7 +1,6 @@
 package packet;
 
 import packet.Packet;
-import request.RequestParser;
 
 public class PacketParser {
   static final int BUFFER_SIZE = 516;

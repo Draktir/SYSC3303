@@ -1,8 +1,6 @@
-package request;
+package packet;
 
 import java.net.InetAddress;
-
-import packet.Packet;
 
 public abstract class Request extends Packet {
   protected String filename;

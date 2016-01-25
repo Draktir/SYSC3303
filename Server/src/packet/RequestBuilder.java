@@ -1,8 +1,6 @@
-package request;
+package packet;
 
 import java.util.Arrays;
-
-import packet.PacketBuilder;
 
 public class RequestBuilder extends PacketBuilder {
   private String filename = "";

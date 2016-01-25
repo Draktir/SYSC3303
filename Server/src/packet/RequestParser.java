@@ -1,7 +1,6 @@
-package request;
+package packet;
 
 import java.nio.ByteBuffer;
-import packet.Packet;
 
 public class RequestParser {
   static final int BUFFER_SIZE = 100;

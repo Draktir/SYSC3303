@@ -1,25 +1,23 @@
-package request;
+package packet;
 
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
-public class WriteRequest extends Request {
-
-  public WriteRequest(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, String filename,
+public class ReadRequest extends Request {
+  public ReadRequest(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, String filename,
       String mode) {
     super(remoteHost, remotePort, localHost, localPort, filename, mode);
   }
 
-  @Override
   public byte[] getPacketData() {
-    int size = 4 + filename.length() + mode.length();
+    int size = 4 + super.filename.length() + super.mode.length();
     ByteBuffer requestBuffer = ByteBuffer.allocate(size);
     
     requestBuffer.put((byte) 0);
-    requestBuffer.put((byte) 2);
-    requestBuffer.put(filename.getBytes());
+    requestBuffer.put((byte) 1);
+    requestBuffer.put(super.filename.getBytes());
     requestBuffer.put((byte) 0);
-    requestBuffer.put(mode.getBytes());
+    requestBuffer.put(super.mode.getBytes());
     requestBuffer.put((byte) 0);
     
     return requestBuffer.array();
@@ -27,7 +25,7 @@ public class WriteRequest extends Request {
 
   @Override
   public String toString() {
-    return "WriteRequest [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
+    return "ReadRequest [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
         + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + "]";
   }
 }

@@ -1,4 +1,4 @@
-package request;
+package packet;
 
 public class InvalidRequestException extends Exception {
   private static final long serialVersionUID = 1L;

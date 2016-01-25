@@ -11,8 +11,8 @@ import packet.InvalidPacketException;
 import packet.Packet;
 import packet.PacketBuilder;
 import packet.PacketParser;
-import request.ReadRequest;
-import request.WriteRequest;
+import packet.ReadRequest;
+import packet.WriteRequest;
 
 /**
  * The RequestHandler class handles requests received by Listener.
