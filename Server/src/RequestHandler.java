@@ -3,13 +3,15 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.UnknownHostException;
 
+import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
+import packet.DataPacket;
 import packet.DataPacketBuilder;
+import packet.InvalidPacketException;
 import packet.Packet;
 import packet.PacketBuilder;
+import packet.PacketParser;
 import request.ReadRequest;
-import request.Request;
-import request.RequestParser;
 import request.WriteRequest;
 
 /**
@@ -22,9 +24,11 @@ import request.WriteRequest;
  * @since 25-01-2016
  */
 class RequestHandler implements Runnable {
+  DatagramSocket clientSocket;
   DatagramPacket receivePacket;
-  int sendFileBlockNumber = 0;
-  int receiveFileBlockNumber = 0;
+  String filename;
+  int blockNumber = 0;
+  boolean transferComplete = false;
   
   /**
    * Default RequestHandler constructor instantiates receivePacket to
@@ -64,56 +68,127 @@ class RequestHandler implements Runnable {
     packetBuilder.setRemotePort(packet.getPort());
     packetBuilder.setPacketData(data);
     
-    RequestParser reqParser = new RequestParser();
-    Request request = reqParser.parse(packetBuilder.buildGenericPacket());
+    PacketParser parser = new PacketParser();
+    Packet request = parser.parse(packetBuilder.buildGenericPacket());
     
-    if (request instanceof ReadRequest) {
-      handleReadRequest((ReadRequest) request);
-    } else if (request instanceof WriteRequest) {
-      handleWriteRequest((WriteRequest) request);
+    do {
+      if (request instanceof ReadRequest) {
+        request = handleReadRequest((ReadRequest) request);
+      } else if (request instanceof WriteRequest) {
+        request = handleWriteRequest((WriteRequest) request);
+      } else if (request instanceof DataPacket) {
+        request = handleDataPacket((DataPacket) request);
+      } else if (request instanceof Acknowledgement) {
+        request = handleAcknowledgement((Acknowledgement) request);
+      } else {
+        System.err.println("Invalid request received");
+      }
+    } while (!transferComplete);
+  }
+  
+  /**
+   * Handles a received Write request (WRQ) by reading the requested
+   * block from disk and responding with a Data packet
+   * 
+   * @param request
+   */
+  private Packet handleReadRequest(ReadRequest request) {
+    filename = request.getFilename();
+    return sendFileBlock(request);
+  }
+  
+  /**
+   * Handles a received Write request (WRQ) by writing the received data
+   * to disk and responding with an ACK
+   * 
+   * @param request
+   */
+  private Packet handleWriteRequest(WriteRequest request) {
+    filename = request.getFilename();
+    System.out.println("Sending ACK with block# 0");
+    
+    AcknowledgementBuilder builder = new AcknowledgementBuilder();
+    builder.setRemoteHost(request.getRemoteHost());
+    builder.setRemotePort(request.getRemotePort());
+    builder.setBlockNumber(0);
+    
+    return sendPacketAndReceive(builder.buildAcknowledgement());
+  }
+  
+  /**
+   * Handles a received Data packet by writing the received data
+   * to disk and responding with an ACK
+   * 
+   * @param packet
+   */
+  private Packet handleDataPacket(DataPacket packet) {
+    byte[] fileData = packet.getFileData();
+    System.out.println("Need to write to file block# " + blockNumber);
+    
+    AcknowledgementBuilder builder = new AcknowledgementBuilder();
+    builder.setRemoteHost(packet.getRemoteHost());
+    builder.setRemotePort(packet.getRemotePort());
+    builder.setBlockNumber(packet.getBlockNumber());
+    
+    // is this the last data packet?
+    if (fileData.length < 512) {
+      transferComplete = true;
+      sendPacket(builder.buildAcknowledgement());
+      return null;
     } else {
-      System.err.println("Invalid request received");
+      return sendPacketAndReceive(builder.buildAcknowledgement());
     }
   }
   
-  private void handleReadRequest(ReadRequest request) {
-    //TODO read file from disk
-    System.out.println("Need to read file from disk");
+  /**
+   * Handles a received ACK by sending the next file block.
+   * 
+   * @param packet
+   */
+  private Packet handleAcknowledgement(Acknowledgement packet) {
+    return sendFileBlock(packet);
+  }
+  
+  private Packet sendFileBlock(Packet request) {
+    System.out.println("Need to read from file block# " + blockNumber);
     byte[] fileData = {1, 24, 1, 22, 100};
     
     DataPacketBuilder builder = new DataPacketBuilder();
     builder.setRemoteHost(request.getRemoteHost());
     builder.setRemotePort(request.getRemotePort());
-    builder.setBlockNumber(sendFileBlockNumber++);
+    builder.setBlockNumber(blockNumber);
     builder.setFileData(fileData);
-    sendPacket(builder.buildDataPacket());
+    
+    blockNumber++;
+    
+    // pretend we have sent the entire file
+    if (blockNumber > 10) {
+      transferComplete = true;
+    }
+    
+    DataPacket dataPacket = builder.buildDataPacket();
+    
+    // pretend we have sent the entire file
+    if (blockNumber > 10) {
+      transferComplete = true;
+      Packet ackPacket = sendPacketAndReceive(builder.buildDataPacket());
+      // TODO: We should make sure we get an ACK and resend the last data packet
+      // if it failed. Not needed for this assignment though.
+      return null;
+    }
+    
+    return sendPacketAndReceive(builder.buildDataPacket());
   }
   
-  private void handleWriteRequest(WriteRequest request) {
-    //TODO write file to disk
-    System.out.println("Need to write file to disk");
-    System.out.println("Sending ACK");
-    
-    AcknowledgementBuilder builder = new AcknowledgementBuilder();
-    builder.setRemoteHost(request.getRemoteHost());
-    builder.setRemotePort(request.getRemotePort());
-    builder.setBlockNumber(receiveFileBlockNumber);
-    
-    sendPacket(builder.buildAcknowledgement());
-    
-    receiveFileBlockNumber++;
-  }
-    
   private void sendPacket(Packet packet) {
     try {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(
           data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      DatagramSocket tempSock = new DatagramSocket();
+      clientSocket = new DatagramSocket();
       System.out.println("[SYSTEM] Sending response to client at port " + packet.getRemotePort());
       printRequestInformation(data);
-      tempSock.send(sendPacket);
-      tempSock.close();
+      clientSocket.send(sendPacket);
     }
     catch (UnknownHostException e) {
       e.printStackTrace();
@@ -123,6 +198,50 @@ class RequestHandler implements Runnable {
       e.printStackTrace();
       System.exit(1);
     }
+  }
+  
+  private Packet sendPacketAndReceive(Packet packet) {
+    try {
+      byte[] data = packet.getPacketData();
+      DatagramPacket sendPacket = new DatagramPacket(
+          data, data.length, packet.getRemoteHost(), packet.getRemotePort());
+      clientSocket = new DatagramSocket();
+      System.out.println("[SYSTEM] Sending response to client at port " + packet.getRemotePort());
+      printRequestInformation(data);
+      clientSocket.send(sendPacket);
+      
+      System.out.println("[SYSTEM] Waiting for response from client");
+      byte[] buffer = new byte[516];
+      DatagramPacket responsePacket = new DatagramPacket(buffer, 516);
+      clientSocket.receive(responsePacket);
+      
+      int len = receivePacket.getLength();
+      byte[] received = new byte[len]; 
+      System.arraycopy(responsePacket.getData(), 0, received, 0, len);
+      
+      printRequestInformation(received);
+      
+      PacketBuilder packetBuilder = new PacketBuilder();
+      packetBuilder.setRemoteHost(responsePacket.getAddress());
+      packetBuilder.setRemotePort(responsePacket.getPort());
+      packetBuilder.setPacketData(data);
+      
+      PacketParser packetParser = new PacketParser();
+      try {
+        return packetParser.parse(packetBuilder.buildGenericPacket());
+      } catch (InvalidPacketException e) {
+        e.printStackTrace();
+      }
+    }
+    catch (UnknownHostException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+    return null;
   }
   
   /**

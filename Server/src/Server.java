@@ -16,7 +16,7 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Server {
-	public static final int SERVER_PORT = 6900;
+	public static final int SERVER_PORT = 6900; // TODO: CHANGE BACK TO correct port
 	public static enum Mode {TEST, NORMAL}; // TODO: implement
 	Mode currentMode;
 	
