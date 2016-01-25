@@ -1,11 +1,9 @@
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.UnknownHostException;
 
 import packet.AcknowledgementBuilder;
-import packet.DataPacket;
 import packet.DataPacketBuilder;
 import packet.Packet;
 import packet.PacketBuilder;
@@ -43,6 +41,7 @@ class RequestHandler implements Runnable {
       processRequest(receivePacket);
     } catch (Exception e) {
       // Error message is printed inside processRequest(DatagramPacket)
+      e.printStackTrace();
       System.exit(1);
     }
   }
@@ -55,10 +54,15 @@ class RequestHandler implements Runnable {
    * @throws Exception not yet implemented
    */
   public void processRequest(DatagramPacket packet) throws Exception {
+    // copy data out of the buffer and into an array
+    int len = receivePacket.getLength();
+    byte[] data = new byte[len]; 
+    System.arraycopy(packet.getData(), 0, data, 0, len);
+    
     PacketBuilder packetBuilder = new PacketBuilder();
     packetBuilder.setRemoteHost(packet.getAddress());
     packetBuilder.setRemotePort(packet.getPort());
-    packetBuilder.setPacketData(packet.getData());
+    packetBuilder.setPacketData(data);
     
     RequestParser reqParser = new RequestParser();
     Request request = reqParser.parse(packetBuilder.buildGenericPacket());
@@ -76,7 +80,6 @@ class RequestHandler implements Runnable {
     //TODO read file from disk
     System.out.println("Need to read file from disk");
     byte[] fileData = {1, 24, 1, 22, 100};
-    
     
     DataPacketBuilder builder = new DataPacketBuilder();
     builder.setRemoteHost(request.getRemoteHost());
@@ -119,62 +122,6 @@ class RequestHandler implements Runnable {
     catch (IOException e) {
       e.printStackTrace();
       System.exit(1);
-    }
-  }
-  
-    /*System.out.println("[SYSTEM] Validating request.");
-    
-    if (isValidRequest(data)) {
-      byte[] header = new byte[4];
-      if (data[0] == 0 && data[1] == 1) {
-        // DATA header
-        header[0] = 0;
-        header[1] = 3;
-        header[2] = 0;
-        header[3] = 1;
-      }
-      else if (data[0] == 0 && data[1] == 2) {
-        // ACK header
-        header[0] = 0;
-        header[1] = 4;
-        header[2] = 0;
-        header[3] = 0;
-      }
-      
-      ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    
-      try {
-        outStream.write(header);
-      }
-      catch (IOException e) {
-        e.printStackTrace();
-        System.exit(1);
-      }
-      
-      data = outStream.toByteArray();
-      
-      try {
-        DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getAddress(), packet.getPort());
-        DatagramSocket tempSock = new DatagramSocket();
-        System.out.println("[SYSTEM] Sending response to client at port " + packet.getPort());
-        printRequestInformation(data);
-        tempSock.send(sendPacket);
-        tempSock.close();
-      }
-      catch (UnknownHostException e) {
-        e.printStackTrace();
-        System.exit(1);
-      }
-      catch (IOException e) {
-        e.printStackTrace();
-        System.exit(1);
-      }
-      
-      System.out.println("[SYSTEM] End of request reached.");
-    }
-    else {
-      System.out.println("[ERROR] Invalid request received.");
-      throw new Exception("Not yet implemented.");
     }
   }
   
