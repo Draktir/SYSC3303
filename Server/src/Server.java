@@ -3,8 +3,8 @@
  * server that will receive and respond to TFTP requests.
  * 
  * @author  Loktin Wong
- * @version 1.0.0
- * @since 22-01-2016
+ * @version 1.0.1
+ * @since 25-01-2016
  */
 
 import java.io.ByteArrayOutputStream;
@@ -13,24 +13,20 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public class Server {
 	public static final int SERVER_PORT = 69;
-	
-	DatagramSocket receiveSocket;
+	public static enum Mode {TEST, NORMAL}; // TODO: implement
+	Mode currentMode;
 	
 	/**
-	 * Default Server class constructor instantiates a DatagramSocket
-	 * which uses the the SERVER_PORT constant defined within the class.
+	 * Default Server class constructor sets the mode of the environment
+	 * to TEST. The modes still need to be implemented if it is required
+	 * for Iteration 1, if not then this needs to be removed.
 	 */
 	public Server() {
-		try {
-			receiveSocket = new DatagramSocket(SERVER_PORT);
-		}
-		catch (SocketException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+		this.currentMode = Mode.TEST; // TODO: implement
 	}
 	
 	/**
@@ -38,12 +34,54 @@ public class Server {
 	 * TFTP requests.
 	 * 
 	 * @param args unused
+	 * @throws InterruptedException 
 	 */
-	public static void main(String[] args) {
-		Server s = new Server();
+	public static void main(String[] args) throws InterruptedException {
+		Listener listener = new Listener(SERVER_PORT);
+		Thread listenThread = new Thread(listener, "Listener");
+		listenThread.start();
+		
+		Scanner sc = new Scanner(System.in);
+		String command = null;
 		
 		while (true) {
-			s.receiveRequest();
+			command = sc.nextLine();
+			if (command.equals("shutdown")) {
+				listener.requestStop();
+				throw new InterruptedException("Server has been shutdown.");
+				// TODO: possibly send packet to client indicating status
+			}
+				
+		}
+	}
+}
+
+
+/**
+ * The Listener class is implemented in order to allow the Server application
+ * to continue to accept input while still listening for Client requests
+ * 
+ * @author Loktin Wong
+ * @version 1.0.1
+ * @since 25-01-2016
+ */
+class Listener implements Runnable {
+	private DatagramSocket receiveSocket;
+	private boolean stopRequested;
+	
+	/**
+	 * Default Listener constructor instantiates a DatagramSocket using the
+	 * SERVER_PORT constant defined in the Server class.
+	 * 
+	 * @param port
+	 */
+	public Listener(int port) {
+		try {
+			this.receiveSocket = new DatagramSocket(port);
+			this.stopRequested = false;
+		} catch (SocketException e) {
+			e.printStackTrace();
+			System.exit(1); // TODO: add exception
 		}
 	}
 	
@@ -52,21 +90,82 @@ public class Server {
 	 * one is received. Upon receiving a DatagramPacket, it calls
 	 * the processRequest(DatagramPacket) method to process the 
 	 * request.
-	 */
-	public void receiveRequest() {
-		byte[] buffer = new byte[512];
-		DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
-		
-		try {
-			System.out.println("[SYSTEM] Listening for requests.");
-			receiveSocket.receive(receivePacket);
+	 */	
+	public void run() {
+		int connections = 0;
+		while (!stopRequested()) {
+			byte[] buffer = new byte[512];
+			DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
+			
+			try {
+				System.out.println("[SYSTEM] Listening for requests.");
+				receiveSocket.receive(receivePacket);
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			
+			Thread userConnection = new Thread(new RequestHandler(receivePacket), "Request " + 1 + connections++);
+			userConnection.start();
+			
+			// Give enough time in between requests to shutdown if necessary
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		catch (IOException e) {
-			e.printStackTrace();
+	}
+	
+	/**
+	 * Method allows the Server class to stop the Listener.
+	 */
+	public synchronized void requestStop() {
+		stopRequested = true;
+	}
+	
+	/**
+	 * Getter for determining whether a stop has been requested
+	 * by the Server.
+	 * 
+	 * @return boolean 
+	 */
+	private synchronized boolean stopRequested() {
+		return stopRequested;
+	}
+}
+
+
+/**
+ * The RequestHandler class handles requests received by Listener.
+ * It creates a separate thread (needs testing) for each Client 
+ * request that is received.
+ * 
+ * @author Loktin Wong
+ * @version 1.0.1
+ * @since 25-01-2016
+ */
+class RequestHandler implements Runnable {
+	DatagramPacket receivePacket;
+	
+	/**
+	 * Default RequestHandler constructor instantiates receivePacket to
+	 * the packet passed down from the Listener class.
+	 * 
+	 * @param packet
+	 */
+	public RequestHandler(DatagramPacket packet) {
+		this.receivePacket = packet;
+	}
+	
+	public void run() {
+		try {
+			processRequest(receivePacket);
+		} catch (Exception e) {
+			// Error message is printed inside processRequest(DatagramPacket)
 			System.exit(1);
 		}
-		
-		processRequest(receivePacket);
 	}
 	
 	/**
@@ -155,8 +254,9 @@ public class Server {
 	 * and responds appropriately.
 	 *  
 	 * @param packet
+	 * @throws Exception not yet implemented
 	 */
-	public void processRequest(DatagramPacket packet) {
+	public void processRequest(DatagramPacket packet) throws Exception {
 		byte[] data = new byte[packet.getLength()];
 		System.arraycopy(packet.getData(), packet.getOffset(), data, 0, packet.getLength());
 		printRequestInformation(data);			
@@ -212,9 +312,8 @@ public class Server {
 			System.out.println("[SYSTEM] End of request reached.");
 		}
 		else {
-			// TODO: throw exception and quit
 			System.out.println("[ERROR] Invalid request received.");
-			System.exit(1);
+			throw new Exception("Not yet implemented.");
 		}
 	}
 	
