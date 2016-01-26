@@ -1,11 +1,8 @@
 package packet;
 
 import packet.Packet;
-import request.RequestParser;
 
 public class PacketParser {
-  static final int BUFFER_SIZE = 516;
-  
   public Packet parse(Packet packet) throws InvalidPacketException {
     byte[] rawRequest = packet.getPacketData();
     
@@ -26,7 +23,7 @@ public class PacketParser {
           AcknowledgementParser aParser = new AcknowledgementParser();
           return aParser.parse(packet);
         case 5:
-          System.out.println("Error packets not yet implented");
+          System.out.println("Error packets not yet implemented");
         default:
           throw new InvalidPacketException("Cannot identify packet type");
       }  

@@ -6,8 +6,8 @@ import java.nio.ByteBuffer;
 public class Acknowledgement extends Packet {
   int blockNumber;
 
-  public Acknowledgement(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, int blockNumber) {
-    super(remoteHost, remotePort, localHost, localPort);
+  public Acknowledgement(InetAddress remoteHost, int remotePort, int blockNumber) {
+    super(remoteHost, remotePort);
     this.blockNumber = blockNumber;
   }
 
@@ -35,6 +35,6 @@ public class Acknowledgement extends Packet {
   @Override
   public String toString() {
     return "Acknowledgement [blockNumber=" + blockNumber + ", remoteHost=" + remoteHost + ", remotePort=" + remotePort
-        + ", localHost=" + localHost + ", localPort=" + localPort + "]";
+        + "]";
   }
 }

@@ -7,23 +7,25 @@ public class DataPacketBuilder extends PacketBuilder {
   private byte[] fileData = new byte[0];
   
   public DataPacket buildDataPacket() {
-    return new DataPacket(remoteHost, remotePort, localHost, localPort, blockNumber, fileData);
+    return new DataPacket(remoteHost, remotePort, blockNumber, fileData);
   }
 
   public int getBlockNumber() {
     return blockNumber;
   }
 
-  public void setBlockNumber(int blockNumber) {
+  public DataPacketBuilder setBlockNumber(int blockNumber) {
     this.blockNumber = blockNumber;
+    return this;
   }
 
   public byte[] getFileData() {
     return fileData;
   }
 
-  public void setFileData(byte[] fileData) {
+  public DataPacketBuilder setFileData(byte[] fileData) {
     this.fileData = fileData;
+    return this;
   }
 
   @Override

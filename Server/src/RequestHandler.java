@@ -17,8 +17,8 @@ import packet.InvalidPacketException;
 import packet.Packet;
 import packet.PacketBuilder;
 import packet.PacketParser;
-import request.ReadRequest;
-import request.WriteRequest;
+import packet.ReadRequest;
+import packet.WriteRequest;
 
 /**
  * The RequestHandler class handles requests received by Listener.
@@ -134,6 +134,8 @@ class RequestHandler implements Runnable {
     File f = null;
     FileOutputStream fStream = null;
     ByteArrayOutputStream bStream = new ByteArrayOutputStream(); 
+    
+    // TODO: finish implementing this
     
     try {
 		f = new File(filename);

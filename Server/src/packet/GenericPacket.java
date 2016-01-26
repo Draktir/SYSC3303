@@ -7,7 +7,7 @@ public class GenericPacket extends Packet {
   byte[] packetData;
   
   public GenericPacket(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, byte[] packetData) {
-    super(remoteHost, remotePort, localHost, localPort);
+    super(remoteHost, remotePort);
     this.packetData = packetData;
   }
 
@@ -23,6 +23,6 @@ public class GenericPacket extends Packet {
   @Override
   public String toString() {
     return "GenericPacket [packetData=" + Arrays.toString(packetData) + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + "]";
+        + remotePort + "]";
   }
 }
