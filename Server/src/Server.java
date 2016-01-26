@@ -7,16 +7,10 @@
  * @since 25-01-2016
  */
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.DatagramPacket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Server {
-	public static final int SERVER_PORT = 6900; // TODO: CHANGE BACK TO correct port
+	public static final int SERVER_PORT = 69;
 	public static enum Mode {TEST, NORMAL}; // TODO: implement
 	Mode currentMode;
 	
@@ -48,10 +42,10 @@ public class Server {
 			command = sc.nextLine();
 			if (command.equals("shutdown")) {
 				listener.requestStop();
+				sc.close();
 				throw new InterruptedException("Server has been shutdown.");
 				// TODO: possibly send packet to client indicating status
 			}
-				
 		}
 	}
 }

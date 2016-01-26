@@ -14,16 +14,18 @@ public class DataPacketBuilder extends PacketBuilder {
     return blockNumber;
   }
 
-  public void setBlockNumber(int blockNumber) {
+  public DataPacketBuilder setBlockNumber(int blockNumber) {
     this.blockNumber = blockNumber;
+    return this;
   }
 
   public byte[] getFileData() {
     return fileData;
   }
 
-  public void setFileData(byte[] fileData) {
+  public DataPacketBuilder setFileData(byte[] fileData) {
     this.fileData = fileData;
+    return this;
   }
 
   @Override
