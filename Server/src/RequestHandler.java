@@ -1,3 +1,9 @@
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -87,7 +93,7 @@ class RequestHandler implements Runnable {
   }
   
   /**
-   * Handles a received Write request (WRQ) by reading the requested
+   * Handles a received Read request (RRQ) by reading the requested
    * block from disk and responding with a Data packet
    * 
    * @param request
@@ -125,6 +131,26 @@ class RequestHandler implements Runnable {
     byte[] fileData = packet.getFileData();
     System.out.println("Need to write to file block# " + blockNumber);
     
+    File f = null;
+    FileOutputStream fStream = null;
+    ByteArrayOutputStream bStream = new ByteArrayOutputStream(); 
+    
+    try {
+		f = new File(filename);
+		fStream = new FileOutputStream(f);
+		int byteOffset = blockNumber * 512;
+		long remainingBytes = f.length() - byteOffset; // I hope this is big enough...
+		fileData = new byte[(int) Math.min(remainingBytes, 512)]; // I hope this works...
+		bStream.write(fileData, byteOffset, (int) Math.min(remainingBytes, 512)); // I hope it works...
+		bStream.flush();
+	} catch (FileNotFoundException e) {
+		// TODO: Auto-generated catch block
+		e.printStackTrace();
+	} catch (IOException e) {
+		// TODO: handle this error from bStream.write();
+		e.printStackTrace();
+	}
+    
     AcknowledgementBuilder builder = new AcknowledgementBuilder();
     builder.setRemoteHost(packet.getRemoteHost());
     builder.setRemotePort(packet.getRemotePort());
@@ -151,7 +177,27 @@ class RequestHandler implements Runnable {
   
   private Packet sendFileBlock(Packet request) {
     System.out.println("Need to read from file block# " + blockNumber);
-    byte[] fileData = {1, 24, 1, 22, 100};
+    
+    File f = null;
+    FileInputStream fStream = null;
+    byte[] fileData = null;
+    ByteArrayOutputStream bStream = new ByteArrayOutputStream(); 
+    
+    try {
+		f = new File(filename);
+		fStream = new FileInputStream(f);
+		int byteOffset = blockNumber * 512;
+		long remainingBytes = f.length() - byteOffset;
+		fileData = new byte[(int) Math.min(remainingBytes, 512)]; // I hope this works...
+		bStream.write(fileData, byteOffset, (int) Math.min(remainingBytes, 512)); // I hope it works...
+		bStream.flush();
+	} catch (FileNotFoundException e) {
+		// TODO: Auto-generated catch block
+		e.printStackTrace();
+	} catch (IOException e) {
+		// TODO: handle this error from bStream.write();
+		e.printStackTrace();
+	}
     
     DataPacketBuilder builder = new DataPacketBuilder();
     builder.setRemoteHost(request.getRemoteHost());
@@ -161,16 +207,17 @@ class RequestHandler implements Runnable {
     
     blockNumber++;
     
-    // pretend we have sent the entire file
-    if (blockNumber > 10) {
-      transferComplete = true;
-    }
-    
     DataPacket dataPacket = builder.buildDataPacket();
     
     // pretend we have sent the entire file
-    if (blockNumber > 10) {
+    if (fileData.length < 512) {
       transferComplete = true;
+	  try {
+		  fStream.close();
+	  } catch (IOException e) {
+			// TODO Auto-generated catch block
+		e.printStackTrace();
+	  }
       Packet ackPacket = sendPacketAndReceive(builder.buildDataPacket());
       // TODO: We should make sure we get an ACK and resend the last data packet
       // if it failed. Not needed for this assignment though.
