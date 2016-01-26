@@ -133,18 +133,14 @@ class RequestHandler implements Runnable {
     
     File f = null;
     FileOutputStream fStream = null;
-    ByteArrayOutputStream bStream = new ByteArrayOutputStream(); 
     
-    // TODO: finish implementing this
+    // TODO: test if this works
     
     try {
 		f = new File(filename);
 		fStream = new FileOutputStream(f);
-		int byteOffset = blockNumber * 512;
-		long remainingBytes = f.length() - byteOffset; // I hope this is big enough...
-		fileData = new byte[(int) Math.min(remainingBytes, 512)]; // I hope this works...
-		bStream.write(fileData, byteOffset, (int) Math.min(remainingBytes, 512)); // I hope it works...
-		bStream.flush();
+		fStream.write(fileData);
+		fStream.flush();
 	} catch (FileNotFoundException e) {
 		// TODO: Auto-generated catch block
 		e.printStackTrace();
@@ -158,9 +154,17 @@ class RequestHandler implements Runnable {
     builder.setRemotePort(packet.getRemotePort());
     builder.setBlockNumber(packet.getBlockNumber());
     
-    // is this the last data packet?
+    blockNumber++;
+    
+    // Check for the last data packet
     if (fileData.length < 512) {
       transferComplete = true;
+      try {
+		fStream.close();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
       sendPacket(builder.buildAcknowledgement());
       return null;
     } else {
@@ -182,17 +186,17 @@ class RequestHandler implements Runnable {
     
     File f = null;
     FileInputStream fStream = null;
-    byte[] fileData = null;
-    ByteArrayOutputStream bStream = new ByteArrayOutputStream(); 
+    byte[] fileData = null; 
+    
+    // TODO: test if this works
     
     try {
 		f = new File(filename);
 		fStream = new FileInputStream(f);
 		int byteOffset = blockNumber * 512;
 		long remainingBytes = f.length() - byteOffset;
-		fileData = new byte[(int) Math.min(remainingBytes, 512)]; // I hope this works...
-		bStream.write(fileData, byteOffset, (int) Math.min(remainingBytes, 512)); // I hope it works...
-		bStream.flush();
+		fileData = new byte[(int) Math.min(remainingBytes, 512)];
+		fStream.read(fileData, byteOffset, (int) Math.min(remainingBytes, 512));
 	} catch (FileNotFoundException e) {
 		// TODO: Auto-generated catch block
 		e.printStackTrace();
@@ -211,7 +215,7 @@ class RequestHandler implements Runnable {
     
     DataPacket dataPacket = builder.buildDataPacket();
     
-    // pretend we have sent the entire file
+    // Check if we have the whole file
     if (fileData.length < 512) {
       transferComplete = true;
 	  try {
