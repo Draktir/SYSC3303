@@ -13,8 +13,9 @@ public class AcknowledgementBuilder extends PacketBuilder {
     return blockNumber;
   }
 
-  public void setBlockNumber(int blockNumber) {
+  public AcknowledgementBuilder setBlockNumber(int blockNumber) {
     this.blockNumber = blockNumber;
+    return this;
   }
 
   @Override

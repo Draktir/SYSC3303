@@ -28,40 +28,45 @@ public class PacketBuilder {
     return remoteHost;
   }
   
-  public void setRemoteHost(InetAddress remoteHost) {
+  public PacketBuilder setRemoteHost(InetAddress remoteHost) {
     this.remoteHost = remoteHost;
+    return this;
   }
   
   public int getRemotePort() {
     return remotePort;
   }
   
-  public void setRemotePort(int remotePort) {
+  public PacketBuilder setRemotePort(int remotePort) {
     this.remotePort = remotePort;
+    return this;
   }
   
   public InetAddress getLocalHost() {
     return localHost;
   }
   
-  public void setLocalHost(InetAddress localHost) {
+  public PacketBuilder setLocalHost(InetAddress localHost) {
     this.localHost = localHost;
+    return this;
   }
   
   public int getLocalPort() {
     return localPort;
   }
   
-  public void setLocalPort(int localPort) {
+  public PacketBuilder setLocalPort(int localPort) {
     this.localPort = localPort;
+    return this;
   }
   
   public byte[] getPacketData() {
     return packetData;
   }
   
-  public void setPacketData(byte[] packetData) {
+  public PacketBuilder setPacketData(byte[] packetData) {
     this.packetData = packetData;
+    return this;
   }
 
   @Override

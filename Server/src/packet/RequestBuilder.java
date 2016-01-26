@@ -18,16 +18,18 @@ public class RequestBuilder extends PacketBuilder {
     return filename;
   }
 
-  public void setFilename(String filename) {
+  public RequestBuilder setFilename(String filename) {
     this.filename = filename;
+    return this;
   }
 
   public String getMode() {
     return mode;
   }
 
-  public void setMode(String mode) {
+  public RequestBuilder setMode(String mode) {
     this.mode = mode;
+    return this;
   }
 
   @Override
