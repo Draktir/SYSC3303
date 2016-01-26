@@ -28,6 +28,6 @@ public class WriteRequest extends Request {
   @Override
   public String toString() {
     return "WriteRequest [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + "]";
+        + remotePort + "]";
   }
 }

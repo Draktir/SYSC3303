@@ -37,8 +37,6 @@ public class RequestParser {
     RequestBuilder builder = new RequestBuilder();
     builder.setFilename(filename);
     builder.setMode(mode);
-    builder.setLocalHost(packet.getLocalHost());
-    builder.setLocalPort(packet.getLocalPort());
     builder.setRemoteHost(packet.getRemoteHost());
     builder.setRemotePort(packet.getRemotePort());
     

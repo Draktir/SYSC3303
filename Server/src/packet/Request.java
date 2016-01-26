@@ -8,7 +8,7 @@ public abstract class Request extends Packet {
   
   public Request(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, 
       String filename, String mode) {
-    super(remoteHost, remotePort, localHost, localPort);
+    super(remoteHost, remotePort);
     this.filename = filename;
     this.mode = (mode != null) ? mode.toLowerCase() : "netascii";
   }
@@ -32,6 +32,6 @@ public abstract class Request extends Packet {
   @Override
   public String toString() {
     return "Request [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + "]";
+        + remotePort + "]";
   }
 }

@@ -8,9 +8,8 @@ public class DataPacket extends Packet {
   int blockNumber;
   byte[] fileData;
 
-  public DataPacket(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, 
-      int blockNumber, byte[] fileData) {
-    super(remoteHost, remotePort, localHost, localPort);
+  public DataPacket(InetAddress remoteHost, int remotePort, int blockNumber, byte[] fileData) {
+    super(remoteHost, remotePort);
     this.blockNumber = blockNumber;
     this.fileData = fileData;
   }
@@ -49,6 +48,6 @@ public class DataPacket extends Packet {
   @Override
   public String toString() {
     return "DataPacket [blockNumber=" + blockNumber + ", fileData=" + Arrays.toString(fileData) + ", remoteHost="
-        + remoteHost + ", remotePort=" + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + "]";
+        + remoteHost + ", remotePort=" + remotePort + "]";
   }
 }

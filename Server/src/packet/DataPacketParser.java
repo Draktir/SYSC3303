@@ -29,8 +29,6 @@ public class DataPacketParser {
     DataPacketBuilder builder = new DataPacketBuilder();
     builder.setRemoteHost(packet.getRemoteHost());
     builder.setRemotePort(packet.getRemotePort());
-    builder.setLocalHost(packet.getLocalHost());
-    builder.setLocalPort(packet.getLocalPort());
     builder.setBlockNumber(blockNumber);
     builder.setFileData(fileData);
     

@@ -20,8 +20,6 @@ public class AcknowledgementParser {
     int blockNumber = ByteBuffer.wrap(blockNumberBytes).getInt();
     
     AcknowledgementBuilder builder = new AcknowledgementBuilder();
-    builder.setLocalHost(packet.getLocalHost());
-    builder.setLocalPort(packet.getLocalPort());
     builder.setRemoteHost(packet.getRemoteHost());
     builder.setRemotePort(packet.getRemotePort());
     builder.setBlockNumber(blockNumber);

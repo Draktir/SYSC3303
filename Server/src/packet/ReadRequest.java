@@ -26,6 +26,6 @@ public class ReadRequest extends Request {
   @Override
   public String toString() {
     return "ReadRequest [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + "]";
+        + remotePort + ", localHost=" + "]";
   }
 }

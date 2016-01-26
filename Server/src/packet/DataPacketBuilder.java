@@ -7,7 +7,7 @@ public class DataPacketBuilder extends PacketBuilder {
   private byte[] fileData = new byte[0];
   
   public DataPacket buildDataPacket() {
-    return new DataPacket(remoteHost, remotePort, localHost, localPort, blockNumber, fileData);
+    return new DataPacket(remoteHost, remotePort, blockNumber, fileData);
   }
 
   public int getBlockNumber() {
