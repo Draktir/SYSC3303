@@ -4,9 +4,8 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
 public class ReadRequest extends Request {
-  public ReadRequest(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, String filename,
-      String mode) {
-    super(remoteHost, remotePort, localHost, localPort, filename, mode);
+  public ReadRequest(InetAddress remoteHost, int remotePort, String filename, String mode) {
+    super(remoteHost, remotePort, filename, mode);
   }
 
   public byte[] getPacketData() {

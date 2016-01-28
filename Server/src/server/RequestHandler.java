@@ -1,21 +1,16 @@
-import java.io.ByteArrayOutputStream;
+package server;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.UnknownHostException;
 
 import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
 import packet.DataPacket;
 import packet.DataPacketBuilder;
-import packet.InvalidPacketException;
 import packet.Packet;
-import packet.PacketBuilder;
 import packet.PacketParser;
 import packet.ReadRequest;
 import packet.WriteRequest;
@@ -26,31 +21,31 @@ import packet.WriteRequest;
  * request that is received.
  * 
  * @author Loktin Wong
+ * @author Philip Klostermann
  * @version 1.0.1
  * @since 25-01-2016
  */
 class RequestHandler implements Runnable {
-  DatagramSocket clientSocket;
-  DatagramPacket receivePacket;
-  String filename;
-  int blockNumber = 0;
-  boolean transferComplete = false;
+  private Packet requestPacket;
+  private ClientConnection clientConnection;
+  private String filename;
+  private int blockNumber = 0;
+  private boolean transferComplete = false;
   
   /**
-   * Default RequestHandler constructor instantiates receivePacket to
+   * Default RequestHandler constructor instantiates requestPacekt to
    * the packet passed down from the Listener class.
    * 
    * @param packet
    */
-  public RequestHandler(DatagramPacket packet) {
-    this.receivePacket = packet;
+  public RequestHandler(Packet requestPacket) {
+    this.requestPacket = requestPacket;
   }
   
   public void run() {
     try {
-      processRequest(receivePacket);
+      processRequest(requestPacket);
     } catch (Exception e) {
-      // Error message is printed inside processRequest(DatagramPacket)
       e.printStackTrace();
       System.exit(1);
     }
@@ -63,19 +58,11 @@ class RequestHandler implements Runnable {
    * @param packet
    * @throws Exception not yet implemented
    */
-  public void processRequest(DatagramPacket packet) throws Exception {
-    // copy data out of the buffer and into an array
-    int len = receivePacket.getLength();
-    byte[] data = new byte[len]; 
-    System.arraycopy(packet.getData(), 0, data, 0, len);
-    
-    PacketBuilder packetBuilder = new PacketBuilder();
-    packetBuilder.setRemoteHost(packet.getAddress());
-    packetBuilder.setRemotePort(packet.getPort());
-    packetBuilder.setPacketData(data);
+  public void processRequest(Packet requestPacket) throws Exception {
+    this.clientConnection = new ClientConnection();
     
     PacketParser parser = new PacketParser();
-    Packet request = parser.parse(packetBuilder.buildGenericPacket());
+    Packet request = parser.parse(requestPacket);
     
     do {
       if (request instanceof ReadRequest) {
@@ -118,7 +105,7 @@ class RequestHandler implements Runnable {
     builder.setRemotePort(request.getRemotePort());
     builder.setBlockNumber(0);
     
-    return sendPacketAndReceive(builder.buildAcknowledgement());
+    return clientConnection.sendPacketAndReceive(builder.buildAcknowledgement());
   }
   
   /**
@@ -165,10 +152,10 @@ class RequestHandler implements Runnable {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
-      sendPacket(builder.buildAcknowledgement());
+      clientConnection.sendPacket(builder.buildAcknowledgement());
       return null;
     } else {
-      return sendPacketAndReceive(builder.buildAcknowledgement());
+      return clientConnection.sendPacketAndReceive(builder.buildAcknowledgement());
     }
   }
   
@@ -224,77 +211,14 @@ class RequestHandler implements Runnable {
 			// TODO Auto-generated catch block
 		e.printStackTrace();
 	  }
-      Packet ackPacket = sendPacketAndReceive(builder.buildDataPacket());
+      clientConnection.sendPacketAndReceive(dataPacket);
       // TODO: We should make sure we get an ACK and resend the last data packet
       // if it failed. Not needed for this assignment though.
       return null;
     }
     
-    return sendPacketAndReceive(builder.buildDataPacket());
-  }
-  
-  private void sendPacket(Packet packet) {
-    try {
-      byte[] data = packet.getPacketData();
-      DatagramPacket sendPacket = new DatagramPacket(
-          data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      clientSocket = new DatagramSocket();
-      System.out.println("[SYSTEM] Sending response to client at port " + packet.getRemotePort());
-      printRequestInformation(data);
-      clientSocket.send(sendPacket);
-    }
-    catch (UnknownHostException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    catch (IOException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-  }
-  
-  private Packet sendPacketAndReceive(Packet packet) {
-    try {
-      byte[] data = packet.getPacketData();
-      DatagramPacket sendPacket = new DatagramPacket(
-          data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      clientSocket = new DatagramSocket();
-      System.out.println("[SYSTEM] Sending response to client at port " + packet.getRemotePort());
-      printRequestInformation(data);
-      clientSocket.send(sendPacket);
-      
-      System.out.println("[SYSTEM] Waiting for response from client");
-      byte[] buffer = new byte[516];
-      DatagramPacket responsePacket = new DatagramPacket(buffer, 516);
-      clientSocket.receive(responsePacket);
-      
-      int len = receivePacket.getLength();
-      byte[] received = new byte[len]; 
-      System.arraycopy(responsePacket.getData(), 0, received, 0, len);
-      
-      printRequestInformation(received);
-      
-      PacketBuilder packetBuilder = new PacketBuilder();
-      packetBuilder.setRemoteHost(responsePacket.getAddress());
-      packetBuilder.setRemotePort(responsePacket.getPort());
-      packetBuilder.setPacketData(data);
-      
-      PacketParser packetParser = new PacketParser();
-      try {
-        return packetParser.parse(packetBuilder.buildGenericPacket());
-      } catch (InvalidPacketException e) {
-        e.printStackTrace();
-      }
-    }
-    catch (UnknownHostException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    catch (IOException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    return null;
+    printPacketInformation(dataPacket);
+    return clientConnection.sendPacketAndReceive(dataPacket);
   }
   
   /**
@@ -302,15 +226,16 @@ class RequestHandler implements Runnable {
    * 
    * @param buffer
    */
-  public void printRequestInformation(byte[] buffer) {
-    String contents = new String(buffer);
+  public void printPacketInformation(Packet packet) {
+    byte[] data = packet.getPacketData();
+    String contents = new String(data);
     
     System.out.println("Request contents: ");
     System.out.println(contents);
     
     System.out.println("Request contents (bytes): ");
-    for (int i = 0; i < buffer.length; i++) {
-      System.out.print(buffer[i] + " ");
+    for (int i = 0; i < data.length; i++) {
+      System.out.print(data[i] + " ");
     }
     System.out.println();
   }

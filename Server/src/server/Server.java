@@ -1,3 +1,4 @@
+package server;
 /**
  * The Server class implements an application that acts as a 
  * server that will receive and respond to TFTP requests.

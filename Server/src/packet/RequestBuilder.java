@@ -7,11 +7,11 @@ public class RequestBuilder extends PacketBuilder {
   private String mode = "netascii";
   
   public WriteRequest buildWriteRequest() {
-    return new WriteRequest(remoteHost, remotePort, localHost, localPort, filename, mode);
+    return new WriteRequest(remoteHost, remotePort, filename, mode);
   }
   
   public ReadRequest buildReadRequest() {
-    return new ReadRequest(remoteHost, remotePort, localHost, localPort, filename, mode);
+    return new ReadRequest(remoteHost, remotePort, filename, mode);
   }
 
   public String getFilename() {
@@ -35,7 +35,6 @@ public class RequestBuilder extends PacketBuilder {
   @Override
   public String toString() {
     return "RequestBuilder [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", localHost=" + localHost + ", localPort=" + localPort + ", packetData="
-        + Arrays.toString(packetData) + "]";
+        + remotePort + ", packetData=" + Arrays.toString(packetData) + "]";
   }
 }

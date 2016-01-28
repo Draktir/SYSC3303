@@ -31,7 +31,6 @@ public class DataPacketBuilder extends PacketBuilder {
   @Override
   public String toString() {
     return "DataPacketBuilder [blockNumber=" + blockNumber + ", fileData=" + Arrays.toString(fileData) + ", remoteHost="
-        + remoteHost + ", remotePort=" + remotePort + ", localHost=" + localHost + ", localPort=" + localPort
-        + ", packetData=" + Arrays.toString(packetData) + "]";
+        + remoteHost + ", remotePort=" + remotePort + ", packetData=" + Arrays.toString(packetData) + "]";
   }
 }

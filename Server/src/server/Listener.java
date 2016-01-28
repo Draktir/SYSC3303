@@ -1,7 +1,11 @@
+package server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
+
+import packet.GenericPacket;
+import packet.PacketBuilder;
 
 /**
  * The Listener class is implemented in order to allow the Server application
@@ -52,7 +56,17 @@ class Listener implements Runnable {
         System.exit(1);
       }
       
-      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Request " + 1 + connections++);
+      int dataLength = receivePacket.getLength();
+      byte[] receivedData = new byte[dataLength];
+      System.arraycopy(receivePacket.getData(), 0, receivedData, 0, dataLength);
+      
+      GenericPacket requestPacket = new PacketBuilder()
+              .setRemoteHost(receivePacket.getAddress())
+              .setRemotePort(receivePacket.getPort())
+              .setPacketData(receivedData)
+              .buildGenericPacket();
+      
+      Thread userConnection = new Thread(new RequestHandler(requestPacket), "Request " + 1 + connections++);
       userConnection.start();
       
       // Give enough time in between requests to shutdown if necessary

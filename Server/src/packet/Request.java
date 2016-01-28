@@ -6,8 +6,7 @@ public abstract class Request extends Packet {
   protected String filename;
   protected String mode;
   
-  public Request(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, 
-      String filename, String mode) {
+  public Request(InetAddress remoteHost, int remotePort, String filename, String mode) {
     super(remoteHost, remotePort);
     this.filename = filename;
     this.mode = (mode != null) ? mode.toLowerCase() : "netascii";
