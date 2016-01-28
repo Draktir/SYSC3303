@@ -7,7 +7,7 @@ public class DataPacketBuilder extends PacketBuilder {
   private byte[] fileData = new byte[0];
   
   public DataPacket buildDataPacket() {
-    return new DataPacket(remoteHost, remotePort, blockNumber, fileData);
+    return new DataPacket(remoteHost, remotePort, getBlockNumber(), fileData);
   }
 
   public int getBlockNumber() {
@@ -30,7 +30,7 @@ public class DataPacketBuilder extends PacketBuilder {
 
   @Override
   public String toString() {
-    return "DataPacketBuilder [blockNumber=" + blockNumber + ", fileData=" + Arrays.toString(fileData) + ", remoteHost="
+    return "DataPacketBuilder [blockNumber=" + getBlockNumber() + ", fileData=" + Arrays.toString(fileData) + ", remoteHost="
         + remoteHost + ", remotePort=" + remotePort + ", packetData=" + Arrays.toString(packetData) + "]";
   }
 }

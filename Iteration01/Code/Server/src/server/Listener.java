@@ -44,7 +44,7 @@ class Listener implements Runnable {
   public void run() {
     int connections = 0;
     while (!stopRequested()) {
-      byte[] buffer = new byte[512];
+      byte[] buffer = new byte[516];
       DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
       
       try {
@@ -76,6 +76,12 @@ class Listener implements Runnable {
         e.printStackTrace();
       }
     }
+    
+    if (!receiveSocket.isClosed()) {
+      receiveSocket.close(); 
+    }
+    
+    System.out.println("[SYSTEM] Listener shut down. No longer accepting new connections.");
   }
   
   /**
@@ -83,6 +89,7 @@ class Listener implements Runnable {
    */
   public synchronized void requestStop() {
     stopRequested = true;
+    System.out.println("[SYSTEM] Shutdown initiated.");
   }
   
   /**

@@ -9,6 +9,12 @@ public class FileReader {
   private String filename;
   private BufferedInputStream fileIn;
     
+  /**
+   * Constructor, accepts filename of file to be read.
+   * 
+   * @param filename
+   * @throws FileNotFoundException
+   */
   public FileReader(String filename) throws FileNotFoundException {
     this.setFilename(filename);
     fileIn = new BufferedInputStream(new FileInputStream(filename));
@@ -27,6 +33,11 @@ public class FileReader {
       return -1;
     }
   }
+
+  /**
+   * Closes the FileInputStream
+   * 
+   */
   
   public void close() {
     try {
@@ -36,14 +47,25 @@ public class FileReader {
     }
   }
 
+  /**
+   * Accessor for filename
+   * @return filename
+   */
   public String getFilename() {
     return filename;
   }
 
+  /**
+   * Mutator for filename
+   * @param filename
+   */
   public void setFilename(String filename) {
     this.filename = filename;
   }
 
+  /**
+   * Generic toString
+   */
   @Override
   public String toString() {
     return "FileReader [filename=" + filename + ", fileIn=" + fileIn + "]";

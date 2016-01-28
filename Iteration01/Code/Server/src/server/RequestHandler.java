@@ -1,10 +1,6 @@
 package server;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileNotFoundException;
 
-import java.io.IOException;
+import java.io.FileNotFoundException;
 
 import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
@@ -27,10 +23,12 @@ import packet.WriteRequest;
  */
 class RequestHandler implements Runnable {
   private Packet requestPacket;
-  private ClientConnection clientConnection;
-  private String filename;
-  private int blockNumber = 0;
   private boolean transferComplete = false;
+
+  private ClientConnection clientConnection;
+  private FileReader fileReader;
+  private FileWriter fileWriter;
+
   
   /**
    * Default RequestHandler constructor instantiates requestPacekt to
@@ -65,6 +63,8 @@ class RequestHandler implements Runnable {
     Packet request = parser.parse(requestPacket);
     
     do {
+      printPacketInformation(request);
+      
       if (request instanceof ReadRequest) {
         request = handleReadRequest((ReadRequest) request);
       } else if (request instanceof WriteRequest) {
@@ -74,7 +74,8 @@ class RequestHandler implements Runnable {
       } else if (request instanceof Acknowledgement) {
         request = handleAcknowledgement((Acknowledgement) request);
       } else {
-        System.err.println("Invalid request received");
+        System.err.println("Invalid request received, closing connection.");
+        break;
       }
     } while (!transferComplete);
   }
@@ -86,8 +87,13 @@ class RequestHandler implements Runnable {
    * @param request
    */
   private Packet handleReadRequest(ReadRequest request) {
-    filename = request.getFilename();
-    return sendFileBlock(request);
+    try {
+      fileReader = new FileReader(request.getFilename());
+    } catch (FileNotFoundException e) {
+      // TODO: send an error packet if the file does not exist
+      e.printStackTrace();
+    }
+    return sendFileBlock(request, 1);
   }
   
   /**
@@ -97,15 +103,23 @@ class RequestHandler implements Runnable {
    * @param request
    */
   private Packet handleWriteRequest(WriteRequest request) {
-    filename = request.getFilename();
+    try {
+      fileWriter = new FileWriter(request.getFilename());
+    } catch (FileNotFoundException e) {
+      // TODO: send an error packet if something goes wrong here
+      e.printStackTrace();
+    }
+    
     System.out.println("Sending ACK with block# 0");
     
     AcknowledgementBuilder builder = new AcknowledgementBuilder();
     builder.setRemoteHost(request.getRemoteHost());
     builder.setRemotePort(request.getRemotePort());
     builder.setBlockNumber(0);
+    Acknowledgement ack = builder.buildAcknowledgement();
     
-    return clientConnection.sendPacketAndReceive(builder.buildAcknowledgement());
+    printPacketInformation(ack);
+    return clientConnection.sendPacketAndReceive(ack);
   }
   
   /**
@@ -114,49 +128,29 @@ class RequestHandler implements Runnable {
    * 
    * @param packet
    */
-  private Packet handleDataPacket(DataPacket packet) {
-    byte[] fileData = packet.getFileData();
-    System.out.println("Need to write to file block# " + blockNumber);
-    
-    File f = null;
-    FileOutputStream fStream = null;
-    
-    // TODO: test if this works
-    
-    try {
-		f = new File(filename);
-		fStream = new FileOutputStream(f);
-		fStream.write(fileData);
-		fStream.flush();
-	} catch (FileNotFoundException e) {
-		// TODO: Auto-generated catch block
-		e.printStackTrace();
-	} catch (IOException e) {
-		// TODO: handle this error from bStream.write();
-		e.printStackTrace();
-	}
+  private Packet handleDataPacket(DataPacket dataPacket) {
+    System.out.println("Writing file block# " + dataPacket.getBlockNumber());
+    byte[] fileData = dataPacket.getFileData();
+    fileWriter.writeBlock(fileData);
     
     AcknowledgementBuilder builder = new AcknowledgementBuilder();
-    builder.setRemoteHost(packet.getRemoteHost());
-    builder.setRemotePort(packet.getRemotePort());
-    builder.setBlockNumber(packet.getBlockNumber());
+    builder.setRemoteHost(dataPacket.getRemoteHost());
+    builder.setRemotePort(dataPacket.getRemotePort());
+    builder.setBlockNumber(dataPacket.getBlockNumber());
+    Acknowledgement ack = builder.buildAcknowledgement();
     
-    blockNumber++;
+    printPacketInformation(ack);
     
     // Check for the last data packet
     if (fileData.length < 512) {
       transferComplete = true;
-      try {
-		fStream.close();
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-      clientConnection.sendPacket(builder.buildAcknowledgement());
+      fileWriter.close();
+      // send the last ACK
+      clientConnection.sendPacket(ack);
       return null;
-    } else {
-      return clientConnection.sendPacketAndReceive(builder.buildAcknowledgement());
     }
+    
+    return clientConnection.sendPacketAndReceive(ack);
   }
   
   /**
@@ -164,67 +158,48 @@ class RequestHandler implements Runnable {
    * 
    * @param packet
    */
-  private Packet handleAcknowledgement(Acknowledgement packet) {
-    return sendFileBlock(packet);
+  private Packet handleAcknowledgement(Acknowledgement ackPacket) {
+    return sendFileBlock(ackPacket, ackPacket.getBlockNumber());
   }
   
-  private Packet sendFileBlock(Packet request) {
-    System.out.println("Need to read from file block# " + blockNumber);
+  private Packet sendFileBlock(Packet request, int blockNumber) {
+    System.out.println("Reading block# " + blockNumber +" from file.");
     
-    File f = null;
-    FileInputStream fStream = null;
-    byte[] fileData = null; 
+    byte[] buffer = new byte[512];
+    int bytesRead = fileReader.readBlock(buffer);
     
-    // TODO: test if this works
-    
-    try {
-		f = new File(filename);
-		fStream = new FileInputStream(f);
-		int byteOffset = blockNumber * 512;
-		long remainingBytes = f.length() - byteOffset;
-		fileData = new byte[(int) Math.min(remainingBytes, 512)];
-		fStream.read(fileData, byteOffset, (int) Math.min(remainingBytes, 512));
-	} catch (FileNotFoundException e) {
-		// TODO: Auto-generated catch block
-		e.printStackTrace();
-	} catch (IOException e) {
-		// TODO: handle this error from bStream.write();
-		e.printStackTrace();
-	}
+    byte[] fileData = new byte[bytesRead];
+    System.arraycopy(buffer, 0, fileData, 0, bytesRead);
     
     DataPacketBuilder builder = new DataPacketBuilder();
     builder.setRemoteHost(request.getRemoteHost());
     builder.setRemotePort(request.getRemotePort());
     builder.setBlockNumber(blockNumber);
     builder.setFileData(fileData);
-    
-    blockNumber++;
-    
+        
     DataPacket dataPacket = builder.buildDataPacket();
+    printPacketInformation(dataPacket);
     
-    // Check if we have the whole file
+    // Check if we have read the whole file
     if (fileData.length < 512) {
       transferComplete = true;
-	  try {
-		  fStream.close();
-	  } catch (IOException e) {
-			// TODO Auto-generated catch block
-		e.printStackTrace();
-	  }
+      fileReader.close();
+      
+      // send the last data packet
       clientConnection.sendPacketAndReceive(dataPacket);
+
       // TODO: We should make sure we get an ACK and resend the last data packet
-      // if it failed. Not needed for this assignment though.
+      // if it failed. Not needed for this iteration though.
       return null;
     }
     
-    printPacketInformation(dataPacket);
     return clientConnection.sendPacketAndReceive(dataPacket);
   }
   
   /**
-   * Prints out request contents as a String and in bytes.
+   * Prints out packet contents as a String and in bytes.
    * 
-   * @param buffer
+   * @param packet
    */
   public void printPacketInformation(Packet packet) {
     byte[] data = packet.getPacketData();

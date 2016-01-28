@@ -9,11 +9,23 @@ public class FileWriter {
   private String filename;
   private BufferedOutputStream fileOut;
   
+  /**
+   * Constructor, accepts filename of file to be written
+   * 
+   * @param filename
+   * @throws FileNotFoundException
+   */
   public FileWriter(String filename) throws FileNotFoundException {
     this.filename = filename;
     fileOut = new BufferedOutputStream(new FileOutputStream(filename));
   }
   
+  /**
+   * Writes a block of data to the file
+   * 
+   * @param data
+   * @return true on success / false on failure
+   */
   public boolean writeBlock(byte[] data) {
     try {
       fileOut.write(data, 0, data.length);
@@ -24,6 +36,10 @@ public class FileWriter {
     }
   }
   
+  /**
+   * Closes the file output stream
+   * 
+   */
   public void close() {
     try {
       this.fileOut.close();
@@ -32,14 +48,27 @@ public class FileWriter {
     }
   }
 
+  /**
+   * Accessor for filename attribute
+   * 
+   * @return filename
+   */
   public String getFilename() {
     return filename;
   }
 
+  /**
+   * Mutator for filename
+   * 
+   * @param filename
+   */
   public void setFilename(String filename) {
     this.filename = filename;
   }
 
+  /**
+   * Generic toString method
+   */
   @Override
   public String toString() {
     return "FileWriter [filename=" + filename + ", fileOut=" + fileOut + "]";
