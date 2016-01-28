@@ -1,3 +1,4 @@
+package intermediate_host;
 /**
  * The IntermediateHost class implements an application 
  * that acts as both a client, and a server that will 
