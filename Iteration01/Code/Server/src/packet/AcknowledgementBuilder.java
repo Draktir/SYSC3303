@@ -2,7 +2,7 @@ package packet;
 
 import java.util.Arrays;
 
-public class AcknowledgementBuilder extends PacketBuilder {
+public class AcknowledgementBuilder extends PacketBuilder<AcknowledgementBuilder> {
   private int blockNumber = 0;
   
   public Acknowledgement buildAcknowledgement() {

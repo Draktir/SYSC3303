@@ -5,7 +5,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 
 import packet.GenericPacket;
-import packet.PacketBuilder;
+import packet.GenericPacketBuilder;
 
 /**
  * The Listener class is implemented in order to allow the Server application
@@ -60,7 +60,7 @@ class Listener implements Runnable {
       byte[] receivedData = new byte[dataLength];
       System.arraycopy(receivePacket.getData(), 0, receivedData, 0, dataLength);
       
-      GenericPacket requestPacket = new PacketBuilder()
+      GenericPacket requestPacket = new GenericPacketBuilder()
               .setRemoteHost(receivePacket.getAddress())
               .setRemotePort(receivePacket.getPort())
               .setPacketData(receivedData)
@@ -68,13 +68,6 @@ class Listener implements Runnable {
       
       Thread userConnection = new Thread(new RequestHandler(requestPacket), "Request " + 1 + connections++);
       userConnection.start();
-      
-      // Give enough time in between requests to shutdown if necessary
-      try {
-        Thread.sleep(10000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
     }
     
     if (!receiveSocket.isClosed()) {

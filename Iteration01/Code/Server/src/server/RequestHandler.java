@@ -1,11 +1,13 @@
 package server;
 
 import java.io.FileNotFoundException;
+import java.net.SocketException;
 
 import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
 import packet.DataPacket;
 import packet.DataPacketBuilder;
+import packet.InvalidPacketException;
 import packet.Packet;
 import packet.PacketParser;
 import packet.ReadRequest;
@@ -43,7 +45,7 @@ class RequestHandler implements Runnable {
   public void run() {
     try {
       processRequest(requestPacket);
-    } catch (Exception e) {
+    } catch (InvalidPacketException e) {
       e.printStackTrace();
       System.exit(1);
     }
@@ -54,10 +56,16 @@ class RequestHandler implements Runnable {
    * and responds appropriately.
    *  
    * @param packet
-   * @throws Exception not yet implemented
+   * @throws InvalidPacketException
    */
-  public void processRequest(Packet requestPacket) throws Exception {
-    this.clientConnection = new ClientConnection();
+  public void processRequest(Packet requestPacket) throws InvalidPacketException {
+    try {
+      this.clientConnection = new ClientConnection();
+    } catch (SocketException e) {
+      e.printStackTrace();
+      System.err.println("Could not create client socket.");
+      return;
+    }
     
     PacketParser parser = new PacketParser();
     Packet request = parser.parse(requestPacket);
@@ -112,11 +120,11 @@ class RequestHandler implements Runnable {
     
     System.out.println("Sending ACK with block# 0");
     
-    AcknowledgementBuilder builder = new AcknowledgementBuilder();
-    builder.setRemoteHost(request.getRemoteHost());
-    builder.setRemotePort(request.getRemotePort());
-    builder.setBlockNumber(0);
-    Acknowledgement ack = builder.buildAcknowledgement();
+    Acknowledgement ack = new AcknowledgementBuilder()
+            .setRemoteHost(request.getRemoteHost())
+            .setRemotePort(request.getRemotePort())
+            .setBlockNumber(0)
+            .buildAcknowledgement();
     
     printPacketInformation(ack);
     return clientConnection.sendPacketAndReceive(ack);
@@ -133,11 +141,11 @@ class RequestHandler implements Runnable {
     byte[] fileData = dataPacket.getFileData();
     fileWriter.writeBlock(fileData);
     
-    AcknowledgementBuilder builder = new AcknowledgementBuilder();
-    builder.setRemoteHost(dataPacket.getRemoteHost());
-    builder.setRemotePort(dataPacket.getRemotePort());
-    builder.setBlockNumber(dataPacket.getBlockNumber());
-    Acknowledgement ack = builder.buildAcknowledgement();
+    Acknowledgement ack = new AcknowledgementBuilder()
+            .setRemoteHost(dataPacket.getRemoteHost())
+            .setRemotePort(dataPacket.getRemotePort())
+            .setBlockNumber(dataPacket.getBlockNumber())
+            .buildAcknowledgement();
     
     printPacketInformation(ack);
     
@@ -171,13 +179,13 @@ class RequestHandler implements Runnable {
     byte[] fileData = new byte[bytesRead];
     System.arraycopy(buffer, 0, fileData, 0, bytesRead);
     
-    DataPacketBuilder builder = new DataPacketBuilder();
-    builder.setRemoteHost(request.getRemoteHost());
-    builder.setRemotePort(request.getRemotePort());
-    builder.setBlockNumber(blockNumber);
-    builder.setFileData(fileData);
-        
-    DataPacket dataPacket = builder.buildDataPacket();
+    DataPacket dataPacket = new DataPacketBuilder()
+            .setRemoteHost(request.getRemoteHost())
+            .setRemotePort(request.getRemotePort())
+            .setBlockNumber(blockNumber)
+            .setFileData(fileData) 
+            .buildDataPacket();
+    
     printPacketInformation(dataPacket);
     
     // Check if we have read the whole file

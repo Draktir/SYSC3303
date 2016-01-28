@@ -7,9 +7,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import packet.GenericPacket;
+import packet.GenericPacketBuilder;
 import packet.InvalidPacketException;
 import packet.Packet;
-import packet.PacketBuilder;
 import packet.PacketParser;
 
 public class ClientConnection {
@@ -68,11 +68,12 @@ public class ClientConnection {
       byte[] received = new byte[len]; 
       System.arraycopy(responsePacket.getData(), 0, received, 0, len);
             
-      GenericPacket recvdPacket = new PacketBuilder()
+      GenericPacket recvdPacket = new GenericPacketBuilder()
               .setRemoteHost(responsePacket.getAddress())
               .setRemotePort(responsePacket.getPort())
               .setPacketData(data)
               .buildGenericPacket();
+      
       PacketParser packetParser = new PacketParser();
       try {
         return packetParser.parse(recvdPacket);

@@ -2,7 +2,7 @@ package packet;
 
 import java.util.Arrays;
 
-public class RequestBuilder extends PacketBuilder {
+public class RequestBuilder extends PacketBuilder<RequestBuilder> {
   private String filename = "";
   private String mode = "netascii";
   

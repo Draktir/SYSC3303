@@ -4,14 +4,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-public class PacketBuilder {
+public abstract class PacketBuilder<T> {
   protected InetAddress remoteHost = findLocalHost();
   protected int remotePort = 69;
   protected byte[] packetData = new byte[0];
-  
-  public GenericPacket buildGenericPacket() {
-    return new GenericPacket(remoteHost, remotePort, packetData);
-  }
   
   private InetAddress findLocalHost() {
     try {
@@ -26,27 +22,30 @@ public class PacketBuilder {
     return remoteHost;
   }
   
-  public PacketBuilder setRemoteHost(InetAddress remoteHost) {
+  @SuppressWarnings("unchecked")
+  public T setRemoteHost(InetAddress remoteHost) {
     this.remoteHost = remoteHost;
-    return this;
+    return (T) this;
   }
   
   public int getRemotePort() {
     return remotePort;
   }
   
-  public PacketBuilder setRemotePort(int remotePort) {
+  @SuppressWarnings("unchecked")
+  public T setRemotePort(int remotePort) {
     this.remotePort = remotePort;
-    return this;
+    return (T) this;
   }
   
   public byte[] getPacketData() {
     return packetData;
   }
   
-  public PacketBuilder setPacketData(byte[] packetData) {
+  @SuppressWarnings("unchecked")
+  public T setPacketData(byte[] packetData) {
     this.packetData = packetData;
-    return this;
+    return (T) this;
   }
 
   @Override

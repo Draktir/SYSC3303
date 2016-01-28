@@ -2,7 +2,7 @@ package packet;
 
 import java.util.Arrays;
 
-public class DataPacketBuilder extends PacketBuilder {
+public class DataPacketBuilder extends PacketBuilder<DataPacketBuilder> {
   private int blockNumber = 0;
   private byte[] fileData = new byte[0];
   
