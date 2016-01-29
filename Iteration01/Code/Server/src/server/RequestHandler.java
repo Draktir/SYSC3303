@@ -3,6 +3,8 @@ package server;
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 
+import javax.swing.plaf.synth.SynthSplitPaneUI;
+
 import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
 import packet.DataPacket;
@@ -111,8 +113,9 @@ class RequestHandler implements Runnable {
    * @param request
    */
   private Packet handleWriteRequest(WriteRequest request) {
+    System.out.println("[SYSTEM] Write request received " + request.getFilename());
     try {
-      fileWriter = new FileWriter(request.getFilename());
+      this.fileWriter = new FileWriter(request.getFilename());
     } catch (FileNotFoundException e) {
       // TODO: send an error packet if something goes wrong here
       e.printStackTrace();
@@ -137,9 +140,14 @@ class RequestHandler implements Runnable {
    * @param packet
    */
   private Packet handleDataPacket(DataPacket dataPacket) {
-    System.out.println("Writing file block# " + dataPacket.getBlockNumber());
+    System.out.println("[SYSTEM] Data packet received block #" + dataPacket.getBlockNumber());
+    
+    printPacketInformation(dataPacket);
+    
+    System.out.println("[SYSTEM] Writing file block# " + dataPacket.getBlockNumber());
     byte[] fileData = dataPacket.getFileData();
-    fileWriter.writeBlock(fileData);
+    System.out.println("[SYSTEM] FILE DATA LENGTH: " + fileData.length);
+    this.fileWriter.writeBlock(fileData);
     
     Acknowledgement ack = new AcknowledgementBuilder()
             .setRemoteHost(dataPacket.getRemoteHost())
@@ -151,6 +159,7 @@ class RequestHandler implements Runnable {
     
     // Check for the last data packet
     if (fileData.length < 512) {
+      System.out.println("Sending last acknowledgement");
       transferComplete = true;
       fileWriter.close();
       // send the last ACK
@@ -167,7 +176,7 @@ class RequestHandler implements Runnable {
    * @param packet
    */
   private Packet handleAcknowledgement(Acknowledgement ackPacket) {
-    return sendFileBlock(ackPacket, ackPacket.getBlockNumber());
+    return sendFileBlock(ackPacket, ackPacket.getBlockNumber() + 1);
   }
   
   private Packet sendFileBlock(Packet request, int blockNumber) {

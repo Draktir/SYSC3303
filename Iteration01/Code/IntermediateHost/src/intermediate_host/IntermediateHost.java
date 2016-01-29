@@ -21,6 +21,8 @@ public class IntermediateHost {
 	public static final int RECEIVE_PORT = 68; // This is the port used to receive packets from the client
 	public static final int SERVER_PORT = 69; // This is the port used to forward the packet to the server
 	
+	private int serverPort;
+	
 	DatagramSocket srSocket, receiveSocket;
 	DatagramPacket sendPacket, receivePacket;
 	
@@ -30,7 +32,8 @@ public class IntermediateHost {
 	 * defined within the class. 
 	 */
 	public IntermediateHost() {
-		try {
+	  this.serverPort = SERVER_PORT;
+	  try {
 			srSocket = new DatagramSocket();
 			receiveSocket = new DatagramSocket(RECEIVE_PORT);
 		}
@@ -61,14 +64,14 @@ public class IntermediateHost {
 	 * temporary socket.
 	 */
 	public void sendAndReceiveRequest() {
-		byte[] buffer = new byte[512];
+		byte[] buffer = new byte[516];
 		byte[] data = null;
 		int clientPort = 0;
 		
 		receivePacket = new DatagramPacket(buffer, buffer.length);
 
 		try {
-			System.out.println("[SYSTEM] Waiting for request from client.");
+			System.out.println("[SYSTEM] Waiting for request from client on port " + receiveSocket.getLocalPort());
 			receiveSocket.receive(receivePacket);
 		}
 		catch (IOException e) {
@@ -76,7 +79,18 @@ public class IntermediateHost {
 			System.exit(1);
 		}
 		
-		clientPort = receivePacket.getPort();
+		int newClientPort = receivePacket.getPort();
+		if (newClientPort != clientPort) {
+		  try {
+        receiveSocket = new DatagramSocket(newClientPort);
+      } catch (SocketException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+		  clientPort = newClientPort;
+		}
+		
+		
 		
 		// Trim excess null bytes from the buffer and store it into data
 		// Makes printing look nice in console, but not needed here
@@ -85,8 +99,8 @@ public class IntermediateHost {
 		printRequestInformation(data);
 		
 		try {
-			System.out.println("[SYSTEM] Sending request to server.");
-			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), SERVER_PORT);
+			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), serverPort);
+			System.out.println("[SYSTEM] Sending request to server on port " + sendPacket.getPort());
 			printRequestInformation(data);
 			srSocket.send(sendPacket);
 		}
@@ -99,17 +113,21 @@ public class IntermediateHost {
 			System.exit(1);
 		}
 		
-		buffer = new byte[512];
+		buffer = new byte[516];
 		receivePacket = new DatagramPacket(buffer, buffer.length);
 		
 		try {
-			System.out.println("[SYSTEM] Waiting for response from server.");
+			System.out.println("[SYSTEM] Waiting for response from server on port " + srSocket.getPort());
 			srSocket.receive(receivePacket);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
+		
+		System.out.println("[SYSTEM] received response from server on port " + receivePacket.getPort());
+		// from now on we'll use the server's newly opened port
+		serverPort = receivePacket.getPort();
 		
 		// Trim excess null bytes from the buffer and store it into data
 		// Makes printing look nice in console, but not needed here
@@ -120,7 +138,7 @@ public class IntermediateHost {
 		try {
 			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), clientPort);
 			DatagramSocket tempSock = new DatagramSocket();
-			System.out.println("[SYSTEM] Sending server response to client.");
+			System.out.println("[SYSTEM] Sending server response to client on port " + sendPacket.getPort());
 			printRequestInformation(data);
 			tempSock.send(sendPacket);
 			tempSock.close();

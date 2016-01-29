@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class GenericPacket extends Packet {
   byte[] packetData;
   
-  public GenericPacket(InetAddress remoteHost, int remotePort, InetAddress localHost, int localPort, byte[] packetData) {
+  public GenericPacket(InetAddress remoteHost, int remotePort, byte[] packetData) {
     super(remoteHost, remotePort);
     this.packetData = packetData;
   }

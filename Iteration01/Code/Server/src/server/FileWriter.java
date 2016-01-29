@@ -1,6 +1,7 @@
 package server;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,6 +18,16 @@ public class FileWriter {
    */
   public FileWriter(String filename) throws FileNotFoundException {
     this.filename = filename;
+    
+    // create the file
+    // TODO: Throw an exception if the file already exists
+    File f = new File(filename);
+    try {
+      f.createNewFile();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    
     fileOut = new BufferedOutputStream(new FileOutputStream(filename));
   }
   

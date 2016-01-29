@@ -29,8 +29,7 @@ public class ClientConnection {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(
           data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      clientSocket = new DatagramSocket();
-      System.out.println("[SYSTEM] Sending response to client at port " + packet.getRemotePort());
+      System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
       clientSocket.send(sendPacket);
     }
     catch (UnknownHostException e) {
@@ -54,14 +53,15 @@ public class ClientConnection {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(
           data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      clientSocket = new DatagramSocket();
       System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
       clientSocket.send(sendPacket);
       
-      System.out.println("[SYSTEM] Waiting for response from client");
       byte[] buffer = new byte[516];
       DatagramPacket responsePacket = new DatagramPacket(buffer, 516);
+      System.out.println("[SYSTEM] Waiting for response from client on port " + clientSocket.getLocalPort());
       clientSocket.receive(responsePacket);
+      
+      System.out.println("Received packet from client, length: " + responsePacket.getLength());
       
       // copy data out of the buffer
       int len = responsePacket.getLength();
@@ -71,7 +71,7 @@ public class ClientConnection {
       GenericPacket recvdPacket = new GenericPacketBuilder()
               .setRemoteHost(responsePacket.getAddress())
               .setRemotePort(responsePacket.getPort())
-              .setPacketData(data)
+              .setPacketData(received)
               .buildGenericPacket();
       
       PacketParser packetParser = new PacketParser();

@@ -4,16 +4,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-public class PacketBuilder {
+public abstract class PacketBuilder<T> {
   protected InetAddress remoteHost = findLocalHost();
   protected int remotePort = 69;
-  protected InetAddress localHost = findLocalHost();
-  protected int localPort = 69;
   protected byte[] packetData = new byte[0];
-  
-  public GenericPacket buildGenericPacket() {
-    return new GenericPacket(remoteHost, remotePort, localHost, localPort, packetData);
-  }
   
   private InetAddress findLocalHost() {
     try {
@@ -28,45 +22,35 @@ public class PacketBuilder {
     return remoteHost;
   }
   
-  public void setRemoteHost(InetAddress remoteHost) {
+  @SuppressWarnings("unchecked")
+  public T setRemoteHost(InetAddress remoteHost) {
     this.remoteHost = remoteHost;
+    return (T) this;
   }
   
   public int getRemotePort() {
     return remotePort;
   }
   
-  public void setRemotePort(int remotePort) {
+  @SuppressWarnings("unchecked")
+  public T setRemotePort(int remotePort) {
     this.remotePort = remotePort;
-  }
-  
-  public InetAddress getLocalHost() {
-    return localHost;
-  }
-  
-  public void setLocalHost(InetAddress localHost) {
-    this.localHost = localHost;
-  }
-  
-  public int getLocalPort() {
-    return localPort;
-  }
-  
-  public void setLocalPort(int localPort) {
-    this.localPort = localPort;
+    return (T) this;
   }
   
   public byte[] getPacketData() {
     return packetData;
   }
   
-  public void setPacketData(byte[] packetData) {
+  @SuppressWarnings("unchecked")
+  public T setPacketData(byte[] packetData) {
     this.packetData = packetData;
+    return (T) this;
   }
 
   @Override
   public String toString() {
-    return "PacketBuilder [remoteHost=" + remoteHost + ", remotePort=" + remotePort + ", localHost=" + localHost
-        + ", localPort=" + localPort + ", packetData=" + Arrays.toString(packetData) + "]";
+    return "PacketBuilder [remoteHost=" + remoteHost + ", remotePort=" + remotePort 
+            + ", packetData=" + Arrays.toString(packetData) + "]";
   }
 }
