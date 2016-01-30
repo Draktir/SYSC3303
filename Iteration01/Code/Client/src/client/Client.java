@@ -19,9 +19,10 @@ import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public class Client {
-  public static final int SERVER_PORT = 6800;
+  public static final int SERVER_PORT = 68;
   private ServerConnection serverConnection;
   private FileReader fileReader;
   private FileWriter fileWriter;
@@ -48,11 +49,36 @@ public class Client {
    * @param args
    */
   public static void main(String[] args) {
-    Client c = new Client();
-    c.downloadFileFromServer("testReadFile.txt", "ocTeT");
-    c.sendFileToServer("testWriteFile.txt", "netAsCiI");
-    
-  }
+    Scanner sc = new Scanner(System.in);
+	Client c = new Client();
+	int command;
+	
+	do {
+		System.out.println("TFTP Client");
+	    System.out.println("  [ 1 ] Write file to server");
+	    System.out.println("  [ 2 ] Read file from server");
+	    System.out.println("  [ 0 ] Exit");
+	    System.out.print(" > ");
+	    
+	    command = sc.nextInt();
+	    
+	    switch (command) {
+	      case 1:
+	    	c.sendFileToServer("testWriteFile.txt", "netAsCiI");
+	    	System.out.println("\n\nDownloaded file testWriteFile.txt from server.");
+	    	System.out.println("Please restart the IntermediatHost now.");
+	    	break;
+	      case 2:
+	    	c.downloadFileFromServer("testReadFile.txt", "ocTeT");
+	    	System.out.println("\n\nUploaded file testReadFile.txt to server.");
+	    	System.out.println("Please restart the IntermediatHost now.");
+	    	break;
+	      default:
+	        System.out.println("Invalid selection");
+	    	break;
+	    }
+	  } while (command != 0);
+	}
 
   private void sendFileToServer(String filename, String mode) {
     transferComplete = false;
