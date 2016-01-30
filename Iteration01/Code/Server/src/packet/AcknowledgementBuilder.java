@@ -1,7 +1,5 @@
 package packet;
 
-import java.util.Arrays;
-
 public class AcknowledgementBuilder extends PacketBuilder<AcknowledgementBuilder> {
   private int blockNumber = 0;
   
@@ -21,6 +19,6 @@ public class AcknowledgementBuilder extends PacketBuilder<AcknowledgementBuilder
   @Override
   public String toString() {
     return "AcknowledgementBuilder [blockNumber=" + blockNumber + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", packetData=" + Arrays.toString(packetData) + "]";
+        + remotePort + "]";
   }
 }
