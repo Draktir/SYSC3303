@@ -30,22 +30,48 @@ Code/
         packet/
           *.java - Java classes encapsulating the TFTP packets sent over the network
 
+Diagrams/
+  Client_ClassDiagram.png - class diagram for client
+  Packets_ClassDagram.png - class diagram for TFTP Packet classes
+  WRQ.JPG - UCM diagram for Write Request
+  IntermediateHost_ClassDiagram.png - class diagram for Intermediate Host
+  RRQ.JPG - UCM diagram for Read Request
+  PacketBuilder_ClassDiagram.png - class diagram for Packet Builder helper classes
+  Server_ClassDiagram.png - class diagram for server
 
 
 
 
-Read Me:
-- Start the Server first then the IntermediatHost then the Client.
-- The Client will ask fot the file name which can be as big as 100 charecters
-- send requests using the TCTP protocol descriped bellow.
+Launching the application
+--------------------------
 
-- the client will either send a RRQ or a WRQ using the the TCTP protocol.
-  for the requests:
-	RRQ = 01"block number" 0 "mode" 0.
-	WRQ = 02"Data acquired" 0 "mode" 0.
-	any other requests will be invalid and will case the server to close.
+Import the projects
+  1) Open eclipse
+  2) Select File -> Import...
+  3) Select General -> "Existing Projects into Workspace"
+  4) Next to "Select root directory" click "Browse"
+  5) Select the Code folder of this submission
+  6) Click "Finish"
 
-- the server will be reading and writing from an earlier created file that will be alocated in the same folder of the project.
+Run the program
+  1) Right click on the "Server" Project and select "Run As" -> "Java Application"
+  2) Right click on the "IntermediateHost" Project and select "Run As" -> "Java Application"
+  3) Right click on the "Client" Project and select "Run As" -> "Java Application"
 
-- the server can receive as much requests as possible as it will be using multithreading which will allow it to handle many requests at a time.
- 
+Testing
+  1) In the client application type "1" and hit enter.
+  2) The client will transfer the testWriteFile.txt to the Server the file should appear in the server
+     directory (Code/Server/testWriteFile.txt) once the transfer is complete.
+  3) Stop and restart the intermediate host
+  4) In the client applicatio type "2" and hit enter.
+  5) The client will download the testReadFile.txt from the Server the file should appear in the client
+     directory (Code/Client/testReadFile.txt) once the transfer is complete,
+
+Shutdown
+  1) To terminate the server type "shutdown" in the server application window and hit enter.
+
+N.B: The server can remain running for the entire time and is capable of handling multiple requests.
+     The client can also transfer the files multiple times without requiring a restart.
+     Only the intermediate host requires a restart after a transfer, since it is only used for testing.
+     To connect directly from the client to the server change the SERVER_PORT constant in the client to 
+     69.
