@@ -85,13 +85,6 @@ class RequestHandler implements Runnable {
         System.err.println("Invalid request received, closing connection.");
         break;
       }
-      
-      try {
-        Thread.sleep(1000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      
     } while (!transferComplete);
     
     System.out.println("\nFile transfer complete. Terminating thread.\n");
