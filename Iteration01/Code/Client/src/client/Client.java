@@ -21,7 +21,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class Client {
-  public static final int SERVER_PORT = 6900;
+  public static final int SERVER_PORT = 6800;
   private ServerConnection serverConnection;
   private FileReader fileReader;
   private FileWriter fileWriter;

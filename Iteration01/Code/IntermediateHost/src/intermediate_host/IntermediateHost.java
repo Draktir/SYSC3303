@@ -23,7 +23,7 @@ public class IntermediateHost {
 	
 	private int serverPort;
 	
-	DatagramSocket srSocket, receiveSocket;
+	DatagramSocket srSocket, receiveSocket, clientSocket;
 	DatagramPacket sendPacket, receivePacket;
 	
 	/**
@@ -34,7 +34,7 @@ public class IntermediateHost {
 	public IntermediateHost() {
 	  this.serverPort = SERVER_PORT;
 	  try {
-			srSocket = new DatagramSocket();
+	    srSocket = new DatagramSocket();
 			receiveSocket = new DatagramSocket(RECEIVE_PORT);
 		}
 		catch (SocketException e) {
@@ -42,6 +42,7 @@ public class IntermediateHost {
 			System.exit(1);
 		}
 	}
+	
 	
 	/**
 	 * Main method which creates an instance of IntermediateHost to 
@@ -79,80 +80,74 @@ public class IntermediateHost {
 			System.exit(1);
 		}
 		
-		int newClientPort = receivePacket.getPort();
-		if (newClientPort != clientPort) {
-		  try {
-        receiveSocket = new DatagramSocket(newClientPort);
-      } catch (SocketException e) {
-        e.printStackTrace();
-        System.exit(1);
-      }
-		  clientPort = newClientPort;
+		clientPort = receivePacket.getPort();
+		System.out.println("Client Port: " + clientPort);
+		
+		
+		while (true) {
+  		// Trim excess null bytes from the buffer and store it into data
+  		// Makes printing look nice in console, but not needed here
+  		data = new byte[receivePacket.getLength()];
+  		System.arraycopy(receivePacket.getData(), receivePacket.getOffset(), data, 0, receivePacket.getLength());
+  		printRequestInformation(data);
+  		
+  		try {
+  			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), serverPort);
+  			System.out.println("[SYSTEM] Sending request to server on port " + sendPacket.getPort());
+  			printRequestInformation(data);
+  			srSocket.send(sendPacket);
+  		}
+  		catch (UnknownHostException e) {
+  			e.printStackTrace();
+  			System.exit(1);
+  		}
+  		catch (IOException e) {
+  			e.printStackTrace();
+  			System.exit(1);
+  		}
+  		
+  		buffer = new byte[516];
+  		receivePacket = new DatagramPacket(buffer, buffer.length);
+  		
+  		try {
+  			System.out.println("[SYSTEM] Waiting for response from server on port " + srSocket.getPort());
+  			srSocket.receive(receivePacket);
+  		}
+  		catch (IOException e) {
+  			e.printStackTrace();
+  			System.exit(1);
+  		}
+  		
+  		System.out.println("[SYSTEM] received response from server on port " + receivePacket.getPort());
+  		// from now on we'll use the server's newly opened port
+  		serverPort = receivePacket.getPort();
+  		
+  		// Trim excess null bytes from the buffer and store it into data
+  		// Makes printing look nice in console, but not needed here
+  		data = new byte[receivePacket.getLength()];
+  		System.arraycopy(receivePacket.getData(), receivePacket.getOffset(), data, 0, receivePacket.getLength());
+  		printRequestInformation(data);
+  		
+  		try {
+  			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), clientPort);
+  			clientSocket = new DatagramSocket();
+  			System.out.println("[SYSTEM] Sending server response to client on port " + sendPacket.getPort());
+  			printRequestInformation(data);
+  			clientSocket.send(sendPacket);
+  			
+  			byte[] buf = new byte[516];
+  			receivePacket = new DatagramPacket(buf, buf.length);
+  			clientSocket.receive(receivePacket);
+  		}
+  		catch (UnknownHostException e) {
+  			e.printStackTrace();
+  			System.exit(1);
+  		}
+  		catch (IOException e) {
+  			e.printStackTrace();
+  			System.exit(1);
+  		}
 		}
-		
-		
-		
-		// Trim excess null bytes from the buffer and store it into data
-		// Makes printing look nice in console, but not needed here
-		data = new byte[receivePacket.getLength()];
-		System.arraycopy(receivePacket.getData(), receivePacket.getOffset(), data, 0, receivePacket.getLength());
-		printRequestInformation(data);
-		
-		try {
-			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), serverPort);
-			System.out.println("[SYSTEM] Sending request to server on port " + sendPacket.getPort());
-			printRequestInformation(data);
-			srSocket.send(sendPacket);
-		}
-		catch (UnknownHostException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		
-		buffer = new byte[516];
-		receivePacket = new DatagramPacket(buffer, buffer.length);
-		
-		try {
-			System.out.println("[SYSTEM] Waiting for response from server on port " + srSocket.getPort());
-			srSocket.receive(receivePacket);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		
-		System.out.println("[SYSTEM] received response from server on port " + receivePacket.getPort());
-		// from now on we'll use the server's newly opened port
-		serverPort = receivePacket.getPort();
-		
-		// Trim excess null bytes from the buffer and store it into data
-		// Makes printing look nice in console, but not needed here
-		data = new byte[receivePacket.getLength()];
-		System.arraycopy(receivePacket.getData(), receivePacket.getOffset(), data, 0, receivePacket.getLength());
-		printRequestInformation(data);
-		
-		try {
-			sendPacket = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), clientPort);
-			DatagramSocket tempSock = new DatagramSocket();
-			System.out.println("[SYSTEM] Sending server response to client on port " + sendPacket.getPort());
-			printRequestInformation(data);
-			tempSock.send(sendPacket);
-			tempSock.close();
-		}
-		catch (UnknownHostException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-		
-		System.out.println("[SYSTEM] End of request reached.");
 	}
 	
 	/**
