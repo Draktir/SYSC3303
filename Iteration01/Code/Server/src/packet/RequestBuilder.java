@@ -1,7 +1,5 @@
 package packet;
 
-import java.util.Arrays;
-
 public class RequestBuilder extends PacketBuilder<RequestBuilder> {
   private String filename = "";
   private String mode = "netascii";
@@ -35,6 +33,6 @@ public class RequestBuilder extends PacketBuilder<RequestBuilder> {
   @Override
   public String toString() {
     return "RequestBuilder [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + ", packetData=" + Arrays.toString(packetData) + "]";
+        + remotePort + "]";
   }
 }

@@ -65,12 +65,12 @@ public class Client {
 	    switch (command) {
 	      case 1:
 	    	c.sendFileToServer("testWriteFile.txt", "netAsCiI");
-	    	System.out.println("\n\nDownloaded file testWriteFile.txt from server.");
+	    	System.out.println("\n\nUploaded file testWriteFile.txt to server.");
 	    	System.out.println("Please restart the IntermediatHost now.");
 	    	break;
 	      case 2:
 	    	c.downloadFileFromServer("testReadFile.txt", "ocTeT");
-	    	System.out.println("\n\nUploaded file testReadFile.txt to server.");
+	    	System.out.println("\n\nDownloaded file testReadFile.txt from server.");
 	    	System.out.println("Please restart the IntermediatHost now.");
 	    	break;
 	      default:
