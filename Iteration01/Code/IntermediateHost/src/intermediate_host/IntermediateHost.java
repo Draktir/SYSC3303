@@ -6,6 +6,7 @@ package intermediate_host;
  * destinations.
  * 
  * @author  Loktin Wong
+ * @author  Philip Klostermann
  * @version 1.0.0
  * @since 22-01-2016
  */
@@ -84,6 +85,7 @@ public class IntermediateHost {
 		System.out.println("Client Port: " + clientPort);
 		
 		
+		// continue to route all packets between server and client using their temp sockets
 		while (true) {
   		// Trim excess null bytes from the buffer and store it into data
   		// Makes printing look nice in console, but not needed here

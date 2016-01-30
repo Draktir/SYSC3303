@@ -8,6 +8,7 @@ package server;
  * @since 25-01-2016
  */
 
+import java.net.SocketException;
 import java.util.Scanner;
 
 public class Server {
@@ -42,10 +43,12 @@ public class Server {
 		while (true) {
 			command = sc.nextLine();
 			if (command.equals("shutdown")) {
-				listener.requestStop();
-				sc.close();
-				throw new InterruptedException("Server has been shutdown.");
-				// TODO: possibly send packet to client indicating status
+			  try {
+          listener.requestStop();
+        } catch (SocketException e) {
+          System.out.println("Listener shutdown.");
+        }
+			  sc.close();
 			}
 		}
 	}
