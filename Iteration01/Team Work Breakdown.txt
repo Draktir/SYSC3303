@@ -1,0 +1,9 @@
+Team Work Breakdown:
+
+Amr Gawish:         Planning, Diagrams
+Loktin Wong:        Planning, Client, Intermediate, Server code
+Yanzhe Zhang:       Planning, Client code, class diagrams
+Rui Li:             Planning, Client code, class diagrams
+Philip Klostermann: Planning, Client code, Server protocol code Class Diagram
+
+
