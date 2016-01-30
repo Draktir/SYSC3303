@@ -52,7 +52,6 @@ class Listener implements Runnable {
         receiveSocket.receive(receivePacket);
       }
       catch (IOException e) {
-        e.printStackTrace();
         System.exit(1);
       }
       
@@ -72,19 +71,16 @@ class Listener implements Runnable {
       userConnection.start();
     }
     
-    if (!receiveSocket.isClosed()) {
-      receiveSocket.close(); 
-    }
-    
     System.out.println("[SYSTEM] Listener shut down. No longer accepting new connections.");
   }
   
   /**
    * Method allows the Server class to stop the Listener.
+   * @throws InterruptedException 
    */
-  public synchronized void requestStop() {
+  public synchronized void requestStop() throws SocketException {
     stopRequested = true;
-    System.out.println("[SYSTEM] Shutdown initiated.");
+    receiveSocket.close();
   }
   
   /**

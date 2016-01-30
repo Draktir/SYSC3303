@@ -3,8 +3,6 @@ package server;
 import java.io.FileNotFoundException;
 import java.net.SocketException;
 
-import javax.swing.plaf.synth.SynthSplitPaneUI;
-
 import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
 import packet.DataPacket;
@@ -54,7 +52,7 @@ class RequestHandler implements Runnable {
   }
 
   /**
-   * Processes a received DatagramPacket by testing it's contents
+   * Processes a received DatagramPacket by testing its contents
    * and responds appropriately.
    *  
    * @param packet
@@ -87,6 +85,13 @@ class RequestHandler implements Runnable {
         System.err.println("Invalid request received, closing connection.");
         break;
       }
+      
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      
     } while (!transferComplete);
     
     System.out.println("\nFile transfer complete. Terminating thread.\n");
@@ -99,6 +104,7 @@ class RequestHandler implements Runnable {
    * @param request
    */
   private Packet handleReadRequest(ReadRequest request) {
+    System.out.println("[SYSTEM] Read Request received "  + request.getFilename());
     try {
       fileReader = new FileReader(request.getFilename());
     } catch (FileNotFoundException e) {
@@ -178,6 +184,7 @@ class RequestHandler implements Runnable {
    * @param packet
    */
   private Packet handleAcknowledgement(Acknowledgement ackPacket) {
+    System.out.println("[SYSTEM] Ack packet received block #" + ackPacket.getBlockNumber());
     return sendFileBlock(ackPacket, ackPacket.getBlockNumber() + 1);
   }
   

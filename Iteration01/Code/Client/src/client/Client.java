@@ -3,6 +3,7 @@
  * send and receive TFTP requests to and from a server
  * 
  * @author  Loktin Wong
+ * @author  Philip Klostermann
  * @version 1.0.0
  * @since 22-01-2016
  */
@@ -29,8 +30,7 @@ public class Client {
   private boolean transferComplete = false;
 
   /**
-   * Default Client constructor which instantiates a DatagramSocket on an open
-   * port on the local machine
+   * Default Client constructor which instantiates the server Connection
    */
   public Client() {
     try {
@@ -42,19 +42,17 @@ public class Client {
   }
 
   /**
-   * Main method which creates an instance of Client to sends alternating read
-   * and write TFTP requests to a server on the local machine at the SERVER_PORT
-   * port.
+   * Main method which creates an instance of Client.
    * 
    * @param args
    */
   public static void main(String[] args) {
     Scanner sc = new Scanner(System.in);
-	Client c = new Client();
-	int command;
+    Client c = new Client();
+    int command;
 	
-	do {
-		System.out.println("TFTP Client");
+  	do {
+  		System.out.println("TFTP Client");
 	    System.out.println("  [ 1 ] Write file to server");
 	    System.out.println("  [ 2 ] Read file from server");
 	    System.out.println("  [ 0 ] Exit");
@@ -78,8 +76,17 @@ public class Client {
 	    	break;
 	    }
 	  } while (command != 0);
+	
+	  sc.close();
 	}
 
+  
+  /**
+   * Initiates sending a file to the server (WriteRequest)
+   * 
+   * @param filename
+   * @param mode
+   */
   private void sendFileToServer(String filename, String mode) {
     transferComplete = false;
     // open file for reading
@@ -108,6 +115,12 @@ public class Client {
     performFileTransfer(req);
   }
 
+  /**
+   * Initiates downloading a file from the server (Read Request)
+   * 
+   * @param filename
+   * @param mode
+   */  
   public void downloadFileFromServer(String filename, String mode) {
     transferComplete = false;
     // create file for reading
@@ -137,6 +150,11 @@ public class Client {
     performFileTransfer(req);
   }
 
+  /**
+   * Performs the actual file transfer, sending requests and receiving responses
+   * 
+   * @param request
+   */
   private void performFileTransfer(Packet request) {
     PacketParser parser = new PacketParser();
     Packet recvdPacket = serverConnection.sendPacketAndReceive(request);
@@ -173,6 +191,12 @@ public class Client {
     System.out.println("File transfer ended.");
   }
 
+  /**
+   * Handles an incoming acknowledgement by sending the next file block
+   * 
+   * @param ack
+   * @return
+   */
   private Packet handleAcknowledgement(Acknowledgement ack) {
     System.out.println("ACK received, block# " + ack.getBlockNumber());
     
@@ -210,6 +234,12 @@ public class Client {
     return serverConnection.sendPacketAndReceive(dataPacket);
   }
 
+  /**
+   * Handles an incoming data packet by responding with an ACK
+   *  
+   * @param dataPacket
+   * @return
+   */
   private Packet handleDataPacket(DataPacket dataPacket) {
     System.out.println("Data Packet received, block# " + dataPacket .getBlockNumber());
     
