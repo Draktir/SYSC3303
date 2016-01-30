@@ -18,8 +18,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class IntermediateHost {
-	public static final int RECEIVE_PORT = 6800; // This is the port used to receive packets from the client
-	public static final int SERVER_PORT = 6900; // This is the port used to forward the packet to the server
+	public static final int RECEIVE_PORT = 68; // This is the port used to receive packets from the client
+	public static final int SERVER_PORT = 69; // This is the port used to forward the packet to the server
 	
 	private int serverPort;
 	
