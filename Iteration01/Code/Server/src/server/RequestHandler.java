@@ -88,6 +88,8 @@ class RequestHandler implements Runnable {
         break;
       }
     } while (!transferComplete);
+    
+    System.out.println("\nFile transfer complete. Terminating thread.\n");
   }
   
   /**

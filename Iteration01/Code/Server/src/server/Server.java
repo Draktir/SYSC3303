@@ -11,7 +11,7 @@ package server;
 import java.util.Scanner;
 
 public class Server {
-	public static final int SERVER_PORT = 69;
+	public static final int SERVER_PORT = 6900;
 	public static enum Mode {TEST, NORMAL}; // TODO: implement
 	Mode currentMode;
 	

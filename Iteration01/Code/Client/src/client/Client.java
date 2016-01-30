@@ -21,7 +21,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class Client {
-  public static final int SERVER_PORT = 68;
+  public static final int SERVER_PORT = 6900;
   private ServerConnection serverConnection;
   private FileReader fileReader;
   private FileWriter fileWriter;
@@ -49,11 +49,13 @@ public class Client {
    */
   public static void main(String[] args) {
     Client c = new Client();
-    c.sendFileToServer("testWriteFile.txt", "netAsCiI");
     c.downloadFileFromServer("testReadFile.txt", "ocTeT");
+    c.sendFileToServer("testWriteFile.txt", "netAsCiI");
+    
   }
 
   private void sendFileToServer(String filename, String mode) {
+    transferComplete = false;
     // open file for reading
     try {
       fileReader = new FileReader(filename);
@@ -81,6 +83,7 @@ public class Client {
   }
 
   public void downloadFileFromServer(String filename, String mode) {
+    transferComplete = false;
     // create file for reading
     try {
       fileWriter = new FileWriter(filename);
@@ -130,7 +133,7 @@ public class Client {
         break;
       }
       
-      System.out.println("\nPacket received from client");
+      System.out.println("\nPacket received from Server");
       
       if (recvdPacket != null) {
         printPacketInformation(recvdPacket);
