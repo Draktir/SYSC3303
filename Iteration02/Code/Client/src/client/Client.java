@@ -13,14 +13,15 @@
 package client;
 
 import packet.*;
-import client.FileReader;
-import client.FileWriter;
 
 import java.io.FileNotFoundException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
+
+import file_io.FileReader;
+import file_io.FileWriter;
 
 public class Client {
   public static final int SERVER_PORT = 68;
