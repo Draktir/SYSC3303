@@ -12,9 +12,10 @@
 5. (A) Improve client menu (let user enter any filename)
 6. (L) Server shutdown needs to be fixed (probably needs to check Thread.currentThread().isInterrupted())
 7. (P) Package Packet and File stuff into libraries for reuse (or something like that)
-8. (F) Add a Config class that has all constants (Ports, etc.)
-9. Timing diagrams showing the error scenarios for this iteration
-10. NICE TO HAVE: add TEST mode
+8. (P) Review parser and builder to make sure all errors are caught
+9. (F) Add a Config class that has all constants (Ports, etc.)
+10. Timing diagrams showing the error scenarios for this iteration
+11. NICE TO HAVE: add TEST mode
 
 
 # Deliverables for Iteration 2
