@@ -122,7 +122,7 @@ class RequestHandler implements Runnable {
       e.printStackTrace();
     }
     
-    System.out.println("Sending ACK with block# 0");
+    System.out.println("\tSending ACK with block #0");
     
     Acknowledgement ack = new AcknowledgementBuilder()
             .setRemoteHost(request.getRemoteHost())
@@ -145,9 +145,9 @@ class RequestHandler implements Runnable {
     
     printPacketInformation(dataPacket);
     
-    System.out.println("[SYSTEM] Writing file block# " + dataPacket.getBlockNumber());
+    System.out.println("[SYSTEM] Writing file block #" + dataPacket.getBlockNumber());
     byte[] fileData = dataPacket.getFileData();
-    System.out.println("[SYSTEM] FILE DATA LENGTH: " + fileData.length);
+    System.out.println("[SYSTEM] File data length (bytes): " + fileData.length);
     this.fileWriter.writeBlock(fileData);
     
     Acknowledgement ack = new AcknowledgementBuilder()
@@ -160,7 +160,7 @@ class RequestHandler implements Runnable {
     
     // Check for the last data packet
     if (fileData.length < 512) {
-      System.out.println("Sending last acknowledgement");
+      System.out.println("[SYSTEM] Sending last acknowledgement.");
       transferComplete = true;
       fileWriter.close();
       // send the last ACK
@@ -177,12 +177,12 @@ class RequestHandler implements Runnable {
    * @param packet
    */
   private Packet handleAcknowledgement(Acknowledgement ackPacket) {
-    System.out.println("[SYSTEM] Ack packet received block #" + ackPacket.getBlockNumber());
+    System.out.println("[SYSTEM] ACK packet received, block #" + ackPacket.getBlockNumber());
     return sendFileBlock(ackPacket, ackPacket.getBlockNumber() + 1);
   }
   
   private Packet sendFileBlock(Packet request, int blockNumber) {
-    System.out.println("Reading block# " + blockNumber +" from file.");
+    System.out.println("[SYSTEM] Reading block #" + blockNumber +" from file.");
     
     byte[] buffer = new byte[512];
     int bytesRead = fileReader.readBlock(buffer);
@@ -216,18 +216,19 @@ class RequestHandler implements Runnable {
   }
   
   /**
-   * Prints out packet contents as a String and in bytes.
+   * Prints out request contents as a String and in bytes.
    * 
-   * @param packet
+   * @param buffer
    */
   public void printPacketInformation(Packet packet) {
     byte[] data = packet.getPacketData();
     String contents = new String(data);
-    
-    System.out.println("Request contents: ");
-    System.out.println(contents);
-    
-    System.out.println("Request contents (bytes): ");
+
+    System.out.println("\tPacket contents: ");
+    System.out.println("\t" + contents);
+
+    System.out.println("\tPacket contents (bytes): ");
+    System.out.print("\t");
     for (int i = 0; i < data.length; i++) {
       System.out.print(data[i] + " ");
     }

@@ -29,7 +29,7 @@ public class ServerConnection {
     try {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort());
+      System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort() + " with length (bytes) " + data.length + ".");
       serverSocket.send(sendPacket);
     } catch (UnknownHostException e) {
       e.printStackTrace();
@@ -49,7 +49,7 @@ public class ServerConnection {
   public Packet sendPacketAndReceive(Packet packet) {
     byte[] data = packet.getPacketData();
     DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-    System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort() + " length " + data.length);
+    System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort() + " with length (bytes) " + data.length + ".");
     try {
       serverSocket.send(sendPacket);
     } catch (IOException e1) {
@@ -57,7 +57,7 @@ public class ServerConnection {
       return null;
     }
 
-    System.out.println("[SYSTEM] Waiting for response from server on port " + serverSocket.getLocalPort());
+    System.out.println("[SYSTEM] Waiting for response from server on port " + serverSocket.getLocalPort() + ".");
     byte[] buffer = new byte[516];
     DatagramPacket responsePacket = new DatagramPacket(buffer, 516);
     try {
@@ -67,7 +67,7 @@ public class ServerConnection {
       return null;
     }
 
-    System.out.println("RECEIVED " + Arrays.toString(buffer));
+    System.out.println("\tReceived from server: " + Arrays.toString(buffer));
     
     // copy data out of the buffer
     int len = responsePacket.getLength();

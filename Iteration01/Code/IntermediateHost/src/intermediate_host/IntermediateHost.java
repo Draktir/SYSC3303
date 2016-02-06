@@ -160,10 +160,11 @@ public class IntermediateHost {
 	public void printRequestInformation(byte[] buffer) {
 		String contents = new String(buffer);
 		
-		System.out.println("Request contents: ");
-		System.out.println(contents);
+		System.out.println("\tRequest contents: ");
+		System.out.println("\t" + contents);
 		
-		System.out.println("Request contents (bytes): ");
+		System.out.println("\tRequest contents (bytes): ");
+		System.out.print("\t");
 		for (int i = 0; i < buffer.length; i++) {
 			System.out.print(buffer[i] + " ");
 		}

@@ -63,13 +63,13 @@ public class Client {
 	    switch (command) {
 	      case 1:
 	    	  c.sendFileToServer("testWriteFile.txt", "netAsCiI");
-	    	  System.out.println("\n\nUploaded file testWriteFile.txt to server.");
-	    	  System.out.println("Please restart the IntermediatHost now.");
+	    	  System.out.println("[SYSTEM] Uploaded file testWriteFile.txt to server.");
+	    	  System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO: remove this
 	    	  break;
 	      case 2:
 	    	  c.downloadFileFromServer("testReadFile.txt", "ocTeT");
-	    	  System.out.println("\n\nDownloaded file testReadFile.txt from server.");
-	    	  System.out.println("Please restart the IntermediatHost now.");
+	    	  System.out.println("[SYSTEM] Downloaded file testReadFile.txt from server.");
+	    	  System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO: remove this
 	    	  break;
 	    }
 	  } while (command != 0);
@@ -174,18 +174,17 @@ public class Client {
         break;
       }
       
-      System.out.println("\nPacket received from Server");
+      //System.out.println("\n\tPacket received from Server");
       
       if (recvdPacket != null) {
         printPacketInformation(recvdPacket);
       } else {
-        System.out.println("File successfully transferred");
+        System.out.println("[SYSTEM] File successfully transferred.");
       }
-      
       
     } while (!transferComplete);
 
-    System.out.println("File transfer ended.");
+    System.out.println("[SYSTEM] File transfer ended."); // TODO: this doesn't really need to be here.
   }
 
   /**
@@ -195,7 +194,7 @@ public class Client {
    * @return
    */
   private Packet handleAcknowledgement(Acknowledgement ack) {
-    System.out.println("ACK received, block# " + ack.getBlockNumber());
+    System.out.println("\n\tACK received, block #" + ack.getBlockNumber());
     
     byte[] buffer = new byte[512];
     int bytesRead = fileReader.readBlock(buffer);
@@ -203,7 +202,7 @@ public class Client {
     byte[] fileData = new byte[bytesRead];
     System.arraycopy(buffer, 0, fileData, 0, bytesRead);
 
-    System.out.println("FILE DATA LENGTH: " + bytesRead);
+    System.out.println("\n\tFile data length (bytes): " + bytesRead);
     
     DataPacket dataPacket = new DataPacketBuilder()
         .setRemoteHost(ack.getRemoteHost())
@@ -216,7 +215,7 @@ public class Client {
 
     // Check if we have read the whole file
     if (fileData.length < 512) {
-      System.out.println("Sending last data packet");
+      System.out.println("[SYSTEM] Sending last data packet.");
       transferComplete = true;
       fileReader.close();
       
@@ -238,9 +237,9 @@ public class Client {
    * @return
    */
   private Packet handleDataPacket(DataPacket dataPacket) {
-    System.out.println("Data Packet received, block# " + dataPacket .getBlockNumber());
+    System.out.println("\tDATA received, block #" + dataPacket .getBlockNumber());
     
-    System.out.println("Writing file block# " + dataPacket.getBlockNumber());
+    System.out.println("\tWriting file block# " + dataPacket.getBlockNumber());
     byte[] fileData = dataPacket.getFileData();
     fileWriter.writeBlock(fileData);
     
@@ -254,7 +253,7 @@ public class Client {
     
     // Check for the last data packet
     if (fileData.length < 512) {
-      System.out.println("Acknowledging last data packet");
+      System.out.println("\tAcknowledging last data packet.");
       transferComplete = true;
       fileWriter.close();
       // send the last ACK
@@ -272,12 +271,13 @@ public class Client {
    */
   public void printPacketInformation(Packet packet) {
     byte[] data = packet.getPacketData();
-    String contents = new String(data);
+    String contents = new String(data); // TODO: format to handle \n in string. (substrings)
 
-    System.out.println("Packet contents: ");
-    System.out.println(contents);
+    System.out.println("\n\tPacket contents: ");
+    System.out.println("\t" + contents);
 
-    System.out.println("Packet contents (bytes): ");
+    System.out.println("\tPacket contents (bytes): ");
+    System.out.print("\t");
     for (int i = 0; i < data.length; i++) {
       System.out.print(data[i] + " ");
     }
