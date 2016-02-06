@@ -12,3 +12,54 @@
 6. Server shutdown needs to be fixed (probably needs to check Thread.currentThread().isInterrupted())
 7. Package Packet and File stuff into libraries for reuse (or something like that)
 8. Add a Config class that has all constants (Ports, etc.)
+
+# Deliverables for Iteration 2
+
+* “README.txt” file explaining the names of your files, set up instructions, etc.
+* Breakdown of responsibilities of each team member for this and previous iterations
+* Any unchanged diagrams from the previous iterations
+* UML class diagram
+* Timing diagrams showing the error scenarios for this iteration
+* Detailed set up and test instructions, including test files used
+* Code (.java files, all required Eclipse files, etc.)
+
+
+# Error Scenarios
+
+## Error Code 4 (Illegal TFTP operation)
+
+On any of these errors, send the error packet, then close the socket and terminate the thread (unless it’s port 69, then we send an error and ignore the packet).
+
+* Invalid ReadRequest
+  * malformed packet: consult TFTP spec
+  * missing filename
+  * missing mode
+  * wrong mode
+* Invalid WriteRequest
+  * malformed packet: consult TFTP spec
+  * missing filename
+  * missing mode
+  * wrong mode
+* Invalid DataPacket
+  * malformed packet: consult TFTP spec
+  * missing block#
+  * out of order block#
+  * too long (> 516 bytes)
+  * too short (< 4 bytes)
+* Invalid Acknowledgement
+  * out of order block#
+  * too short (< 4 bytes)
+  * too long (> 4 bytes)
+* Other
+  * Server receives something other than a READ or WRITE request on Port 69.
+  * Packet is completely screwed (e.g. starts with 0 6+)
+
+
+## Error Code 5 (Unknown transfer ID)
+
+If an error 5 occurs, we send an error packet and ignore the received packet. Do not terminate.
+
+The port the other end sent the packet from must match the previous port number. (TID of other host must remain the same for the entire duration of the transfer).
+
+
+TFTP Spec: http://tools.ietf.org/html/rfc1350
