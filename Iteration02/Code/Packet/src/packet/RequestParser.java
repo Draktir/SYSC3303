@@ -60,7 +60,7 @@ public class RequestParser {
       i++;
     }
     
-    if ((i - offset) >= STR_BUFFER_SIZE) {
+    if ((i - offset) >= STR_BUFFER_SIZE || msg[i] != 0) {
       throw new InvalidRequestException("String must be terminated by 0 byte.");
     }
     
