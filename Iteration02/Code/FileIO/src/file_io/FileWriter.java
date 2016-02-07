@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 
 public class FileWriter {
   private String filename;
@@ -14,21 +15,26 @@ public class FileWriter {
    * Constructor, accepts filename of file to be written
    * 
    * @param filename
-   * @throws FileNotFoundException
+   * @throws IOException 
+   * @throws FileAlreadyExistsException
    */
-  public FileWriter(String filename) throws FileNotFoundException {
+  public FileWriter(String filename) throws FileAlreadyExistsException, IOException {
     this.filename = filename;
     
-    // create the file
-    // TODO: Throw an exception if the file already exists
     File f = new File(filename);
-    try {
-      f.createNewFile();
-    } catch (IOException e) {
-      e.printStackTrace();
+    if (f.exists()) {
+      throw new FileAlreadyExistsException(filename);
     }
     
-    fileOut = new BufferedOutputStream(new FileOutputStream(filename));
+    // create the file
+    f.createNewFile();
+    
+    try {
+      fileOut = new BufferedOutputStream(new FileOutputStream(filename));
+    } catch (FileNotFoundException e) {
+      // we just created the file so this error makes no sense
+      e.printStackTrace();
+    }
   }
   
   /**
@@ -37,14 +43,8 @@ public class FileWriter {
    * @param data
    * @return true on success / false on failure
    */
-  public boolean writeBlock(byte[] data) {
-    try {
-      fileOut.write(data, 0, data.length);
-      return true;
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
-    }
+  public void writeBlock(byte[] data) throws IOException {    
+    fileOut.write(data, 0, data.length);
   }
   
   /**
@@ -53,6 +53,7 @@ public class FileWriter {
    */
   public void close() {
     try {
+      this.fileOut.flush();
       this.fileOut.close();
     } catch (IOException e) {
       e.printStackTrace();

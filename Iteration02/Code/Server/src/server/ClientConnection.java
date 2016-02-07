@@ -3,19 +3,22 @@ package server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 
-import packet.GenericPacket;
-import packet.GenericPacketBuilder;
-import packet.InvalidPacketException;
+import packet.ErrorPacket;
+import packet.ErrorPacket.ErrorCode;
+import packet.ErrorPacketBuilder;
 import packet.Packet;
-import packet.PacketParser;
 
 public class ClientConnection {
   private DatagramSocket clientSocket;
+  private InetAddress clientAddress;
+  private int clientPort;
   
-  public ClientConnection() throws SocketException {
+  public ClientConnection(DatagramPacket originalRequest) throws SocketException {
+    this.clientAddress = originalRequest.getAddress();
+    this.clientPort = originalRequest.getPort();
     this.clientSocket = new DatagramSocket();
   }
   
@@ -23,20 +26,17 @@ public class ClientConnection {
    * Sends a packet, but does not wait for a response.
    * 
    * @param packet
+   * @throws InvalidClientTidException 
    */
   public void sendPacket(Packet packet) {
+    byte[] data = packet.getPacketData();
+    DatagramPacket sendDatagram = new DatagramPacket(
+        data, data.length, packet.getRemoteHost(), packet.getRemotePort());
+    System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
+    
     try {
-      byte[] data = packet.getPacketData();
-      DatagramPacket sendPacket = new DatagramPacket(
-          data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
-      clientSocket.send(sendPacket);
-    }
-    catch (UnknownHostException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    catch (IOException e) {
+      clientSocket.send(sendDatagram);
+    } catch (IOException e) {
       e.printStackTrace();
       System.exit(1);
     }
@@ -47,50 +47,71 @@ public class ClientConnection {
    * 
    * @param packet
    * @return GenericPacket containing data and connection information
+   * @throws InvalidClientTidException 
    */
-  public Packet sendPacketAndReceive(Packet packet) {
+  public DatagramPacket sendPacketAndReceive(Packet packet) {
+    // 1. form datagram packet
+    byte[] data = packet.getPacketData();
+    DatagramPacket sendDatagram = new DatagramPacket(
+        data, data.length, packet.getRemoteHost(), packet.getRemotePort());
+    
+    // 2. send datagram packet
+    System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
     try {
-      byte[] data = packet.getPacketData();
-      DatagramPacket sendPacket = new DatagramPacket(
-          data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
-      clientSocket.send(sendPacket);
-      
-      byte[] buffer = new byte[516];
-      DatagramPacket responsePacket = new DatagramPacket(buffer, 516);
+      clientSocket.send(sendDatagram);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
+    }
+    
+    // 3. wait to receive a response
+    byte[] buffer;
+    DatagramPacket responseDatagram = null;
+    
+    do {
+      buffer = new byte[517];
+      responseDatagram = new DatagramPacket(buffer, 517);
       System.out.println("[SYSTEM] Waiting for response from client on port " + clientSocket.getLocalPort());
-      clientSocket.receive(responsePacket);
       
-      System.out.println("Received packet from client, length: " + responsePacket.getLength());
-      
-      // copy data out of the buffer
-      int len = responsePacket.getLength();
-      byte[] received = new byte[len]; 
-      System.arraycopy(responsePacket.getData(), 0, received, 0, len);
-            
-      GenericPacket recvdPacket = new GenericPacketBuilder()
-              .setRemoteHost(responsePacket.getAddress())
-              .setRemotePort(responsePacket.getPort())
-              .setPacketData(received)
-              .buildGenericPacket();
-      
-      PacketParser packetParser = new PacketParser();
       try {
-        return packetParser.parse(recvdPacket);
-      } catch (InvalidPacketException e) {
+        clientSocket.receive(responseDatagram);
+      } catch (IOException e) {
         e.printStackTrace();
-        System.exit(1);
+        return null;
       }
-    }
-    catch (UnknownHostException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    catch (IOException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    return null;
+      
+      // ensure the client TID is the same
+      if (!isClientTidValid(responseDatagram)) {
+        System.err.println("Received packet with wrong TID");
+        // respond to the rogue client with an appropriate error packet
+        ErrorPacket errPacket = new ErrorPacketBuilder()
+            .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
+            .setMessage("Your request had an invalid TID.")
+            .setRemoteHost(responseDatagram.getAddress())
+            .setRemotePort(responseDatagram.getPort())
+            .buildErrorPacket();
+        
+        byte[] errData = errPacket.getPacketData();
+        DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
+            errPacket.getRemoteHost(), errPacket.getRemotePort());
+        
+        try {
+          clientSocket.send(errDatagram);
+        } catch (IOException e) {
+          e.printStackTrace();
+          System.err.println("Error sending error packet to unknown client. Ignoring this error.");
+        }
+        responseDatagram = null;
+      }
+      
+    } while (responseDatagram == null);
+    
+    
+    System.out.println("Received packet from client, length: " + responseDatagram.getLength());
+    return responseDatagram;
   }
   
+  private boolean isClientTidValid(DatagramPacket packet) {
+    return clientAddress.equals(packet.getAddress()) && packet.getPort() == clientPort;
+  }
 }

@@ -4,9 +4,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
-import packet.GenericPacket;
-import packet.GenericPacketBuilder;
-
 /**
  * The Listener class is implemented in order to allow the Server application
  * to continue to accept input while still listening for Client requests
@@ -44,7 +41,7 @@ class Listener implements Runnable {
   public void run() {
     int connections = 0;
     while (!stopRequested()) {
-      byte[] buffer = new byte[516];
+      byte[] buffer = new byte[517];
       DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
       
       try {
@@ -59,15 +56,9 @@ class Listener implements Runnable {
       byte[] receivedData = new byte[dataLength];
       System.arraycopy(receivePacket.getData(), 0, receivedData, 0, dataLength);
       
-      GenericPacket requestPacket = new GenericPacketBuilder()
-              .setRemoteHost(receivePacket.getAddress())
-              .setRemotePort(receivePacket.getPort())
-              .setPacketData(receivedData)
-              .buildGenericPacket();
-      
       System.out.println("[SYSTEM] New Connection request received, creating new Thread.");
       
-      Thread userConnection = new Thread(new RequestHandler(requestPacket), "Request " + 1 + connections++);
+      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Request " + 1 + connections++);
       userConnection.start();
     }
     

@@ -15,9 +15,11 @@ package client;
 import packet.*;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.Scanner;
 
 import file_io.FileReader;
@@ -128,6 +130,12 @@ public class Client {
       e1.printStackTrace();
       System.err.println("Could not create new file for downloading.");
       return;
+    } catch (FileAlreadyExistsException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
     }
    
     InetAddress remoteHost;

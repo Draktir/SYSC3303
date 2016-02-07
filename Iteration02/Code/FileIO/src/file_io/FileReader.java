@@ -25,7 +25,7 @@ public class FileReader {
    * @param buffer
    * @return number of bytes read, or -1 on EOF or error.
    */
-  public int readBlock(byte[] buffer) {
+  public int readNextBlock(byte[] buffer) {
     try {
       return fileIn.read(buffer);
     } catch (IOException e) {

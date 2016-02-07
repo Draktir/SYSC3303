@@ -46,7 +46,7 @@ public class ServerConnection {
    * @param packet
    * @return GenericPacket containing data and connection information
    */
-  public Packet sendPacketAndReceive(Packet packet) {
+  public DatagramPacket sendPacketAndReceive(Packet packet) {
     byte[] data = packet.getPacketData();
     DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
     System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort() + " with length (bytes) " + data.length + ".");
@@ -68,25 +68,7 @@ public class ServerConnection {
     }
 
     System.out.println("\tReceived from server: " + Arrays.toString(buffer));
-    
-    // copy data out of the buffer
-    int len = responsePacket.getLength();
-    byte[] received = new byte[len];
-    System.arraycopy(responsePacket.getData(), 0, received, 0, len);
-    
-    GenericPacket recvdPacket = new GenericPacketBuilder()
-        .setRemoteHost(responsePacket.getAddress())
-        .setRemotePort(responsePacket.getPort())
-        .setPacketData(received)
-        .buildGenericPacket();
-
-    PacketParser packetParser = new PacketParser();
-    try {
-      return packetParser.parse(recvdPacket);
-    } catch (InvalidPacketException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
+    return responsePacket;
     return null;
   }
 

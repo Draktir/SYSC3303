@@ -1,13 +1,17 @@
 package packet;
 
 
+import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 
 public class RequestParser {
   static final int STR_BUFFER_SIZE = 256; // (516 - 4) / 2
   
-  public Request parse(Packet packet) throws InvalidRequestException {
-    byte[] rawRequest = packet.getPacketData();
+  public Request parse(DatagramPacket packet) throws InvalidRequestException {
+    // copy data out of the datagram buffer
+    int len = packet.getLength();
+    byte[] rawRequest = new byte[len];
+    System.arraycopy(packet.getData(), 0, rawRequest, 0, len);
     
     if (rawRequest[0] != 0) {
       throw new InvalidRequestException("First byte must be 0.");
@@ -39,8 +43,8 @@ public class RequestParser {
     RequestBuilder builder = new RequestBuilder();
     builder.setFilename(filename);
     builder.setMode(mode);
-    builder.setRemoteHost(packet.getRemoteHost());
-    builder.setRemotePort(packet.getRemotePort());
+    builder.setRemoteHost(packet.getAddress());
+    builder.setRemotePort(packet.getPort());
     
     if (requestType == 1) {
       return builder.buildReadRequest();

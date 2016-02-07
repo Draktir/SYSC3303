@@ -1,6 +1,7 @@
 package packet;
 
 import java.math.BigInteger;
+import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 
 import packet.ErrorPacket.ErrorCode;
@@ -8,8 +9,11 @@ import packet.ErrorPacket.ErrorCode;
 public class ErrorPacketParser {
   private static final int STR_BUFFER_SIZE = 511; // 516 - 5
   
-  public ErrorPacket parse(Packet packet) throws InvalidErrorPacketException {
-    byte[] rawData = packet.getPacketData();
+  public ErrorPacket parse(DatagramPacket packet) throws InvalidErrorPacketException {
+    // copy data out of the datagram buffer
+    int len = packet.getLength();
+    byte[] rawData = new byte[len];
+    System.arraycopy(packet.getData(), 0, rawData, 0, len);
     
     if (rawData.length < 5) {
       throw new InvalidErrorPacketException("Packet must be at least 5 bytes long.");
@@ -42,8 +46,8 @@ public class ErrorPacketParser {
     ErrorPacketBuilder builder = new ErrorPacketBuilder();
     builder.setErrorCode(errorCode);
     builder.setMessage(message);
-    builder.setRemoteHost(packet.getRemoteHost());
-    builder.setRemotePort(packet.getRemotePort());
+    builder.setRemoteHost(packet.getAddress());
+    builder.setRemotePort(packet.getPort());
     
     return builder.buildErrorPacket();
   }  

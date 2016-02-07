@@ -1,7 +1,7 @@
 package packet;
 
 
-public class InvalidDataPacketException extends Exception {
+public class InvalidDataPacketException extends InvalidPacketException {
   private static final long serialVersionUID = 1L;
 
   public InvalidDataPacketException(String message) {

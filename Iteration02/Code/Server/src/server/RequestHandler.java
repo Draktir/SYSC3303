@@ -1,7 +1,10 @@
 package server;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.SocketException;
+import java.nio.file.FileAlreadyExistsException;
 
 import file_io.FileReader;
 import file_io.FileWriter;
@@ -9,11 +12,16 @@ import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
 import packet.DataPacket;
 import packet.DataPacketBuilder;
-import packet.InvalidPacketException;
+import packet.ErrorPacket;
+import packet.ErrorPacketBuilder;
+import packet.InvalidAcknowledgementException;
+import packet.InvalidDataPacketException;
+import packet.InvalidRequestException;
 import packet.Packet;
 import packet.PacketParser;
 import packet.ReadRequest;
 import packet.WriteRequest;
+import packet.ErrorPacket.ErrorCode;
 
 /**
  * The RequestHandler class handles requests received by Listener.
@@ -26,13 +34,8 @@ import packet.WriteRequest;
  * @since 25-01-2016
  */
 class RequestHandler implements Runnable {
-  private Packet requestPacket;
-  private boolean transferComplete = false;
-
+  private DatagramPacket requestPacket;
   private ClientConnection clientConnection;
-  private FileReader fileReader;
-  private FileWriter fileWriter;
-
   
   /**
    * Default RequestHandler constructor instantiates requestPacekt to
@@ -40,29 +43,17 @@ class RequestHandler implements Runnable {
    * 
    * @param packet
    */
-  public RequestHandler(Packet requestPacket) {
+  public RequestHandler(DatagramPacket requestPacket) {
     this.requestPacket = requestPacket;
   }
   
+  /**
+   * Processes the received request and initiates file transfer.
+   * 
+   */
   public void run() {
     try {
-      processRequest(requestPacket);
-    } catch (InvalidPacketException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-  }
-
-  /**
-   * Processes a received DatagramPacket by testing its contents
-   * and responds appropriately.
-   *  
-   * @param packet
-   * @throws InvalidPacketException
-   */
-  public void processRequest(Packet requestPacket) throws InvalidPacketException {
-    try {
-      this.clientConnection = new ClientConnection();
+      this.clientConnection = new ClientConnection(requestPacket);
     } catch (SocketException e) {
       e.printStackTrace();
       System.err.println("Could not create client socket.");
@@ -70,159 +61,207 @@ class RequestHandler implements Runnable {
     }
     
     PacketParser parser = new PacketParser();
-    Packet request = parser.parse(requestPacket);
+    Packet request = null;
     
-    do {
-      printPacketInformation(request);
-      
-      if (request instanceof ReadRequest) {
-        request = handleReadRequest((ReadRequest) request);
-      } else if (request instanceof WriteRequest) {
-        request = handleWriteRequest((WriteRequest) request);
-      } else if (request instanceof DataPacket) {
-        request = handleDataPacket((DataPacket) request);
-      } else if (request instanceof Acknowledgement) {
-        request = handleAcknowledgement((Acknowledgement) request);
-      } else {
-        System.err.println("Invalid request received, closing connection.");
-        break;
-      }
-    } while (!transferComplete);
+    // 1. parse the orignal client request
+    try {
+      parser.parseRequest(requestPacket);
+    } catch (InvalidRequestException e) {
+      System.err.println("Received an invalid request.");
+      handlePacketError("Invalid request. Expected a RRQ or WRQ.", requestPacket);
+      System.out.println("Terminating this thread.");
+      return;
+    }
     
-    System.out.println("\nFile transfer complete. Terminating thread.\n");
+    // 2. determine the type of transfer
+    if (request instanceof ReadRequest) {
+      // initiate ReadRequest
+      sendFileToClient((ReadRequest) request);
+    } else if (request instanceof WriteRequest) {
+      // initiate WriteRequest
+      receiveFileFromClient((WriteRequest) request);
+    } else {
+      // should never get here really
+      System.err.println("Could not identify request type. SOMETHING IS SERIOUSLY WRONG!");
+      handlePacketError("Invalid request. Expected RRQ or WRQ.", requestPacket);
+    }
+    
+    System.out.println("Terminating thread " + Thread.currentThread().getName());
   }
   
-  /**
-   * Handles a received Read request (RRQ) by reading the requested
-   * block from disk and responding with a Data packet
-   * 
-   * @param request
-   */
-  private Packet handleReadRequest(ReadRequest request) {
-    System.out.println("[SYSTEM] Read Request received "  + request.getFilename());
+  private void sendFileToClient(ReadRequest request) {
+    System.out.println("[SYSTEM] opening " + request.getFilename() + " for reading.");
+    FileReader fileReader = null;
     try {
       fileReader = new FileReader(request.getFilename());
     } catch (FileNotFoundException e) {
-      // TODO: send an error packet if the file does not exist
+      // TODO Send an Error (FILE_NOT_FOUND)
       e.printStackTrace();
+      return;
     }
-    return sendFileBlock(request, 1);
+    
+    int blockNumber = 1;
+    int bytesRead;
+    byte[] fileBuffer = new byte[512];
+    PacketParser packetParser = new PacketParser();
+    
+    do {
+      // 1. read the next block from the file 
+      System.out.println("[SYSTEM] Reading block #" + blockNumber + " from file.");
+      bytesRead = fileReader.readNextBlock(fileBuffer);
+      
+      // 2. copy file data out of the buffer
+      byte[] fileData = new byte[bytesRead];
+      System.arraycopy(fileBuffer, 0, fileData, 0, bytesRead);
+      
+      // 3. build data packet
+      DataPacket dataPacket = new DataPacketBuilder()
+          .setRemoteHost(request.getRemoteHost())
+          .setRemotePort(request.getRemotePort())
+          .setBlockNumber(blockNumber)
+          .setFileData(fileData)
+          .buildDataPacket();
+      
+      printPacketInformation(dataPacket);
+      
+      // 4. send data packet and wait for response
+      DatagramPacket responseDatagram;
+      responseDatagram = clientConnection.sendPacketAndReceive(dataPacket);
+            
+      if (responseDatagram == null) {
+        System.err.println("Did not receive a response from the client.");
+        break;
+      }
+      
+      // 5. parse client response
+      Acknowledgement ack = null;
+      try {
+       ack = packetParser.parseAcknowledgement(responseDatagram);
+      } catch (InvalidAcknowledgementException e) {
+        handlePacketError("Did not receive a valid ACK. Expected ACK with block #" + blockNumber, 
+            responseDatagram);
+        return;
+      }
+       
+      // make sure the block number is correct
+      if (ack.getBlockNumber() != blockNumber) {
+        handlePacketError("Acknowledgement had the wrong block#, expected block #" + blockNumber, 
+            responseDatagram);
+        return;
+      }
+      
+      // 6. repeat
+      blockNumber++;
+    } while (bytesRead == 512);
+    
+    fileReader.close();
+    
+    System.out.println("File " + request.getFilename() +" successfully sent to client in " + 
+        (blockNumber - 1) + " blocks.");
   }
   
-  /**
-   * Handles a received Write request (WRQ) by writing the received data
-   * to disk and responding with an ACK
-   * 
-   * @param request
-   */
-  private Packet handleWriteRequest(WriteRequest request) {
-    System.out.println("[SYSTEM] Write request received " + request.getFilename());
+  private void receiveFileFromClient(WriteRequest request) {
+    System.out.println("[SYSTEM] opening " + request.getFilename() + " for writing.");
+    FileWriter fileWriter = null;
+  
     try {
-      this.fileWriter = new FileWriter(request.getFilename());
-    } catch (FileNotFoundException e) {
-      // TODO: send an error packet if something goes wrong here
+      fileWriter = new FileWriter(request.getFilename());
+    } catch (FileAlreadyExistsException e) {
+      // TODO Send error FILE_ALREADY_EXISTS
       e.printStackTrace();
+      return;
+    } catch (IOException e) {
+      // TODO Send error DISK_FULL_OR_ALLOCATION_EXCEEDED 
+      e.printStackTrace();
+      return;
     }
+
+    int blockNumber = 0;
+    PacketParser packetParser = new PacketParser();
     
-    System.out.println("\tSending ACK with block #0");
-    
-    Acknowledgement ack = new AcknowledgementBuilder()
-            .setRemoteHost(request.getRemoteHost())
-            .setRemotePort(request.getRemotePort())
-            .setBlockNumber(0)
-            .buildAcknowledgement();
-    
-    printPacketInformation(ack);
-    return clientConnection.sendPacketAndReceive(ack);
-  }
+    while (true) {
+      //1. send an ACK
+      System.out.println("[SYSTEM] Sending ACK with block#" + blockNumber);
+      
+      Acknowledgement ack = new AcknowledgementBuilder()
+          .setRemoteHost(request.getRemoteHost())
+          .setRemotePort(request.getRemotePort())
+          .setBlockNumber(blockNumber)
+          .buildAcknowledgement();
   
-  /**
-   * Handles a received Data packet by writing the received data
-   * to disk and responding with an ACK
-   * 
-   * @param packet
-   */
-  private Packet handleDataPacket(DataPacket dataPacket) {
-    System.out.println("[SYSTEM] Data packet received block #" + dataPacket.getBlockNumber());
-    
-    printPacketInformation(dataPacket);
-    
-    System.out.println("[SYSTEM] Writing file block #" + dataPacket.getBlockNumber());
-    byte[] fileData = dataPacket.getFileData();
-    System.out.println("[SYSTEM] File data length (bytes): " + fileData.length);
-    this.fileWriter.writeBlock(fileData);
-    
-    Acknowledgement ack = new AcknowledgementBuilder()
-            .setRemoteHost(dataPacket.getRemoteHost())
-            .setRemotePort(dataPacket.getRemotePort())
-            .setBlockNumber(dataPacket.getBlockNumber())
-            .buildAcknowledgement();
-    
-    printPacketInformation(ack);
-    
-    // Check for the last data packet
-    if (fileData.length < 512) {
-      System.out.println("[SYSTEM] Sending last acknowledgement.");
-      transferComplete = true;
-      fileWriter.close();
-      // send the last ACK
-      clientConnection.sendPacket(ack);
-      return null;
-    }
-    
-    return clientConnection.sendPacketAndReceive(ack);
-  }
-  
-  /**
-   * Handles a received ACK by sending the next file block.
-   * 
-   * @param packet
-   */
-  private Packet handleAcknowledgement(Acknowledgement ackPacket) {
-    System.out.println("[SYSTEM] ACK packet received, block #" + ackPacket.getBlockNumber());
-    return sendFileBlock(ackPacket, ackPacket.getBlockNumber() + 1);
-  }
-  
-  private Packet sendFileBlock(Packet request, int blockNumber) {
-    System.out.println("[SYSTEM] Reading block #" + blockNumber +" from file.");
-    
-    byte[] buffer = new byte[512];
-    int bytesRead = fileReader.readBlock(buffer);
-    
-    byte[] fileData = new byte[bytesRead];
-    System.arraycopy(buffer, 0, fileData, 0, bytesRead);
-    
-    DataPacket dataPacket = new DataPacketBuilder()
+      printPacketInformation(ack);
+      DatagramPacket receivedDatagram = clientConnection.sendPacketAndReceive(ack);
+      
+      // we are now expecting the next sequential block number
+      blockNumber++;
+      
+      //2. wait for a data packet
+      DataPacket dataPacket;
+      try {
+        dataPacket = packetParser.parseDataPacket(receivedDatagram);
+      } catch (InvalidDataPacketException e) {
+        handlePacketError("Did not receive a valid Data Packet. Expected Data packet with block #" 
+            + blockNumber, receivedDatagram);
+        return;
+      }
+      
+      // make sure the block number is correct
+      if (dataPacket.getBlockNumber() != blockNumber) {
+        handlePacketError("Data packet had the wrong block#, expected block #" + blockNumber, 
+            receivedDatagram);
+        return;
+      }
+      
+      //3. write file data to disk
+      try {
+        fileWriter.writeBlock(dataPacket.getFileData());
+      } catch (IOException e) {
+        // TODO send an DISK_FULL_OR_ALLOCATION_EXCEEDED error
+        e.printStackTrace();
+        return;
+      }
+      
+      // was this the last data packet?
+      if (dataPacket.getFileData().length < 512) {
+        // send last ACK
+        System.out.println("[SYSTEM] Sending ACK with block#" + blockNumber);
+        
+        Acknowledgement lastAck = new AcknowledgementBuilder()
             .setRemoteHost(request.getRemoteHost())
             .setRemotePort(request.getRemotePort())
             .setBlockNumber(blockNumber)
-            .setFileData(fileData) 
-            .buildDataPacket();
+            .buildAcknowledgement();
     
-    printPacketInformation(dataPacket);
-    
-    // Check if we have read the whole file
-    if (fileData.length < 512) {
-      transferComplete = true;
-      fileReader.close();
+        printPacketInformation(ack);
+        clientConnection.sendPacket(lastAck);
+        
+        break;
+      }
       
-      // send the last data packet
-      clientConnection.sendPacketAndReceive(dataPacket);
-
-      // TODO: We should make sure we get an ACK and resend the last data packet
-      // if it failed. Not needed for this iteration though.
-      return null;
     }
     
-    return clientConnection.sendPacketAndReceive(dataPacket);
+    fileWriter.close();
+    
+    System.out.println("File " + request.getFilename() + " successfully received from client in " 
+          + blockNumber + " blocks.");
   }
   
+  private void handlePacketError(String message, DatagramPacket requestPacket) {
+    ErrorPacket errPacket = new ErrorPacketBuilder()
+        .setRemoteHost(requestPacket.getAddress())
+        .setRemotePort(requestPacket.getPort())
+        .setErrorCode(ErrorCode.ILLEGAL_TFTP_OPERATION)
+        .setMessage(message)
+        .buildErrorPacket();
+    clientConnection.sendPacket(errPacket);
+  }
+    
   /**
    * Prints out request contents as a String and in bytes.
    * 
    * @param buffer
    */
-  public void printPacketInformation(Packet packet) {
+  private void printPacketInformation(Packet packet) {
     byte[] data = packet.getPacketData();
     String contents = new String(data);
 

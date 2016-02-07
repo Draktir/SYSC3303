@@ -2,10 +2,14 @@ package packet;
 
 
 import java.math.BigInteger;
+import java.net.DatagramPacket;
 
 public class DataPacketParser {
-  public DataPacket parse(Packet packet) throws InvalidDataPacketException {
-    byte[] rawData = packet.getPacketData();
+  public DataPacket parse(DatagramPacket packet) throws InvalidDataPacketException {
+    // copy data out of the datagram buffer
+    int len = packet.getLength();
+    byte[] rawData = new byte[len];
+    System.arraycopy(packet.getData(), 0, rawData, 0, len);
     
     if (rawData.length > 516) {
       throw new InvalidDataPacketException("Packet cannot be longer than 516 bytes");
@@ -32,8 +36,8 @@ public class DataPacketParser {
     }
     
     DataPacketBuilder builder = new DataPacketBuilder();
-    builder.setRemoteHost(packet.getRemoteHost());
-    builder.setRemotePort(packet.getRemotePort());
+    builder.setRemoteHost(packet.getAddress());
+    builder.setRemotePort(packet.getPort());
     builder.setBlockNumber(blockNumber);
     builder.setFileData(fileData);
     

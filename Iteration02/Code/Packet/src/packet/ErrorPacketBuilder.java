@@ -12,16 +12,18 @@ public class ErrorPacketBuilder extends PacketBuilder<ErrorPacketBuilder> {
     return errorCode;
   }
 
-  public void setErrorCode(ErrorPacket.ErrorCode errorCode) {
+  public ErrorPacketBuilder setErrorCode(ErrorPacket.ErrorCode errorCode) {
     this.errorCode = errorCode;
+    return this;
   }
 
   public String getMessage() {
     return message;
   }
 
-  public void setMessage(String message) {
+  public ErrorPacketBuilder setMessage(String message) {
     this.message = message;
+    return this;
   }
 
   @Override
