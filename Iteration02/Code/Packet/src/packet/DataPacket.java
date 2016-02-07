@@ -19,7 +19,6 @@ public class DataPacket extends Packet {
       throw new RuntimeException("Block number is too big (max " 
             + Math.pow(2,  16) + "): " + blockNumber);
     }
-    
     this.blockNumber = blockNumber;
     this.fileData = fileData;
   }

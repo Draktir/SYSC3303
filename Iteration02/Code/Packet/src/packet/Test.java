@@ -7,7 +7,7 @@ public class Test {
   public static void main(String[] args) {
     
     // test byte to int conversion
-    for (int i = 0; i < Math.pow(2, 9); i++) {
+    for (int i = 0; i < Math.pow(2, 16); i++) {
       BigInteger bigInt = BigInteger.valueOf(i);      
       byte[] blockNumberBytes = bigInt.toByteArray();
       

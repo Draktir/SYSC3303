@@ -4,7 +4,7 @@ package packet;
 import java.nio.ByteBuffer;
 
 public class RequestParser {
-  static final int BUFFER_SIZE = 100;
+  static final int STR_BUFFER_SIZE = 256; // (516 - 4) / 2
   
   public Request parse(Packet packet) throws InvalidRequestException {
     byte[] rawRequest = packet.getPacketData();
@@ -19,26 +19,23 @@ public class RequestParser {
     }
     
     int currentOffset = 2;
-    
     String filename = extractString(rawRequest, currentOffset);
-    currentOffset += filename.length() + 1;
-    
     if (filename.length() <= 0) {
       throw new InvalidRequestException("The filename cannot be of length 0");
     }
+    currentOffset += filename.length() + 1;
     
-    String mode = extractString(rawRequest, currentOffset);
-    currentOffset += mode.length() + 1;
-    
+    String mode = extractString(rawRequest, currentOffset);   
     if (!mode.equalsIgnoreCase("octet") && !mode.equalsIgnoreCase("netascii")) {
       throw new InvalidRequestException("The mode must be either 'octet' or 'netascii'");
     }
+    currentOffset += mode.length() + 1;
     
     if (rawRequest.length > (currentOffset + 1)) {
       throw new InvalidRequestException("The request must be complete after the third 0 byte");
     }
     
-    // Message is valid, build request object
+    // Packet is valid, build request object
     RequestBuilder builder = new RequestBuilder();
     builder.setFilename(filename);
     builder.setMode(mode);
@@ -55,15 +52,15 @@ public class RequestParser {
   }
   
   private String extractString(byte[] msg, int offset) throws InvalidRequestException {
-    ByteBuffer stringBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+    ByteBuffer stringBuffer = ByteBuffer.allocate(STR_BUFFER_SIZE);
     int i = offset;
     
-    while (msg[i] != 0 && i < msg.length && (i - offset) < BUFFER_SIZE) {
+    while (msg[i] != 0 && i < msg.length && (i - offset) < STR_BUFFER_SIZE) {
       stringBuffer.put(msg[i]);
       i++;
     }
     
-    if ((i - offset) >= BUFFER_SIZE) {
+    if ((i - offset) >= STR_BUFFER_SIZE) {
       throw new InvalidRequestException("String must be terminated by 0 byte.");
     }
     

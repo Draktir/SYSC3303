@@ -7,6 +7,9 @@ public class DataPacketParser {
   public DataPacket parse(Packet packet) throws InvalidDataPacketException {
     byte[] rawData = packet.getPacketData();
     
+    if (rawData.length > 516) {
+      throw new InvalidDataPacketException("Packet cannot be longer than 516 bytes");
+    }
     if (rawData.length < 4) {
       throw new InvalidDataPacketException("Packet must be at least 4 bytes long");
     }
@@ -18,8 +21,8 @@ public class DataPacketParser {
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};
-    BigInteger bigInt2 = new BigInteger(blockNumberBytes);
-    int blockNumber = bigInt2.intValue();
+    BigInteger bigInt = new BigInteger(blockNumberBytes);
+    int blockNumber = bigInt.intValue();
     
     int fileDataLength = rawData.length - 4;
     byte[] fileData = new byte[fileDataLength];

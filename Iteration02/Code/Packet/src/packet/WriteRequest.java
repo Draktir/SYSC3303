@@ -1,6 +1,5 @@
 package packet;
 
-
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 

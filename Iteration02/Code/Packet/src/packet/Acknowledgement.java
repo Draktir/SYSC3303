@@ -1,6 +1,7 @@
 package packet;
 
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
@@ -9,18 +10,30 @@ public class Acknowledgement extends Packet {
 
   public Acknowledgement(InetAddress remoteHost, int remotePort, int blockNumber) {
     super(remoteHost, remotePort);
+    
+    // if block number is bigger than what 2 bytes can represent
+    if (blockNumber > Math.pow(2, 16)) {
+      throw new RuntimeException("Block number is too big (max " 
+            + Math.pow(2, 16) + "): " + blockNumber);
+    }
     this.blockNumber = blockNumber;
   }
 
   @Override
   public byte[] getPacketData() {
     ByteBuffer requestBuffer = ByteBuffer.allocate(4);
-    byte[] blockNumberBytes = ByteBuffer.allocate(4).putInt(blockNumber).array();
+ 
+    // convert block number from int to byte array
+    BigInteger bigInt = BigInteger.valueOf(blockNumber);      
+    byte[] blockNumberBytes = bigInt.toByteArray();
+    if (blockNumberBytes.length == 1) {
+      blockNumberBytes = new byte[]{0, blockNumberBytes[0]};
+    }
     
     requestBuffer.put((byte) 0);
     requestBuffer.put((byte) 4);
-    requestBuffer.put(blockNumberBytes[2]);
-    requestBuffer.put(blockNumberBytes[3]);
+    requestBuffer.put(blockNumberBytes[0]);
+    requestBuffer.put(blockNumberBytes[1]);
     
     return requestBuffer.array();
   }

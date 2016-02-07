@@ -1,24 +1,25 @@
 package packet;
 
 
-import java.nio.ByteBuffer;
+import java.math.BigInteger;
 
 public class AcknowledgementParser {
   public Acknowledgement parse(Packet packet) throws InvalidDataPacketException {
     byte[] rawData = packet.getPacketData();
     
-    if (rawData.length < 4) {
-      throw new InvalidDataPacketException("Packet must be at least 4 bytes long");
+    if (rawData.length != 4) {
+      throw new InvalidDataPacketException("Packet must be exactly 4 bytes long");
     }
     if (rawData[0] != 0) {
-      throw new InvalidDataPacketException("Packet must start with 0 byte");
+      throw new InvalidDataPacketException("Packet must start with a 0 byte");
     }
     if (rawData[1] != 4) {
-      throw new InvalidDataPacketException("Second position must be a 3 byte");
+      throw new InvalidDataPacketException("Second position must be a 4 byte");
     }
     
-    byte[] blockNumberBytes = {0, 0, rawData[2], rawData[3]};
-    int blockNumber = ByteBuffer.wrap(blockNumberBytes).getInt();
+    byte[] blockNumberBytes = {rawData[2], rawData[3]};
+    BigInteger bigInt = new BigInteger(blockNumberBytes);
+    int blockNumber = bigInt.intValue();
     
     AcknowledgementBuilder builder = new AcknowledgementBuilder();
     builder.setRemoteHost(packet.getRemoteHost());
