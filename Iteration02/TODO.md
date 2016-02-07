@@ -1,9 +1,9 @@
 # TODO - Iteration 02
 
-1. (L) Format debugging output using indentation (\\t) and separate connections
+## Outstanding tasks
+
+1. (L) Format debugging output using indentation (`\t`) and separate connections
 2. (R) Client error detection & handling
-  1. Increase buffer size to 517 bytes to check whether the packet is too long
-3. (P) Server error detection & handling 
   1. Increase buffer size to 517 bytes to check whether the packet is too long
 4. Intermediate Host
   1. Menu to pick an error scenario and which packet to modify
@@ -12,11 +12,20 @@
 5. (A) Improve client menu (let user enter any filename)
   1. Check the file isn't too big, max size: (512 * 2^16) - 1 bytes
 6. (L) Server shutdown needs to be fixed (probably needs to check Thread.currentThread().isInterrupted())
-7. (P) Package Packet and File stuff into libraries for reuse (or something like that)
-8. (P) Review parser and builder to make sure all errors are caught
 9. (F) Add a Config class that has all constants (Ports, etc.)
 10. Timing diagrams showing the error scenarios for this iteration
 11. NICE TO HAVE: add TEST mode
+
+
+## DONE - needs testing
+3. (P) Server error detection & handling 
+  1. Increase buffer size to 517 bytes to check whether the packet is too long
+8. (P) Review parser and builder to make sure all errors are caught
+
+
+## DONE - tested
+7. ~~(P) Package Packet and File stuff into libraries for reuse (or something like that)~~
+
 
 
 # Deliverables for Iteration 2
