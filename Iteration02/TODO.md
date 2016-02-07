@@ -10,6 +10,7 @@
   2. Parse all packets and introduce error where applicable
   3. "We should be able to simulate any problem with any packet and any field within any packet."
 5. (A) Improve client menu (let user enter any filename)
+  1. Check the file isn't too big, max size: (512 * 2^16) - 1 bytes
 6. (L) Server shutdown needs to be fixed (probably needs to check Thread.currentThread().isInterrupted())
 7. (P) Package Packet and File stuff into libraries for reuse (or something like that)
 8. (P) Review parser and builder to make sure all errors are caught
