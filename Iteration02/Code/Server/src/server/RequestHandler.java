@@ -65,7 +65,7 @@ class RequestHandler implements Runnable {
     
     // 1. parse the orignal client request
     try {
-      parser.parseRequest(requestPacket);
+      request = parser.parseRequest(requestPacket);
     } catch (InvalidRequestException e) {
       System.err.println("Received an invalid request.");
       handlePacketError("Invalid request. Expected a RRQ or WRQ.", requestPacket);
@@ -81,8 +81,9 @@ class RequestHandler implements Runnable {
       // initiate WriteRequest
       receiveFileFromClient((WriteRequest) request);
     } else {
-      // should never get here really
+      // should never really get here
       System.err.println("Could not identify request type. SOMETHING IS SERIOUSLY WRONG!");
+      System.err.println(request);
       handlePacketError("Invalid request. Expected RRQ or WRQ.", requestPacket);
     }
     
@@ -129,8 +130,9 @@ class RequestHandler implements Runnable {
       responseDatagram = clientConnection.sendPacketAndReceive(dataPacket);
             
       if (responseDatagram == null) {
+        // TODO: handle timeouts
         System.err.println("Did not receive a response from the client.");
-        break;
+        return;
       }
       
       // 5. parse client response
@@ -138,8 +140,8 @@ class RequestHandler implements Runnable {
       try {
        ack = packetParser.parseAcknowledgement(responseDatagram);
       } catch (InvalidAcknowledgementException e) {
-        handlePacketError("Did not receive a valid ACK. Expected ACK with block #" + blockNumber, 
-            responseDatagram);
+        String errMsg = "Did not receive a valid ACK. Expected ACK with block #" + blockNumber;
+        handlePacketError(errMsg, responseDatagram);
         return;
       }
        
@@ -149,6 +151,9 @@ class RequestHandler implements Runnable {
             responseDatagram);
         return;
       }
+      
+      System.out.println("Received ACK packet with block #" + ack.getBlockNumber());
+      printPacketInformation(ack);
       
       // 6. repeat
       blockNumber++;
@@ -180,7 +185,7 @@ class RequestHandler implements Runnable {
     PacketParser packetParser = new PacketParser();
     
     while (true) {
-      //1. send an ACK
+      //1. build an ACK
       System.out.println("[SYSTEM] Sending ACK with block#" + blockNumber);
       
       Acknowledgement ack = new AcknowledgementBuilder()
@@ -190,27 +195,39 @@ class RequestHandler implements Runnable {
           .buildAcknowledgement();
   
       printPacketInformation(ack);
+      
+      //2. send ACK and wait for a data packet
       DatagramPacket receivedDatagram = clientConnection.sendPacketAndReceive(ack);
+      
+      if (receivedDatagram == null) {
+        // TODO: handle timeouts
+        System.err.println("Did not receive a data packet from the client.");
+        return;
+      }
       
       // we are now expecting the next sequential block number
       blockNumber++;
-      
-      //2. wait for a data packet
+            
       DataPacket dataPacket;
       try {
         dataPacket = packetParser.parseDataPacket(receivedDatagram);
       } catch (InvalidDataPacketException e) {
-        handlePacketError("Did not receive a valid Data Packet. Expected Data packet with block #" 
-            + blockNumber, receivedDatagram);
+        String errMsg = "Did not receive a valid Data Packet. Expected Data packet with block #" + blockNumber;
+        System.err.println(errMsg);
+        handlePacketError(errMsg, receivedDatagram);
         return;
       }
       
       // make sure the block number is correct
       if (dataPacket.getBlockNumber() != blockNumber) {
-        handlePacketError("Data packet had the wrong block#, expected block #" + blockNumber, 
-            receivedDatagram);
+        String errMsg = "Data packet had the wrong block#, expected block #" + blockNumber;
+        System.err.println(errMsg);
+        handlePacketError(errMsg, receivedDatagram);
         return;
       }
+      
+      System.out.println("Received Data packet with block #" + dataPacket.getBlockNumber());
+      printPacketInformation(dataPacket);
       
       //3. write file data to disk
       try {
@@ -235,9 +252,9 @@ class RequestHandler implements Runnable {
         printPacketInformation(ack);
         clientConnection.sendPacket(lastAck);
         
+        // we're done
         break;
       }
-      
     }
     
     fileWriter.close();
