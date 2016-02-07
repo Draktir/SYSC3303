@@ -16,6 +16,7 @@ import packet.*;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -163,21 +164,21 @@ public class Client {
    */
   private void performFileTransfer(Packet request) {
     PacketParser parser = new PacketParser();
-    Packet recvdPacket = serverConnection.sendPacketAndReceive(request);
-    
+    DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
+
     do {
       Packet response;
       try {
-        response = parser.parse(recvdPacket);
+        response = parser.parse(recvdDatagram);
       } catch (InvalidPacketException e) {
         e.printStackTrace();
         break;
       }
       
       if (response instanceof Acknowledgement) {
-        recvdPacket = handleAcknowledgement((Acknowledgement) response);
+        recvdDatagram = handleAcknowledgement((Acknowledgement) response);
       } else if (response instanceof DataPacket) {
-        recvdPacket = handleDataPacket((DataPacket) response);
+        recvdDatagram = handleDataPacket((DataPacket) response);
       } else {
         System.err.println("Invalid packet received");
         break;
@@ -185,8 +186,8 @@ public class Client {
       
       //System.out.println("\n\tPacket received from Server");
       
-      if (recvdPacket != null) {
-        printPacketInformation(recvdPacket);
+      if (recvdDatagram != null) {
+        //printPacketInformation(recvdDatagram);
       } else {
         System.out.println("[SYSTEM] File successfully transferred.");
       }
@@ -202,11 +203,11 @@ public class Client {
    * @param ack
    * @return
    */
-  private Packet handleAcknowledgement(Acknowledgement ack) {
+  private DatagramPacket handleAcknowledgement(Acknowledgement ack) {
     System.out.println("\n\tACK received, block #" + ack.getBlockNumber());
     
     byte[] buffer = new byte[512];
-    int bytesRead = fileReader.readBlock(buffer);
+    int bytesRead = fileReader.readNextBlock(buffer);
 
     byte[] fileData = new byte[bytesRead];
     System.arraycopy(buffer, 0, fileData, 0, bytesRead);
@@ -245,12 +246,17 @@ public class Client {
    * @param dataPacket
    * @return
    */
-  private Packet handleDataPacket(DataPacket dataPacket) {
+  private DatagramPacket handleDataPacket(DataPacket dataPacket) {
     System.out.println("\tDATA received, block #" + dataPacket .getBlockNumber());
     
     System.out.println("\tWriting file block# " + dataPacket.getBlockNumber());
     byte[] fileData = dataPacket.getFileData();
-    fileWriter.writeBlock(fileData);
+    try {
+      fileWriter.writeBlock(fileData);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
     
     Acknowledgement ack = new AcknowledgementBuilder()
             .setRemoteHost(dataPacket.getRemoteHost())

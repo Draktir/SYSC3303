@@ -7,11 +7,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
-import packet.GenericPacket;
-import packet.GenericPacketBuilder;
-import packet.InvalidPacketException;
 import packet.Packet;
-import packet.PacketParser;
 
 public class ServerConnection {
   private DatagramSocket serverSocket;
@@ -69,7 +65,6 @@ public class ServerConnection {
 
     System.out.println("\tReceived from server: " + Arrays.toString(buffer));
     return responsePacket;
-    return null;
   }
 
 }
