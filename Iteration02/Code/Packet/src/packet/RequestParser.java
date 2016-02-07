@@ -23,6 +23,10 @@ public class RequestParser {
     String filename = extractString(rawRequest, currentOffset);
     currentOffset += filename.length() + 1;
     
+    if (filename.length() <= 0) {
+      throw new InvalidRequestException("The filename cannot be of length 0");
+    }
+    
     String mode = extractString(rawRequest, currentOffset);
     currentOffset += mode.length() + 1;
     

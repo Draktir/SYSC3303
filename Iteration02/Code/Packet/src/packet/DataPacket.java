@@ -1,6 +1,7 @@
 package packet;
 
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -9,8 +10,16 @@ public class DataPacket extends Packet {
   int blockNumber;
   byte[] fileData;
 
-  public DataPacket(InetAddress remoteHost, int remotePort, int blockNumber, byte[] fileData) {
+  public DataPacket(InetAddress remoteHost, int remotePort, int blockNumber, 
+      byte[] fileData) {
     super(remoteHost, remotePort);
+    
+    // if block number is bigger than what 2 bytes can represent
+    if (blockNumber > Math.pow(2, 16)) {
+      throw new RuntimeException("Block number is too big (max " 
+            + Math.pow(2,  16) + "): " + blockNumber);
+    }
+    
     this.blockNumber = blockNumber;
     this.fileData = fileData;
   }
@@ -19,12 +28,18 @@ public class DataPacket extends Packet {
   public byte[] getPacketData() {
     int len = 4 + fileData.length;
     ByteBuffer requestBuffer = ByteBuffer.allocate(len);
-    byte[] blockNumberBytes = ByteBuffer.allocate(4).putInt(blockNumber).array();
+    
+    // convert block number from int to byte array
+    BigInteger bigInt = BigInteger.valueOf(blockNumber);      
+    byte[] blockNumberBytes = bigInt.toByteArray();
+    if (blockNumberBytes.length == 1) {
+      blockNumberBytes = new byte[]{0, blockNumberBytes[0]};
+    }
     
     requestBuffer.put((byte) 0);
     requestBuffer.put((byte) 3);
-    requestBuffer.put(blockNumberBytes[2]);
-    requestBuffer.put(blockNumberBytes[3]);
+    requestBuffer.put(blockNumberBytes[0]);
+    requestBuffer.put(blockNumberBytes[1]);
     requestBuffer.put(fileData);
     
     return requestBuffer.array();

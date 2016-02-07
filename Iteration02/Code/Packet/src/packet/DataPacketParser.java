@@ -1,7 +1,7 @@
 package packet;
 
 
-import java.nio.ByteBuffer;
+import java.math.BigInteger;
 
 public class DataPacketParser {
   public DataPacket parse(Packet packet) throws InvalidDataPacketException {
@@ -17,8 +17,9 @@ public class DataPacketParser {
       throw new InvalidDataPacketException("Second position must be a 3 byte");
     }
     
-    byte[] blockNumberBytes = {0, 0, rawData[2], rawData[3]};
-    int blockNumber = ByteBuffer.wrap(blockNumberBytes).getInt();
+    byte[] blockNumberBytes = {rawData[2], rawData[3]};
+    BigInteger bigInt2 = new BigInteger(blockNumberBytes);
+    int blockNumber = bigInt2.intValue();
     
     int fileDataLength = rawData.length - 4;
     byte[] fileData = new byte[fileDataLength];
