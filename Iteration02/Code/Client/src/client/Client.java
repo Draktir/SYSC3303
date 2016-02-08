@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Scanner;
+import java.io.File;
 
 import file_io.FileReader;
 import file_io.FileWriter;
@@ -55,6 +56,15 @@ public class Client {
     Client c = new Client();
     int command;
 	
+    String file_name = null;
+    System.out.println("please enter the file name: \n");
+    file_name = sc.next( );
+	File f = new File(file_name);
+	while(!(f.exists() || f.isDirectory())) { 
+		System.out.println("please enter a valid and existing filename: \n");
+		file_name = sc.next( );
+	}
+	
   	do {
   		System.out.println("TFTP Client");
 	    System.out.println("  [ 1 ] Write file to server");
@@ -66,12 +76,12 @@ public class Client {
 	    
 	    switch (command) {
 	      case 1:
-	    	  c.sendFileToServer("testWriteFile.txt", "netAsCiI");
+	    	  c.sendFileToServer(file_name, "netAsCiI");
 	    	  System.out.println("[SYSTEM] Uploaded file testWriteFile.txt to server.");
 	    	  System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO: remove this
 	    	  break;
 	      case 2:
-	    	  c.downloadFileFromServer("testReadFile.txt", "ocTeT");
+	    	  c.downloadFileFromServer(file_name, "ocTeT");
 	    	  System.out.println("[SYSTEM] Downloaded file testReadFile.txt from server.");
 	    	  System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO: remove this
 	    	  break;
