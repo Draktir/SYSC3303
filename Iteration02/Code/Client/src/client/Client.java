@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Scanner;
 import java.io.File;
+import java.math.*;
 
 import file_io.FileReader;
 import file_io.FileWriter;
@@ -55,16 +56,23 @@ public class Client {
     Scanner sc = new Scanner(System.in);
     Client c = new Client();
     int command;
+    double file_size;
 	
     String file_name = null;
     System.out.println("please enter the file name: \n");
     file_name = sc.next( );
 	File f = new File(file_name);
-	while(!(f.exists() || f.isDirectory())) { 
-		System.out.println("please enter a valid and existing filename: \n");
-		file_name = sc.next( );
+	while(true){
+		while(!(f.exists() || f.isDirectory())) { 
+			System.out.println("please enter a valid and existing filename: \n");
+			file_name = sc.next( );
+			f = new File(file_name);
+		}
+		file_size = f.length();
+		if (!(file_size < (512*(Math.pow(2,16) - 1)))){
+			break;
+		}
 	}
-	
   	do {
   		System.out.println("TFTP Client");
 	    System.out.println("  [ 1 ] Write file to server");
