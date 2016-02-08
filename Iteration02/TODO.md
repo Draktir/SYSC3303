@@ -23,8 +23,8 @@
 
 ## DONE - tested
 7. ~~(P) Package Packet and File stuff into libraries for reuse (or something like that)~~
-5. (A) Improve client menu (let user enter any filename)
-  1. Check the file isn't too big, max size: (512 * 2^16) - 1 bytes
+5. ~~(A) Improve client menu (let user enter any filename)~~
+  ~~1. Check the file isn't too big, max size: (512 * 2^16) - 1 bytes~~
 
 
 # Deliverables for Iteration 2
