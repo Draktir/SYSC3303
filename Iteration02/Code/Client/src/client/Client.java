@@ -58,21 +58,31 @@ public class Client {
     int command;
     double file_size;
 	
+    
+    boolean fileValid = false;
     String file_name = null;
-    System.out.println("please enter the file name: \n");
-    file_name = sc.next( );
-	File f = new File(file_name);
-	while(true){
-		while(!(f.exists() || f.isDirectory())) { 
-			System.out.println("please enter a valid and existing filename: \n");
-			file_name = sc.next( );
-			f = new File(file_name);
-		}
-		file_size = f.length();
-		if (!(file_size < (512*(Math.pow(2,16) - 1)))){
-			break;
-		}
-	}
+    final double MAX_FILE_SIZE = 512 * (Math.pow(2,16) - 1);
+    
+    do {
+      System.out.println("please enter the file name: \n");
+      file_name = sc.next();
+      File f = new File(file_name);
+      
+      if (!f.exists() || f.isDirectory()) {
+        System.out.println("file does not exist or is a directory\n");
+        fileValid = false;
+        continue;
+      }
+      
+      if (f.length() > MAX_FILE_SIZE) {
+        System.out.println("file is too big");
+        fileValid = false;
+        continue;
+      }
+      
+      fileValid = true;
+    } while (!fileValid);
+	
   	do {
   		System.out.println("TFTP Client");
 	    System.out.println("  [ 1 ] Write file to server");
