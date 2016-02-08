@@ -12,6 +12,7 @@ package intermediate_host;
  */
 
 import java.io.IOException;
+import Configuration.*;
 import java.net.InetAddress;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
@@ -19,9 +20,10 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 public class IntermediateHost {
-	public static final int RECEIVE_PORT = 68; // This is the port used to receive packets from the client
-	public static final int SERVER_PORT = 69; // This is the port used to forward the packet to the server
-	
+	//public static final int RECEIVE_PORT = 68; // This is the port used to receive packets from the client
+	//public static final int SERVER_PORT = 69; // This is the port used to forward the packet to the server
+//	Configuration.inter_RECEIVE_PORT;
+//	Configuration.inter_SERVER_PORT; // change to the Configuration file 
 	private int serverPort;
 	
 	DatagramSocket srSocket, receiveSocket, clientSocket;
@@ -33,10 +35,11 @@ public class IntermediateHost {
 	 * defined within the class. 
 	 */
 	public IntermediateHost() {
-	  this.serverPort = SERVER_PORT;
+		
+	  this.serverPort = Configuration.inter_RECEIVE_PORT;
 	  try {
 	    srSocket = new DatagramSocket();
-			receiveSocket = new DatagramSocket(RECEIVE_PORT);
+			receiveSocket = new DatagramSocket(Configuration.inter_RECEIVE_PORT);
 		}
 		catch (SocketException e) {
 			e.printStackTrace();
