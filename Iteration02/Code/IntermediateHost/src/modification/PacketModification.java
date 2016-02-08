@@ -1,9 +1,9 @@
 package modification;
 
-public class Modification {
+public class PacketModification {
   protected int packetNumber;
 
-  public Modification(int packetNumber) {
+  public PacketModification(int packetNumber) {
     this.packetNumber = packetNumber;
   }
   

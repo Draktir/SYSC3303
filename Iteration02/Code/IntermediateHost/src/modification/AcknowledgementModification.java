@@ -2,7 +2,7 @@ package modification;
 
 import java.util.Arrays;
 
-public class AcknowledgementModification extends Modification {
+public class AcknowledgementModification extends PacketModification {
   private byte[] opcode = null;
   private byte[] blockNumber = null;
   
