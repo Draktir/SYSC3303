@@ -14,7 +14,7 @@ public class RequestParser {
     System.arraycopy(packet.getData(), 0, rawRequest, 0, len);
     
     if (rawRequest[0] != 0) {
-      throw new InvalidRequestException("Malformed packet. First byte is " + rawRequest[0] + " expected 0.");
+      throw new InvalidRequestException("Malformed packet: First byte is " + rawRequest[0] + " expected 0.");
     }
     
     byte requestType = rawRequest[1];

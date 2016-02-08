@@ -12,13 +12,13 @@ public class AcknowledgementParser {
     System.arraycopy(packet.getData(), 0, rawData, 0, len);
     
     if (rawData.length != 4) {
-      throw new InvalidAcknowledgementException("Packet must be exactly 4 bytes long");
+      throw new InvalidAcknowledgementException("Malformed Packet: packet is " + len + " bytes long, expected 4 bytes");
     }
     if (rawData[0] != 0) {
-      throw new InvalidAcknowledgementException("Packet must start with a 0 byte");
+      throw new InvalidAcknowledgementException("Malformed packet: first byte is " + rawData[0] + " expected 0");
     }
     if (rawData[1] != 4) {
-      throw new InvalidAcknowledgementException("Second position must be a 4 byte");
+      throw new InvalidAcknowledgementException("Invalid opcode: got 0" + rawData[1] + ", expected 03");
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};

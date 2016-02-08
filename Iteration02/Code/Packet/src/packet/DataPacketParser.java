@@ -12,16 +12,16 @@ public class DataPacketParser {
     System.arraycopy(packet.getData(), 0, rawData, 0, len);
     
     if (rawData.length > 516) {
-      throw new InvalidDataPacketException("Packet cannot be longer than 516 bytes");
+      throw new InvalidDataPacketException("Malformed Packet: packet is " + len + " bytes long, max: 516 bytes");
     }
     if (rawData.length < 4) {
-      throw new InvalidDataPacketException("Packet must be at least 4 bytes long");
+      throw new InvalidDataPacketException("Malformed Packet: packet is " + len + " bytes long, min: 4 bytes");
     }
     if (rawData[0] != 0) {
-      throw new InvalidDataPacketException("Packet must start with 0 byte");
+      throw new InvalidDataPacketException("Malformed packet: first byte is " + rawData[0] + " expected 0");
     }
     if (rawData[1] != 3) {
-      throw new InvalidDataPacketException("Second position must be a 3 byte");
+      throw new InvalidDataPacketException("Invalid opcode: got 0" + rawData[1] + ", expected 03");
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};

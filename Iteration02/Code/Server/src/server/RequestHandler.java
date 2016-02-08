@@ -84,7 +84,7 @@ class RequestHandler implements Runnable {
       receiveFileFromClient((WriteRequest) request);
     } else {
       // should never really get here
-      System.err.println("Could not identify request type. SOMETHING IS SERIOUSLY WRONG!");
+      System.err.println("Could not identify request type, but it was parsed. SOMETHING IS SERIOUSLY WRONG!");
       System.err.println(request);
       handlePacketError("Invalid request. Expected RRQ or WRQ.", requestPacket);
     }
@@ -142,14 +142,15 @@ class RequestHandler implements Runnable {
       try {
        ack = packetParser.parseAcknowledgement(responseDatagram);
       } catch (InvalidAcknowledgementException e) {
-        String errMsg = "Did not receive a valid ACK. Expected ACK with block #" + blockNumber;
+        
+        String errMsg = "Not a valid ACK. Expected ACK with block #" + blockNumber;
         handlePacketError(errMsg, responseDatagram);
         return;
       }
        
       // make sure the block number is correct
       if (ack.getBlockNumber() != blockNumber) {
-        handlePacketError("Acknowledgement had the wrong block#, expected block #" + blockNumber, 
+        handlePacketError("ACK had the wrong block number, expected block #" + blockNumber, 
             responseDatagram);
         return;
       }

@@ -16,13 +16,13 @@ public class ErrorPacketParser {
     System.arraycopy(packet.getData(), 0, rawData, 0, len);
     
     if (rawData.length < 5) {
-      throw new InvalidErrorPacketException("Packet must be at least 5 bytes long.");
+      throw new InvalidErrorPacketException("Malformed Packet: packet is " + len + " bytes long, min: 5 bytes");
     }
     if (rawData[0] != 0) {
-      throw new InvalidErrorPacketException("First byte must be 0.");
+      throw new InvalidErrorPacketException("Malformed packet: first byte is " + rawData[0] + " expected 0");
     }
     if (rawData[1] != 5) {
-      throw new InvalidErrorPacketException("Second byte must be 5.");
+      throw new InvalidErrorPacketException("Invalid opcode: got 0" + rawData[1] + ", expected 05");
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};
@@ -31,7 +31,7 @@ public class ErrorPacketParser {
     
     ErrorCode errorCode = ErrorCode.fromValue(errorCodeInt);
     if (errorCode == null) {
-      throw new InvalidErrorPacketException("Invalid error code: " + errorCodeInt);
+      throw new InvalidErrorPacketException("Invalid error code: " + rawData[2] + "" + rawData[3]);
     }
     
     int currentOffset = 4;
