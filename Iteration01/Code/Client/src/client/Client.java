@@ -15,6 +15,7 @@ package client;
 import packet.*;
 import client.FileReader;
 import client.FileWriter;
+import Configuration.*;
 
 import java.io.FileNotFoundException;
 import java.net.InetAddress;
@@ -23,7 +24,7 @@ import java.net.UnknownHostException;
 import java.util.Scanner;
 
 public class Client {
-  public static final int SERVER_PORT = 68;
+  //public static final int SERVER_PORT = 68;
   private ServerConnection serverConnection;
   private FileReader fileReader;
   private FileWriter fileWriter;
@@ -104,7 +105,7 @@ public class Client {
     
     WriteRequest req = new RequestBuilder()
         .setRemoteHost(remoteHost)
-        .setRemotePort(SERVER_PORT)
+        .setRemotePort(Configuration.client_SERVER_PORT)
         .setFilename(filename)
         .setMode(mode)
         .buildWriteRequest();
@@ -139,7 +140,7 @@ public class Client {
     
     ReadRequest req = new RequestBuilder()
         .setRemoteHost(remoteHost)
-        .setRemotePort(SERVER_PORT)
+        .setRemotePort(Configuration.client_SERVER_PORT)
         .setFilename(filename)
         .setMode(mode)
         .buildReadRequest();

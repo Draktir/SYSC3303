@@ -9,10 +9,11 @@ package server;
  */
 
 import java.net.SocketException;
+import Configuration.*;
 import java.util.Scanner;
 
 public class Server {
-	public static final int SERVER_PORT = 69;
+	//public static final int SERVER_PORT = 69;
 	public static enum Mode {TEST, NORMAL}; // TODO: implement
 	Mode currentMode;
 	
@@ -33,7 +34,7 @@ public class Server {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws InterruptedException {
-		Listener listener = new Listener(SERVER_PORT);
+		Listener listener = new Listener(Configuration.listener_SERVER_PORT);
 		Thread listenThread = new Thread(listener, "Listener");
 		listenThread.start();
 		
