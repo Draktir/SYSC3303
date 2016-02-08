@@ -20,8 +20,10 @@ import packet.InvalidRequestException;
 import packet.Packet;
 import packet.PacketParser;
 import packet.ReadRequest;
+import packet.Request;
 import packet.WriteRequest;
 import packet.ErrorPacket.ErrorCode;
+import packet.Request.RequestType;
 
 /**
  * The RequestHandler class handles requests received by Listener.
@@ -61,23 +63,23 @@ class RequestHandler implements Runnable {
     }
     
     PacketParser parser = new PacketParser();
-    Packet request = null;
+    Request request = null;
     
     // 1. parse the orignal client request
     try {
       request = parser.parseRequest(requestPacket);
     } catch (InvalidRequestException e) {
-      System.err.println("Received an invalid request.");
-      handlePacketError("Invalid request. Expected a RRQ or WRQ.", requestPacket);
-      System.out.println("Terminating this thread.");
+      String errMsg = "Invalid request: " + e.getMessage();
+      System.err.println(errMsg);
+      handlePacketError(errMsg, requestPacket);
       return;
     }
     
     // 2. determine the type of transfer
-    if (request instanceof ReadRequest) {
+    if (request.type() == RequestType.READ) {
       // initiate ReadRequest
       sendFileToClient((ReadRequest) request);
-    } else if (request instanceof WriteRequest) {
+    } else if (request.type() == RequestType.WRITE) {
       // initiate WriteRequest
       receiveFileFromClient((WriteRequest) request);
     } else {
@@ -87,7 +89,7 @@ class RequestHandler implements Runnable {
       handlePacketError("Invalid request. Expected RRQ or WRQ.", requestPacket);
     }
     
-    System.out.println("Terminating thread " + Thread.currentThread().getName());
+    System.out.println("Terminated thread " + Thread.currentThread().getName());
   }
   
   private void sendFileToClient(ReadRequest request) {

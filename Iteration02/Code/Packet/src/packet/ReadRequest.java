@@ -22,6 +22,11 @@ public class ReadRequest extends Request {
     
     return requestBuffer.array();
   }
+  
+  @Override
+  public RequestType type() {
+    return RequestType.READ;
+  }
 
   @Override
   public String toString() {

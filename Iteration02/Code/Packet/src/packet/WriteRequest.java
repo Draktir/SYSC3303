@@ -23,6 +23,11 @@ public class WriteRequest extends Request {
     
     return requestBuffer.array();
   }
+  
+  @Override
+  public RequestType type() {
+    return RequestType.WRITE;
+  }
 
   @Override
   public String toString() {

@@ -4,6 +4,8 @@ package packet;
 import java.net.InetAddress;
 
 public abstract class Request extends Packet {
+  public enum RequestType { READ, WRITE };
+  
   protected String filename;
   protected String mode;
   
@@ -17,6 +19,8 @@ public abstract class Request extends Packet {
     this.mode = mode.toLowerCase();
   }
 
+  public abstract RequestType type();
+  
   public String getFilename() {
     return filename;
   }
