@@ -142,15 +142,14 @@ class RequestHandler implements Runnable {
       try {
        ack = packetParser.parseAcknowledgement(responseDatagram);
       } catch (InvalidAcknowledgementException e) {
-        
-        String errMsg = "Not a valid ACK. Expected ACK with block #" + blockNumber;
+        String errMsg = "Not a valid ACK: " + e.getMessage();
         handlePacketError(errMsg, responseDatagram);
         return;
       }
        
       // make sure the block number is correct
       if (ack.getBlockNumber() != blockNumber) {
-        handlePacketError("ACK had the wrong block number, expected block #" + blockNumber, 
+        handlePacketError("ACK has the wrong block number, expected block #" + blockNumber, 
             responseDatagram);
         return;
       }
@@ -215,7 +214,7 @@ class RequestHandler implements Runnable {
       try {
         dataPacket = packetParser.parseDataPacket(receivedDatagram);
       } catch (InvalidDataPacketException e) {
-        String errMsg = "Did not receive a valid Data Packet. Expected Data packet with block #" + blockNumber;
+        String errMsg = "Not a valid Data Packet: " + e.getMessage();
         System.err.println(errMsg);
         handlePacketError(errMsg, receivedDatagram);
         return;
@@ -223,7 +222,7 @@ class RequestHandler implements Runnable {
       
       // make sure the block number is correct
       if (dataPacket.getBlockNumber() != blockNumber) {
-        String errMsg = "Data packet had the wrong block#, expected block #" + blockNumber;
+        String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
         System.err.println(errMsg);
         handlePacketError(errMsg, receivedDatagram);
         return;
@@ -244,14 +243,13 @@ class RequestHandler implements Runnable {
       // was this the last data packet?
       if (dataPacket.getFileData().length < 512) {
         // send last ACK
-        System.out.println("[SYSTEM] Sending ACK with block#" + blockNumber);
-        
         Acknowledgement lastAck = new AcknowledgementBuilder()
             .setRemoteHost(request.getRemoteHost())
             .setRemotePort(request.getRemotePort())
             .setBlockNumber(blockNumber)
             .buildAcknowledgement();
     
+        System.out.println("[SYSTEM] Sending ACK with block#" + blockNumber);
         printPacketInformation(ack);
         clientConnection.sendPacket(lastAck);
         
