@@ -140,7 +140,7 @@ public class Client {
     
     WriteRequest req = new RequestBuilder()
         .setRemoteHost(remoteHost)
-        .setRemotePort(Configuration.SERVER_PORT)
+        .setRemotePort(Configuration.INTERMEDIATE_PORT)
         .setFilename(filename)
         .setMode(mode)
         .buildWriteRequest();

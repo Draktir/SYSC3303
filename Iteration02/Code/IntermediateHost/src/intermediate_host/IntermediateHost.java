@@ -93,6 +93,8 @@ public class IntermediateHost {
       serviceTftpWrite((WriteRequest) request);
     }
     
+    System.out.println("File Transfer ended.");
+    
     clientSocket.close();
 	}
 	
@@ -191,7 +193,97 @@ public class IntermediateHost {
 
 	
 	public void serviceTftpWrite(WriteRequest request) {
-	  
+	  try {
+      serverSocket = new DatagramSocket();
+    } catch (SocketException e) {
+      e.printStackTrace();
+    }
+    
+    // send WriteRequest
+    byte[] requestData = request.getPacketData();
+    DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length,
+        request.getRemoteHost(), Configuration.SERVER_PORT);
+    
+    try {
+      serverSocket.send(requestDatagram);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return;
+    }
+    
+    int serverPort;
+    byte[] recvBuffer = new byte[1024];
+    
+    while (true) {
+      // wait for ack packet
+      DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
+      try {
+        serverSocket.receive(ackDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      
+      // parse data packet
+      Acknowledgement ack = null;
+      try {
+        ack = packetParser.parseAcknowledgement(ackDatagram);
+      } catch (InvalidPacketException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      serverPort = ackDatagram.getPort();
+      
+      System.out.println("Received ack:\n" + ack.toString());
+      
+      // forward to client
+      byte[] ackPacketRaw = ack.getPacketData();
+      DatagramPacket forwardPacket = new DatagramPacket(ackPacketRaw, ackPacketRaw.length,
+          ack.getRemoteHost(), clientPort);
+
+      try {
+        clientSocket.send(forwardPacket);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      // wait for Data Packet from client
+      DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
+      
+      try {
+        clientSocket.receive(dataPacketDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      // parse ACK
+      DataPacket dataPacket;
+      try {
+        dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
+      } catch (InvalidPacketException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      System.out.println("Received DataPacket:\n" + dataPacket.toString());
+      
+      // forward data packet to server
+      byte[] dataPacketData = dataPacket.getPacketData();
+      DatagramPacket forwardDataPacketDatagram = new DatagramPacket(dataPacketData, dataPacketData.length,
+          dataPacket.getRemoteHost(), serverPort);
+      
+      try {
+        serverSocket.send(forwardDataPacketDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      
+      //break;
+    }
+    
+    //serverSocket.close();
 	}
 	
 	/*public static void performFileTransfer() {
