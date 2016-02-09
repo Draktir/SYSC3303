@@ -22,14 +22,15 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Scanner;
+
+import Configuration.Configuration;
+
 import java.io.File;
-import java.math.*;
 
 import file_io.FileReader;
 import file_io.FileWriter;
 
 public class Client {
-  public static final int SERVER_PORT = 68;
   private ServerConnection serverConnection;
   private FileReader fileReader;
   private FileWriter fileWriter;
@@ -53,35 +54,10 @@ public class Client {
    * @param args
    */
   public static void main(String[] args) {
-    Scanner sc = new Scanner(System.in);
-    Client c = new Client();
+    Scanner scan = new Scanner(System.in);
+    Client client = new Client();
     int command;
-    double file_size;
-	
-    
-    boolean fileValid = false;
-    String file_name = null;
-    final double MAX_FILE_SIZE = 512 * (Math.pow(2,16) - 1);
-    
-    do {
-      System.out.println("please enter the file name: \n");
-      file_name = sc.next();
-      File f = new File(file_name);
-      
-      if (!f.exists() || f.isDirectory()) {
-        System.out.println("file does not exist or is a directory\n");
-        fileValid = false;
-        continue;
-      }
-      
-      if (f.length() > MAX_FILE_SIZE) {
-        System.out.println("file is too big");
-        fileValid = false;
-        continue;
-      }
-      
-      fileValid = true;
-    } while (!fileValid);
+    String fileName = "";
 	
   	do {
   		System.out.println("TFTP Client");
@@ -90,24 +66,52 @@ public class Client {
 	    System.out.println("  [ 0 ] Exit");
 	    System.out.print(" > ");
 	    
-	    command = sc.nextInt();
+	    command = scan.nextInt();
 	    
 	    switch (command) {
 	      case 1:
-	    	  c.sendFileToServer(file_name, "netAsCiI");
-	    	  System.out.println("[SYSTEM] Uploaded file testWriteFile.txt to server.");
+	        do {
+	          System.out.print("Please enter a file name: ");
+	          fileName = scan.next();
+	        } while (!client.validateFilename(fileName));
+	    	  client.sendFileToServer(fileName, "netAsCiI");
+	    	  System.out.println("[SYSTEM] Uploaded file " + fileName + " to server.");
 	    	  System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO: remove this
 	    	  break;
 	      case 2:
-	    	  c.downloadFileFromServer(file_name, "ocTeT");
-	    	  System.out.println("[SYSTEM] Downloaded file testReadFile.txt from server.");
+          do {
+            System.out.print("Please enter a file name: ");
+            fileName = scan.next();
+          } while (fileName == null || fileName.length() == 0);
+	    	  client.downloadFileFromServer(fileName, "ocTeT");
+	    	  System.out.println("[SYSTEM] Downloaded file " + fileName + " from server.");
 	    	  System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO: remove this
 	    	  break;
 	    }
 	  } while (command != 0);
 	
-	  sc.close();
+	  scan.close();
 	}
+  
+  public boolean validateFilename(String filename) {
+    final double MAX_FILE_SIZE = 512 * (Math.pow(2,16) - 1);
+    File f = new File(filename);
+    
+    if (!f.exists()) {
+      System.out.println("The file does not exist.");
+      return false;
+    }
+    if (f.isDirectory()) {
+      System.out.println("The filename you entered is a directory.");
+      return false;
+    }
+    if (f.length() > MAX_FILE_SIZE) {
+      System.out.println("The File is too big. size: " + f.length() + " max: " + MAX_FILE_SIZE);
+      return false;
+    }
+    
+    return true;
+  }
 
   
   /**
@@ -136,7 +140,7 @@ public class Client {
     
     WriteRequest req = new RequestBuilder()
         .setRemoteHost(remoteHost)
-        .setRemotePort(SERVER_PORT)
+        .setRemotePort(Configuration.SERVER_PORT)
         .setFilename(filename)
         .setMode(mode)
         .buildWriteRequest();
@@ -177,7 +181,7 @@ public class Client {
     
     ReadRequest req = new RequestBuilder()
         .setRemoteHost(remoteHost)
-        .setRemotePort(SERVER_PORT)
+        .setRemotePort(Configuration.INTERMEDIATE_PORT)
         .setFilename(filename)
         .setMode(mode)
         .buildReadRequest();
