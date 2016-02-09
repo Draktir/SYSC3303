@@ -12,6 +12,10 @@ public class ModificationMenu {
     Scanner scan = new Scanner(System.in);
     int menuSelection = -1;
     
+    
+    // TODO: Error code 5!!!
+    
+    
     // main menu
     System.out.println("TFTP Error Simulator");
     System.out.println("\nWhich type of packet do you want to modify.");

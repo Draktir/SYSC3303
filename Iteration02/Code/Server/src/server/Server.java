@@ -11,8 +11,9 @@ package server;
 import java.net.SocketException;
 import java.util.Scanner;
 
+import Configuration.Configuration;
+
 public class Server {
-	public static final int SERVER_PORT = 69;
 	public static enum Mode {TEST, NORMAL}; // TODO: implement
 	Mode currentMode;
 	
@@ -33,7 +34,7 @@ public class Server {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws InterruptedException {
-		Listener listener = new Listener(SERVER_PORT);
+		Listener listener = new Listener(Configuration.SERVER_PORT);
 		Thread listenThread = new Thread(listener, "Listener");
 		listenThread.start();
 		

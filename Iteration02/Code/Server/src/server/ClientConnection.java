@@ -83,6 +83,8 @@ public class ClientConnection {
       // ensure the client TID is the same
       if (!isClientTidValid(responseDatagram)) {
         System.err.println("Received packet with wrong TID");
+        System.err.println("  > Client:   " + responseDatagram.getAddress() + " " + responseDatagram.getPort());
+        System.err.println("  > Expected: " + clientAddress + " " + clientPort);
         // respond to the rogue client with an appropriate error packet
         ErrorPacket errPacket = new ErrorPacketBuilder()
             .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)

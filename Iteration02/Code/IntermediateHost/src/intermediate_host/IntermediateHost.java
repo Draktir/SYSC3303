@@ -12,44 +12,31 @@ package intermediate_host;
  */
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
+import Configuration.Configuration;
 import modification.*;
+import packet.Acknowledgement;
+import packet.DataPacket;
+import packet.InvalidPacketException;
+import packet.Packet;
+import packet.PacketParser;
+import packet.ReadRequest;
+import packet.Request;
+import packet.Request.RequestType;
+import packet.WriteRequest;
 
 public class IntermediateHost {
-	public static final int RECEIVE_PORT = 6800; // This is the port used to receive packets from the client
-	public static final int SERVER_PORT = 6900; // This is the port used to forward the packet to the server
-	
-	private int serverPort;
-	
-	DatagramSocket srSocket, receiveSocket, clientSocket;
-	DatagramPacket sendPacket, receivePacket;
-	
-	/**
-	 * Default IntermediateHost class constructor instantiates two
-	 * DatagramSockets, one of which uses the RECEIVE_PORT constant
-	 * defined within the class. 
-	 */
-	public IntermediateHost() {
-	  this.serverPort = SERVER_PORT;
-	  try {
-	    srSocket = new DatagramSocket();
-			receiveSocket = new DatagramSocket(RECEIVE_PORT);
-		}
-		catch (SocketException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-	}
-	
+	private DatagramSocket clientSocket;
+	private DatagramSocket serverSocket;
+	private PacketModification modification;
+	private int clientPort;
+	private PacketParser packetParser = new PacketParser();
 	
 	/**
 	 * Main method which creates an instance of IntermediateHost to 
@@ -59,16 +46,185 @@ public class IntermediateHost {
 	 */
 	public static void main(String[] args) {
 		IntermediateHost h = new IntermediateHost();
-		
-		// Do we need to be able to modify Error Packets?
-		// Can we use a GUI, since the IntermediateHost is not multi-threaded?
-		ModificationMenu modMenu = new ModificationMenu();
-		PacketModification modification = modMenu.show();
-    
-		while (true) {
-			h.sendAndReceiveRequest();
-		}
+		boolean exit;
+		Scanner scan = new Scanner(System.in);
+		do {
+		  h.go();
+		  System.out.print("Do you want to go again? (y/n) ");
+		  exit = !scan.next().equalsIgnoreCase("y");
+		} while (!exit);		
 	}
+	
+	
+	public void go() {
+	  // allow user to configure error simulation
+	  ModificationMenu modMenu = new ModificationMenu();
+    modification = modMenu.show();
+    
+    try {
+      clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
+    } catch (SocketException e1) {
+      e1.printStackTrace();
+      return;
+    }
+    
+    byte[] buffer = new byte[1024];
+    DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
+    
+    try {
+      clientSocket.receive(requestDatagram);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    
+    Request request = null;
+    try {
+      request = packetParser.parseRequest(requestDatagram);
+    } catch (InvalidPacketException e1) {
+      e1.printStackTrace();
+      return;
+    }
+    
+    clientPort = requestDatagram.getPort();
+    
+    if (request.type() == RequestType.READ) {
+      serviceTftpRead((ReadRequest) request);
+    } else if (request.type() == RequestType.WRITE) {
+      serviceTftpWrite((WriteRequest) request);
+    }
+    
+    clientSocket.close();
+	}
+	
+	public void serviceTftpRead(ReadRequest request) {
+	  try {
+      serverSocket = new DatagramSocket();
+    } catch (SocketException e) {
+      e.printStackTrace();
+    }
+    
+	  // send ReadRequest
+    byte[] requestData = request.getPacketData();
+    DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length,
+        request.getRemoteHost(), Configuration.SERVER_PORT);
+    try {
+      serverSocket.send(requestDatagram);
+    } catch (IOException e) {
+      e.printStackTrace();
+      return;
+    }
+    
+    int serverPort;
+    byte[] recvBuffer = new byte[1024];
+    
+    while (true) {
+      // wait for data packet
+      DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
+      try {
+        serverSocket.receive(dataPacketDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      
+      // parse data packet
+      DataPacket dataPacket = null;
+      try {
+        dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
+      } catch (InvalidPacketException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      serverPort = dataPacketDatagram.getPort();
+      
+      System.out.println("Received data packet:\n" + dataPacket.toString());
+      
+      // forward to client
+      byte[] dataPacketRaw = dataPacket.getPacketData();
+      DatagramPacket forwardPacket = new DatagramPacket(dataPacketRaw, dataPacketRaw.length,
+          dataPacket.getRemoteHost(), clientPort);
+
+      try {
+        clientSocket.send(forwardPacket);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      // wait for ACK from client
+      DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
+      
+      try {
+        clientSocket.receive(ackDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      // parse ACK
+      Acknowledgement ack;
+      try {
+        ack = packetParser.parseAcknowledgement(ackDatagram);
+      } catch (InvalidPacketException e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      System.out.println("Received ACK: " + ack.toString());
+      
+      // forward ACK to server
+      byte[] ackData = ack.getPacketData();
+      DatagramPacket forwardAckDatagram = new DatagramPacket(ackData, ackData.length,
+          ack.getRemoteHost(), serverPort);
+      
+      try {
+        serverSocket.send(forwardAckDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      
+	    //break;
+    }
+	  
+	  //serverSocket.close();
+	}
+
+	
+	public void serviceTftpWrite(WriteRequest request) {
+	  
+	}
+	
+	/*public static void performFileTransfer() {
+	  byte[] buffer = new byte[1024];
+	  
+	  
+	  DatagramSocket clientRequestSocket;
+    try {
+      clientRequestSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
+    } catch (SocketException e1) {
+      e1.printStackTrace();
+      return;
+    }
+	  DatagramPacket clientRequestDatagram = new DatagramPacket(buffer, buffer.length);
+	  
+	  try {
+      clientRequestSocket.receive(clientRequestDatagram);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+	  
+	  int clientPort = clientRequestDatagram.getPort();
+	  
+	  try {
+      DatagramSocket serverSocket = new DatagramSocket();
+    } catch (SocketException e) {
+      e.printStackTrace();
+      return;
+    }
+	  
+	  serverSocket
+	}*/
+	
 	
 	/**
 	 * Receives requests from the receiveSocket and forwards them
@@ -76,7 +232,7 @@ public class IntermediateHost {
 	 * response to the client from the receiveSocket through a 
 	 * temporary socket.
 	 */
-	public void sendAndReceiveRequest() {
+	/*public void sendAndReceiveRequest() {
 		byte[] buffer = new byte[516];
 		byte[] data = null;
 		int clientPort = 0;
@@ -161,7 +317,7 @@ public class IntermediateHost {
   			System.exit(1);
   		}
 		}
-	}
+	}*/
 	
 	/**
 	 * Prints out request contents as a String and in bytes.
