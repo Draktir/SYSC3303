@@ -149,8 +149,9 @@ class RequestHandler implements Runnable {
        
       // make sure the block number is correct
       if (ack.getBlockNumber() != blockNumber) {
-        handlePacketError("ACK has the wrong block number, expected block #" + blockNumber, 
-            responseDatagram);
+        String errMsg = "ACK has the wrong block number, expected block #" + blockNumber;
+        System.err.println(errMsg);
+        handlePacketError(errMsg, responseDatagram);
         return;
       }
       
