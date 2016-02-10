@@ -205,7 +205,7 @@ public class IntermediateHost {
           ack = packetParser.parseAcknowledgement(ackDatagram);
         } catch (InvalidPacketException e) {
           // if this is not an error packet or it's an error packet != error code 5 we are done.
-          boolean isRecoverableError = handleParseError(dataPacketDatagram, serverSocket, dataPacketDatagram.getAddress(), serverPort);
+          boolean isRecoverableError = handleParseError(ackDatagram, serverSocket, ackDatagram.getAddress(), serverPort);
           if (!isRecoverableError) {
             transferEnded = true;
             break;
@@ -266,23 +266,40 @@ public class IntermediateHost {
     
     int serverPort;
     byte[] recvBuffer = new byte[1024];
+    boolean transferEnded = false;
     
     while (true) {
+      /*****************************************************************************************
+       * Receive ACK from server and forward to client
+       */
+      
       // wait for ack packet
       DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
-      try {
-        serverSocket.receive(ackDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      
-      // parse data packet
       Acknowledgement ack = null;
-      try {
-        ack = packetParser.parseAcknowledgement(ackDatagram);
-      } catch (InvalidPacketException e) {
-        e.printStackTrace();
-        return;
+      
+      do {
+        try {
+          serverSocket.receive(ackDatagram);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+        
+        // parse data packet
+        try {
+          ack = packetParser.parseAcknowledgement(ackDatagram);
+        } catch (InvalidPacketException e) {
+          // if this is not an error packet or it's an error packet != error code 5 we are done.
+          boolean isRecoverableError = handleParseError(ackDatagram, clientSocket, ackDatagram.getAddress(), clientPort);
+          if (!isRecoverableError) {
+            transferEnded = true;
+            break;
+          }
+          ack = null;
+        }
+      } while (ack == null);
+      
+      if (transferEnded) {
+        break;
       }
       
       serverPort = ackDatagram.getPort();
@@ -301,23 +318,41 @@ public class IntermediateHost {
         return;
       }
       
+      
+      /*****************************************************************************************
+       * Receive DataPacket from client and forward to server
+       */
+      
       // wait for Data Packet from client
       DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
+      DataPacket dataPacket = null;
       
-      try {
-        clientSocket.receive(dataPacketDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-        return;
-      }
+      do {
+
+        try {
+          clientSocket.receive(dataPacketDatagram);
+        } catch (IOException e) {
+          e.printStackTrace();
+          return;
+        }
+        
+        // parse ACK
+        try {
+          dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
+        } catch (InvalidPacketException e) {
+          // if this is not an error packet or it's an error packet != error code 5 we are done.
+          boolean isRecoverableError = handleParseError(dataPacketDatagram, serverSocket, 
+              dataPacketDatagram.getAddress(), serverPort);
+          if (!isRecoverableError) {
+            transferEnded = true;
+            break;
+          }
+          dataPacket = null;
+        }  
+      } while (dataPacket == null);
       
-      // parse ACK
-      DataPacket dataPacket;
-      try {
-        dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
-      } catch (InvalidPacketException e) {
-        e.printStackTrace();
-        return;
+      if (transferEnded) {
+        break;
       }
       
       System.out.println("Received DataPacket:\n" + dataPacket.toString());
