@@ -22,8 +22,13 @@ public class FileWriter {
     this.filename = filename;
     
     File f = new File(filename);
+    
+    
+    // TODO: For this iteration simply delete the file if it exists
+    // for the next iteration we need to send an error in this case
     if (f.exists()) {
-      throw new FileAlreadyExistsException(filename);
+      f.delete();
+      //throw new FileAlreadyExistsException(filename);
     }
     
     // create the file

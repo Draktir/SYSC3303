@@ -3,13 +3,17 @@ package modification;
 import java.util.Arrays;
 import java.util.List;
 
-public class PacketModification {
+import packet.Packet;
+
+public abstract class PacketModification {
   protected int packetNumber;
 
   public PacketModification(int packetNumber) {
     this.packetNumber = packetNumber;
   }
 
+  public abstract byte[] apply(Packet packet);
+  
   public int getPacketNumber() {
     return packetNumber;
   }

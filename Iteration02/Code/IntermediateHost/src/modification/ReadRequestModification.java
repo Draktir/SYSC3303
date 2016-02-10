@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import packet.Packet;
 import packet.ReadRequest;
 
 public class ReadRequestModification extends PacketModification {
@@ -17,7 +18,13 @@ public class ReadRequestModification extends PacketModification {
     super(packetNumber);
   }
   
-  public byte[] apply(ReadRequest readRequest) {
+  public byte[] apply(Packet packet) {
+    ReadRequest readRequest = (ReadRequest) packet;
+
+    System.out.println("Applying modification: ");
+    System.out.println(" - Original:     " + readRequest.toString());
+    System.out.println(" - Modification: " + this.toString());
+    
     List<Byte> modified = new ArrayList<>();
     
     if (opcode != null) {

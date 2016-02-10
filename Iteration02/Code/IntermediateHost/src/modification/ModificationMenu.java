@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import intermediate_host.PacketModifier;
+
 public class ModificationMenu {
 
-  public PacketModification show() {
-    List<PacketModification> modifications = new ArrayList<>();
+  public PacketModifier show() {
+    PacketModifier modifier = new PacketModifier();
     Scanner scan = new Scanner(System.in);
     int menuSelection = -1;
     
@@ -33,7 +35,8 @@ public class ModificationMenu {
     /*
     
     // ReadRequest
-    System.out.print("\nWhich one of the ReadRequests do you want to modify? #");
+    
+    // we always modify the first read request
     
     System.out.println("Which field do you want to modify?");
     System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
@@ -44,8 +47,9 @@ public class ModificationMenu {
     System.out.println(" > ");
     
     // WriteRequest
-    System.out.print("\nWhich one of the WriteRequests do you want to modify? #");
     
+    // we always modify the first write request
+ 
     System.out.println("Which field do you want to modify?");
     System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
     System.out.println("  [ 2 ] Filename");
@@ -64,7 +68,6 @@ public class ModificationMenu {
     System.out.println("  [ 3 ] Data");
     System.out.println(" > ");
     */
-    
     
     if (menuSelection == 4) {
       int packetNumber;
@@ -117,7 +120,12 @@ public class ModificationMenu {
           case 2:
             System.out.print("Enter your int: ");
             BigInteger newInt = BigInteger.valueOf(scan.nextInt());
-            modValue = new byte[] { newInt.byteValue() };
+            modValue = newInt.toByteArray();
+            if (modValue.length == 1) {
+              modValue = new byte[] {0, modValue[0]};
+            } else {
+              modValue = new byte[] {modValue[0], modValue[1]};
+            }
             break;
             
           case 3:
@@ -150,8 +158,9 @@ public class ModificationMenu {
         System.out.println("\n");
       }
       
-      return ackMod;
+      modifier.setAckModification(ackMod);      
     }
-    return null;
+    
+    return modifier;
   }
 }

@@ -2,6 +2,8 @@ package modification;
 
 import java.util.Arrays;
 
+import packet.Packet;
+
 public class WriteRequestModification extends PacketModification {
   byte[] opcode = null;
   byte[] filename = null;
@@ -13,6 +15,12 @@ public class WriteRequestModification extends PacketModification {
     super(packetNumber);
   }
 
+  @Override
+  public byte[] apply(Packet packet) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+  
   public byte[] getOpcode() {
     return opcode;
   }
