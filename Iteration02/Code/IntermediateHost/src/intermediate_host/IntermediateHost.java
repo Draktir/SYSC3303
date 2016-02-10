@@ -53,6 +53,7 @@ public class IntermediateHost {
 		  System.out.print("Do you want to go again? (y/n) ");
 		  exit = !scan.next().equalsIgnoreCase("y");
 		} while (!exit);		
+		scan.close();
 	}
 	
 	
@@ -99,6 +100,11 @@ public class IntermediateHost {
 	}
 	
 	public void serviceTftpRead(ReadRequest request) {
+	  // set up our packet counters
+	  int packetCount = 0;
+	  int ackCount = 0;
+	  int dataCount = 0;
+	  
 	  try {
       serverSocket = new DatagramSocket();
     } catch (SocketException e) {
@@ -191,7 +197,6 @@ public class IntermediateHost {
 	  //serverSocket.close();
 	}
 
-	
 	public void serviceTftpWrite(WriteRequest request) {
 	  try {
       serverSocket = new DatagramSocket();

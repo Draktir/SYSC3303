@@ -1,6 +1,10 @@
 package modification;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
+import packet.ReadRequest;
 
 public class ReadRequestModification extends PacketModification {
   byte[] opcode = null;
@@ -11,6 +15,42 @@ public class ReadRequestModification extends PacketModification {
   
   public ReadRequestModification(int packetNumber) {
     super(packetNumber);
+  }
+  
+  public byte[] apply(ReadRequest readRequest) {
+    List<Byte> modified = new ArrayList<>();
+    
+    if (opcode != null) {
+      modified.addAll(PacketModification.byteArrayToList(opcode));
+    } else {
+      modified.addAll(PacketModification.byteArrayToList(readRequest.getOpcode()));
+    }
+    
+    if (filename != null) {
+      modified.addAll(PacketModification.byteArrayToList(filename));
+    } else {
+      modified.addAll(PacketModification.byteArrayToList(readRequest.getFilename().getBytes()));
+    }
+    
+    if (zeroByteAfterFilename != -1) {
+      modified.add(new Byte(zeroByteAfterFilename));
+    } else {
+      modified.add(new Byte((byte) 0));
+    }
+    
+    if (mode != null) {
+      modified.addAll(PacketModification.byteArrayToList(mode));
+    } else {
+      modified.addAll(PacketModification.byteArrayToList(readRequest.getMode().getBytes()));
+    }
+    
+    if (zeroByteAfterMode != -1) {
+      modified.add(new Byte(zeroByteAfterFilename));
+    } else {
+      modified.add(new Byte((byte) 0));
+    }
+    
+    return PacketModification.byteListToArray(modified);
   }
   
   public byte[] getOpcode() {
