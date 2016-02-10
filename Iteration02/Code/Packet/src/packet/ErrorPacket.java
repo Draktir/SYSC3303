@@ -59,5 +59,31 @@ public class ErrorPacket extends Packet {
     
     return packetBuffer.array();
   }
+  
+  @Override
+  public byte[] getOpcode() {
+    return new byte[] {0, 5};
+  }
 
+  public ErrorCode getErrorCode() {
+    return errorCode;
+  }
+
+  public void setErrorCode(ErrorCode errorCode) {
+    this.errorCode = errorCode;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
+  @Override
+  public String toString() {
+    return "ErrorPacket [errorCode=" + errorCode + ", message=" + message + ", remoteHost=" + remoteHost
+        + ", remotePort=" + remotePort + "]";
+  }
 }

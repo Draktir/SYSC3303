@@ -28,7 +28,12 @@ public class WriteRequest extends Request {
   public RequestType type() {
     return RequestType.WRITE;
   }
-
+  
+  @Override
+  public byte[] getOpcode() {
+    return new byte[] {0, 2};
+  }
+  
   @Override
   public String toString() {
     return "WriteRequest [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="

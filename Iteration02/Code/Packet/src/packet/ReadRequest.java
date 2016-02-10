@@ -29,6 +29,11 @@ public class ReadRequest extends Request {
   }
 
   @Override
+  public byte[] getOpcode() {
+    return new byte[] {0, 1};
+  }
+  
+  @Override
   public String toString() {
     return "ReadRequest [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
         + remotePort + ", localHost=" + "]";

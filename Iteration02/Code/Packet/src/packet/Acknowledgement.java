@@ -38,6 +38,11 @@ public class Acknowledgement extends Packet {
     return requestBuffer.array();
   }
 
+  @Override
+  public byte[] getOpcode() {
+    return new byte[] {0, 4};
+  }
+  
   public int getBlockNumber() {
     return blockNumber;
   }

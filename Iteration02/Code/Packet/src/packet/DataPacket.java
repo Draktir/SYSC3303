@@ -43,6 +43,11 @@ public class DataPacket extends Packet {
     
     return requestBuffer.array();
   }
+  
+  @Override
+  public byte[] getOpcode() {
+    return new byte[] {0, 3};
+  }
 
   public int getBlockNumber() {
     return blockNumber;

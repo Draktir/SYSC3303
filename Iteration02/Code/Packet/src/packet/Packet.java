@@ -13,6 +13,7 @@ public abstract class Packet {
   }
   
   public abstract byte[] getPacketData();
+  public abstract byte[] getOpcode();
 
   public InetAddress getRemoteHost() {
     return remoteHost;
