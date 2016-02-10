@@ -49,6 +49,7 @@ class Listener implements Runnable {
         receiveSocket.receive(receivePacket);
       }
       catch (IOException e) {
+    	System.out.println("[SYSTEM] Listening failed exit!");
         System.exit(1);
       }
       
