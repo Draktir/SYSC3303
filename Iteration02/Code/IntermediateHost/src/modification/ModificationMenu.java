@@ -30,6 +30,104 @@ public class ModificationMenu {
     
     menuSelection = scan.nextInt();
     
+    
+    if(menuSelection == 1) {
+    	// ReadRequest
+        // we always modify the first read request
+        ReadRequestModification readReqMode = new ReadRequestModification(); 
+        int fieldSelection = -1;
+        while (fieldSelection != 0) {
+            System.out.println("Which field do you want to modify?");
+            System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
+            System.out.println("  [ 2 ] Filename");
+            System.out.println("  [ 3 ] zero-byte after filename");
+            System.out.println("  [ 4 ] Mode");
+            System.out.println("  [ 5 ] zero-byte after mode");
+            System.out.println("  [ 0 ] Done");
+            System.out.println(" > ");
+          
+          fieldSelection = scan.nextInt();
+          
+          if (fieldSelection == 0){
+            break;
+          }
+          
+          System.out.println("How do you want to modify the field?");
+          System.out.println("  [ 1 ] Replace with bytes");
+          System.out.println("  [ 2 ] Replace with int");
+          System.out.println("  [ 3 ] Replace with string");
+          System.out.println("  [ 4 ] Remove field");
+          System.out.print(" > ");
+           
+          int modType = scan.nextInt(); 
+          byte[] modValue;
+          
+          Scanner modScanner = new Scanner(System.in);
+          
+          switch (modType) {
+            case 1:
+              System.out.print("Enter bytes separated by spaces: ");
+              String bytesStr = modScanner.nextLine();
+              
+              String[] splitBytes = bytesStr.split(" ");
+              modValue = new byte[splitBytes.length];
+              
+              for (int i = 0; i < splitBytes.length; i++) {
+                BigInteger integer = new BigInteger(splitBytes[i]);
+                modValue[i] = integer.byteValue();
+              }
+              break;
+              
+            case 2:
+              System.out.print("Enter your int: ");
+              BigInteger newInt = BigInteger.valueOf(scan.nextInt());
+              modValue = newInt.toByteArray();
+              if (modValue.length == 1) {
+                modValue = new byte[] {0, modValue[0]};
+              } else {
+                modValue = new byte[] {modValue[0], modValue[1]};
+              }
+              break;
+              
+            case 3:
+              System.out.print("Enter your string: ");
+              String str = scan.nextLine();
+              modValue = str.getBytes();
+              break;
+              
+            case 4:
+              modValue = new byte[0];
+              break;
+              
+            default:
+              System.err.println("Invalid selection");
+              continue;
+          }
+
+          switch (fieldSelection) {
+            case 1:
+            	readReqMode.setOpcode(modValue);
+              break;
+            case 2:
+            	readReqMode.setFilename(modValue);
+              break;
+            case 3:
+//            	readReqMode.setZeroByteAfterFilename(modValue);TODO: wait for P change the function
+            case 4:
+            	readReqMode.setMode(modValue);
+            case 5:
+            	readReqMode.setMode(modValue);
+//            	readReqMode.setZeroByteAfterMode(modValue);TODO: wait for P change the function            	
+            default:
+              System.err.println("Invalid field selection");
+              break;
+          }
+          System.out.println(readReqMode);
+          System.out.println("\n");
+        }    	
+    }
+    
+    
     /*
     
     // ReadRequest
