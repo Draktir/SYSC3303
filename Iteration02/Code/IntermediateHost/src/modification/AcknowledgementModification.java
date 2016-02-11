@@ -18,6 +18,10 @@ public class AcknowledgementModification extends PacketModification {
 
   @Override
   public byte[] apply(Packet packet) {
+    if (super.tidModification != null) {
+      super.performTidModification(packet);
+    }
+    
     Acknowledgement ackPacket = (Acknowledgement) packet;
     List<Byte> modified = new ArrayList<>();
     
@@ -43,6 +47,10 @@ public class AcknowledgementModification extends PacketModification {
         bnBytes = new byte[] {bnBytes[bnBytes.length - 2], bnBytes[bnBytes.length - 1]};
       }
       modified.addAll(PacketModification.byteArrayToList(bnBytes));
+    }
+    
+    if (appendToEnd != null) {
+      modified.addAll(PacketModification.byteArrayToList(appendToEnd));
     }
     
     return PacketModification.byteListToArray(modified);

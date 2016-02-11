@@ -98,7 +98,8 @@ class RequestHandler implements Runnable {
     try {
       fileReader = new FileReader(request.getFilename());
     } catch (FileNotFoundException e) {
-      // TODO Send an Error (FILE_NOT_FOUND)
+      System.err.println("[SYSTEM] opening " + request.getFilename() + " for reading failed. "
+      		+ " File not found!");// TODO Send an Error (FILE_NOT_FOUND
       e.printStackTrace();
       return;
     }
@@ -175,10 +176,13 @@ class RequestHandler implements Runnable {
     try {
       fileWriter = new FileWriter(request.getFilename());
     } catch (FileAlreadyExistsException e) {
-      // TODO Send error FILE_ALREADY_EXISTS
+      System.err.println("[SYSTEM] opening " + request.getFilename() + " for writing failed."
+      		+ " File already exists!");// TODO Send error FILE_ALREADY_EXISTS
       e.printStackTrace();
       return;
     } catch (IOException e) {
+    	System.err.println("[SYSTEM] opening " + request.getFilename() + " for writing failed."
+          		+ " Disk is full!");
       // TODO Send error DISK_FULL_OR_ALLOCATION_EXCEEDED 
       e.printStackTrace();
       return;
@@ -236,6 +240,7 @@ class RequestHandler implements Runnable {
       try {
         fileWriter.writeBlock(dataPacket.getFileData());
       } catch (IOException e) {
+    	System.err.println("Disk is full or allocation exceeded");  
         // TODO send an DISK_FULL_OR_ALLOCATION_EXCEEDED error
         e.printStackTrace();
         return;

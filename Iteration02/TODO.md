@@ -3,28 +3,28 @@
 ## Outstanding tasks
 
 1. (L) Format debugging output using indentation (`\t`) and separate connections
-2. (R) Client error detection & handling
-  1. Increase buffer size to 517 bytes to check whether the packet is too long
+
 4. Intermediate Host
   1. Menu to pick an error scenario and which packet to modify
   2. Parse all packets and introduce error where applicable
   3. "We should be able to simulate any problem with any packet and any field within any packet."
-6. (L) Server shutdown needs to be fixed (probably needs to check Thread.currentThread().isInterrupted())
+
 9. (F) Add a Config class that has all constants (Ports, etc.)
 10. (A)Timing diagrams showing the error scenarios for this iteration
-11. NICE TO HAVE: add TEST mode
-
+11. ~~(P) Server error detection & handling~~ 
+  1. ~~Increase buffer size to 517 bytes to check whether the packet is too long~~
+  2. Detect if the client sends an error packet when the server messed up and handle it appropriately
 
 ## DONE - needs testing
-3. (P) Server error detection & handling 
-  1. Increase buffer size to 517 bytes to check whether the packet is too long
 8. (P) Review parser and builder to make sure all errors are caught
-
+2. Client error detection & handling
+  1. Increase buffer size to 517 bytes to check whether the packet is too long
 
 ## DONE - tested
 7. ~~(P) Package Packet and File stuff into libraries for reuse (or something like that)~~
 5. ~~(A) Improve client menu (let user enter any filename)~~
   ~~1. Check the file isn't too big, max size: (512 * 2^16) - 1 bytes~~
+6. (L) Server shutdown needs to be fixed (program does not "terminate", but no longer listens for new connections, and will allow current transfers to finish)
 
 
 # Deliverables for Iteration 2
