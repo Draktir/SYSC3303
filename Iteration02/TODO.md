@@ -3,8 +3,7 @@
 ## Outstanding tasks
 
 1. (L) Format debugging output using indentation (`\t`) and separate connections
-2. (R) Client error detection & handling
-  1. Increase buffer size to 517 bytes to check whether the packet is too long
+
 4. Intermediate Host
   1. Menu to pick an error scenario and which packet to modify
   2. Parse all packets and introduce error where applicable
@@ -19,7 +18,8 @@
 3. (P) Server error detection & handling 
   1. Increase buffer size to 517 bytes to check whether the packet is too long
 8. (P) Review parser and builder to make sure all errors are caught
-
+2. Client error detection & handling
+  1. Increase buffer size to 517 bytes to check whether the packet is too long
 
 ## DONE - tested
 7. ~~(P) Package Packet and File stuff into libraries for reuse (or something like that)~~
