@@ -49,6 +49,10 @@ public class AcknowledgementModification extends PacketModification {
       modified.addAll(PacketModification.byteArrayToList(bnBytes));
     }
     
+    if (appendToEnd != null) {
+      modified.addAll(PacketModification.byteArrayToList(appendToEnd));
+    }
+    
     return PacketModification.byteListToArray(modified);
   }
   

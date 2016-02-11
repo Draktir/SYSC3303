@@ -14,7 +14,7 @@ import packet.PacketParser;
 
 public abstract class PacketModification {
   protected int packetNumber;
-  protected byte[] appendToEnd;
+  protected byte[] appendToEnd = null;
   protected TidModification tidModification = null; 
 
   public PacketModification(int packetNumber) {

@@ -11,8 +11,8 @@ public class WriteRequestModification extends PacketModification {
   byte[] mode = null;
   byte zeroByteAfterMode = -1;
   
-  public WriteRequestModification(int packetNumber) {
-    super(packetNumber);
+  public WriteRequestModification() {
+    super(1);
   }
 
   @Override

@@ -14,8 +14,8 @@ public class ReadRequestModification extends PacketModification {
   byte[] mode = null;
   byte zeroByteAfterMode = -1;
   
-  public ReadRequestModification(int packetNumber) {
-    super(packetNumber);
+  public ReadRequestModification() {
+    super(1);
   }
   
   public byte[] apply(Packet packet) {
@@ -60,6 +60,8 @@ public class ReadRequestModification extends PacketModification {
     } else {
       modified.add(new Byte((byte) 0));
     }
+    
+    if ()
     
     return PacketModification.byteListToArray(modified);
   }
