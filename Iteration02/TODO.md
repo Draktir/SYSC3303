@@ -11,11 +11,11 @@
 
 9. (F) Add a Config class that has all constants (Ports, etc.)
 10. (A)Timing diagrams showing the error scenarios for this iteration
-
+11. ~~(P) Server error detection & handling~~ 
+  1. ~~Increase buffer size to 517 bytes to check whether the packet is too long~~
+  2. Detect if the client sends an error packet when the server messed up and handle it appropriately
 
 ## DONE - needs testing
-3. (P) Server error detection & handling 
-  1. Increase buffer size to 517 bytes to check whether the packet is too long
 8. (P) Review parser and builder to make sure all errors are caught
 2. Client error detection & handling
   1. Increase buffer size to 517 bytes to check whether the packet is too long
