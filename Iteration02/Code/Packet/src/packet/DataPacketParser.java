@@ -28,6 +28,10 @@ public class DataPacketParser {
     BigInteger bigInt = new BigInteger(blockNumberBytes);
     int blockNumber = bigInt.intValue();
     
+    if (blockNumber <= 0) {
+      throw new InvalidDataPacketException("Invalid block number: " + blockNumber + ", must be greater than 0");
+    }
+    
     int fileDataLength = rawData.length - 4;
     byte[] fileData = new byte[fileDataLength];
     
