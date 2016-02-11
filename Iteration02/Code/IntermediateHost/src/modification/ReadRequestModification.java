@@ -19,6 +19,10 @@ public class ReadRequestModification extends PacketModification {
   }
   
   public byte[] apply(Packet packet) {
+    if (super.tidModification != null) {
+      super.performTidModification(packet);
+    }
+    
     ReadRequest readRequest = (ReadRequest) packet;
 
     System.out.println("Applying modification: ");

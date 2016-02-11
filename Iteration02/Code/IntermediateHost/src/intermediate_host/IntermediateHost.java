@@ -230,13 +230,6 @@ public class IntermediateHost {
       } catch (IOException e) {
         e.printStackTrace();
       }
-      
-      
-      // figure out if we're done
-      if (dataPacket != null && dataPacket.getBlockNumber() > 0 && dataPacket.getFileData().length < 512) {
-        System.out.println("\nFile Transfer is complete.");
-        transferEnded = true;
-      }      
     }
 	  
 	  serverSocket.close();
@@ -368,10 +361,14 @@ public class IntermediateHost {
         e.printStackTrace();
       }
       
-      //break;
+      // figure out if we're done
+      if (dataPacket != null && dataPacket.getBlockNumber() > 0 && dataPacket.getFileData().length < 512) {
+        System.out.println("\nFile Transfer is complete.");
+        transferEnded = true;
+      }
     }
     
-    //serverSocket.close();
+    serverSocket.close();
 	}
 	
 	private boolean handleParseError(DatagramPacket datagram, DatagramSocket socket, InetAddress recvHost, int recvPort) {

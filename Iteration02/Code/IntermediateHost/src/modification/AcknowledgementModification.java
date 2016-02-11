@@ -18,6 +18,10 @@ public class AcknowledgementModification extends PacketModification {
 
   @Override
   public byte[] apply(Packet packet) {
+    if (super.tidModification != null) {
+      super.performTidModification(packet);
+    }
+    
     Acknowledgement ackPacket = (Acknowledgement) packet;
     List<Byte> modified = new ArrayList<>();
     

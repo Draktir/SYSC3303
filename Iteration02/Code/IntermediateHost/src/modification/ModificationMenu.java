@@ -25,8 +25,6 @@ public class ModificationMenu {
     System.out.println("  [ 2 ] Write Request (WRQ)");
     System.out.println("  [ 3 ] Data Packet (DATA)");
     System.out.println("  [ 4 ] Acknowledgement (ACK)");
-    System.out.println("  [ 5 ] Error Packet (ERROR)");
-    System.out.println("  [ 6 ] Other (modify the i-th packet)");
     System.out.println("  [ 0 ] Make no modification");
     System.out.print(" > ");
     
@@ -82,6 +80,7 @@ public class ModificationMenu {
         System.out.println("Enter your modifications");
         System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
         System.out.println("  [ 2 ] Block Number (bytes 3 & 4)");
+        System.out.println("  [ 3 ] Append data to packet");
         System.out.println("  [ 0 ] Done");
         System.out.print(" > ");
         
@@ -150,6 +149,8 @@ public class ModificationMenu {
           case 2:
             ackMod.setBlockNumber(modValue);
             break;
+          case 3:
+            ackMod.setAppendToEnd(modValue);
           default:
             System.err.println("Invalid field selection");
             break;
