@@ -11,7 +11,6 @@
 
 9. (F) Add a Config class that has all constants (Ports, etc.)
 10. (A)Timing diagrams showing the error scenarios for this iteration
-11. NICE TO HAVE: add TEST mode
 
 
 ## DONE - needs testing
