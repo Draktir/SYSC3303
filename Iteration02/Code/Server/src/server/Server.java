@@ -40,18 +40,17 @@ public class Server {
 		
 		Scanner sc = new Scanner(System.in);
 		String command = null;
+		boolean shutdown = false;
 		
-		while (true) {
-			command = sc.nextLine();
-			if (command.equals("shutdown")) {
-			  try {
-          listener.requestStop();
-        } catch (SocketException e) {
-          System.out.println("Listener shutdown.");
-        }
-			  sc.close();
-			}
+		
+		while (!shutdown) {
+		  command = sc.nextLine();
+		    if (command.equals("shutdown")) {
+			  shutdown = true;
+		      listener.requestStop();
+		    }
 		}
+		
 	}
 }
 

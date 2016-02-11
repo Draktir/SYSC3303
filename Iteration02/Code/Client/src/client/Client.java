@@ -197,8 +197,8 @@ public class Client {
   private void performFileTransfer(Packet request) {
     PacketParser parser = new PacketParser();
     DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
-
-    do {
+    
+    do {    	
       Packet response;
       try {
         response = parser.parse(recvdDatagram);
