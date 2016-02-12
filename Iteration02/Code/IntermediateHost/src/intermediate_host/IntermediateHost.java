@@ -305,6 +305,7 @@ public class IntermediateHost {
     int serverPort;
     byte[] recvBuffer = new byte[1024];
     boolean transferEnded = false;
+    boolean receivedLastDataPacket = false;
 
     while (!transferEnded) {
       /*****************************************************************************************
@@ -369,6 +370,15 @@ public class IntermediateHost {
         e.printStackTrace();
         return;
       }
+      
+      
+      // figure out if we're done (i.e. we just sent the last ACK)
+      if (receivedLastDataPacket) {
+        log("");
+        log("File Transfer is complete.\n");
+        transferEnded = true;
+        break;
+      }
 
       /*****************************************************************************************
        * Receive DataPacket from client and forward to server
@@ -424,17 +434,13 @@ public class IntermediateHost {
 
       printPacketInformation(forwardDataPacketDatagram);
       
+      // figure out if this was the last data packet
+      receivedLastDataPacket = (dataPacket.getFileData().length < 512); 
+      
       try {
         serverSocket.send(forwardDataPacketDatagram);
       } catch (IOException e) {
         e.printStackTrace();
-      }
-
-      // figure out if we're done
-      if (dataPacket != null && dataPacket.getBlockNumber() > 0 && dataPacket.getFileData().length < 512) {
-        log("");
-        log("File Transfer is complete.\n");
-        transferEnded = true;
       }
     }
 

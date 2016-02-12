@@ -169,11 +169,11 @@ public class ModificationMenu {
           System.err.println("Invalid field selection");
           continue;
       }
-      
-      System.out.println("\n" + writeReqMod.toString());
-      System.out.println("\n");
     }
    
+    System.out.println("\n" + writeReqMod.toString());
+    System.out.println("\n");
+    
     return writeReqMod;
   }
   
