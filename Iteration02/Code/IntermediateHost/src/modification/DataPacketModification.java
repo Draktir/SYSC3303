@@ -26,9 +26,9 @@ public class DataPacketModification extends PacketModification {
     DataPacket dataPacket = (DataPacket) packet;
     List<Byte> modified = new ArrayList<>();
     
-    System.out.println("Applying modification: ");
-    System.out.println(" - Original:     " + dataPacket.toString());
-    System.out.println(" - Modification: " + this.toString());
+    System.out.println("\n[DATA-Modification] Applying modification: ");
+    System.out.println("  > Original:     " + dataPacket.toString());
+    System.out.println("  > Modification: " + this.toString() + "\n");
     
     if (opcode != null) {
       modified.addAll(PacketModification.byteArrayToList(opcode));
@@ -89,7 +89,8 @@ public class DataPacketModification extends PacketModification {
 
   @Override
   public String toString() {
-    return "DataPacketModification [opcode=" + Arrays.toString(opcode) + ", blockNumber=" + Arrays.toString(blockNumber)
-        + ", data=" + Arrays.toString(data) + ", packetNumber=" + packetNumber + "]";
+    return "DataPacketModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    blockNumber="
+        + Arrays.toString(blockNumber) + ",\n    data=" + Arrays.toString(data) + ",\n    packetNumber=" + packetNumber
+        + ",\n    appendToEnd=" + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + "\n]";
   }
 }

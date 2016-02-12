@@ -25,9 +25,9 @@ public class AcknowledgementModification extends PacketModification {
     Acknowledgement ackPacket = (Acknowledgement) packet;
     List<Byte> modified = new ArrayList<>();
     
-    System.out.println("Applying modification: ");
-    System.out.println(" - Original:     " + ackPacket.toString());
-    System.out.println(" - Modification: " + this.toString());
+    System.out.println("\n[ACK-Modification] Applying modification: ");
+    System.out.println("  > Original:     " + ackPacket.toString());
+    System.out.println("  > Modification: " + this.toString() + "\n");
     
     if (opcode != null) {
       modified.addAll(PacketModification.byteArrayToList(opcode));
@@ -74,7 +74,8 @@ public class AcknowledgementModification extends PacketModification {
 
   @Override
   public String toString() {
-    return "AcknowledgementModification [opcode=" + Arrays.toString(opcode) + ", blockNumber="
-        + Arrays.toString(blockNumber) + ", packetNumber=" + packetNumber + "]";
+    return "AcknowledgementModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    blockNumber="
+        + Arrays.toString(blockNumber) + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd="
+        + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + "\n]";
   }
 }

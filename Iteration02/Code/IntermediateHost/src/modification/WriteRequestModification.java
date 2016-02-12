@@ -26,9 +26,9 @@ public class WriteRequestModification extends PacketModification {
     
     WriteRequest writeRequest = (WriteRequest) packet;
 
-    System.out.println("Applying modification: ");
-    System.out.println(" - Original:     " + writeRequest.toString());
-    System.out.println(" - Modification: " + this.toString());
+    System.out.println("\n[WRQ-Modification] Applying modification: ");
+    System.out.println("  > Original:     " + writeRequest.toString());
+    System.out.println("  > Modification: " + this.toString() + "\n");
     
     List<Byte> modified = new ArrayList<>();
     
@@ -111,8 +111,10 @@ public class WriteRequestModification extends PacketModification {
 
   @Override
   public String toString() {
-    return "WriteRequestModification [opcode=" + Arrays.toString(opcode) + ", filename=" + Arrays.toString(filename)
-        + ", zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename) + ", mode=" + Arrays.toString(mode)
-        + ", zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode) + ", packetNumber=" + packetNumber + "]";
+    return "WriteRequestModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    filename="
+        + Arrays.toString(filename) + ",\n    zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename)
+        + ",\n    mode=" + Arrays.toString(mode) + ",\n    zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode)
+        + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd=" + Arrays.toString(appendToEnd)
+        + ",\n    tidModification=" + tidModification + "\n]";
   }
 }

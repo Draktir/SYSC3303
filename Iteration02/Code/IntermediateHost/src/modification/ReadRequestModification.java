@@ -27,8 +27,7 @@ public class ReadRequestModification extends PacketModification {
 
     System.out.println("\n[RRQ-Modification] Applying modification: ");
     System.out.println("  > Original:     " + readRequest.toString());
-    System.out.println("  > Modification: " + this.toString());
-    System.out.println();
+    System.out.println("  > Modification: " + this.toString() + "\n");
     
     List<Byte> modified = new ArrayList<>();
     
@@ -115,6 +114,6 @@ public class ReadRequestModification extends PacketModification {
         + Arrays.toString(filename) + ",\n    zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename)
         + ",\n    mode=" + Arrays.toString(mode) + ",\n    zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode)
         + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd=" + Arrays.toString(appendToEnd)
-        + ",\n    tidModification=" + tidModification.toString() + "\n]";
+        + ",\n    tidModification=" + tidModification + "\n]";
   }  
 }

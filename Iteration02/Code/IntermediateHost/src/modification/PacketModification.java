@@ -24,7 +24,7 @@ public abstract class PacketModification {
   public abstract byte[] apply(Packet packet, int recvPort);
   
   public void performTidModification(Packet packet, int recvPort) {
-    System.out.println("Sending packet with wrong TID: port " + tidModification.getPort());
+    System.out.println("[Modification] Sending packet with wrong TID: port " + tidModification.getPort());
     DatagramSocket tempSock = null;
     try {
       tempSock = new DatagramSocket(tidModification.getPort());
@@ -62,12 +62,12 @@ public abstract class PacketModification {
       errPacket = parser.parseErrorPacket(receiveDatagram);
     } catch (InvalidErrorPacketException e) {
       e.printStackTrace();
-      System.err.println("Did not receive an error packet. Expected an error, code 5.");
+      System.err.println("[Modification] Did not receive an error packet. Expected an error, code 5.");
       tempSock.close();
       return;
     }
     
-    System.out.println("Error packet received: " + errPacket.toString());
+    System.out.println("[Modification] Error packet received: \n" + errPacket.toString() + "\n");
     tempSock.close();
   }
   
