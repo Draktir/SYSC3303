@@ -3,17 +3,24 @@ package client;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
+import packet.ErrorPacket;
+import packet.ErrorPacketBuilder;
 import packet.Packet;
+import packet.ErrorPacket.ErrorCode;
 
 public class ServerConnection {
   private DatagramSocket serverSocket;
+  private InetAddress serverAddress;
+  private int serverPort;
 
-  public ServerConnection() throws SocketException {
+  public ServerConnection(Packet originalResponse) throws SocketException {
     this.serverSocket = new DatagramSocket();
+    this.serverAddress = originalResponse.getRemoteHost();
+    this.serverPort = originalResponse.getRemotePort();
   }
 
   /**
@@ -25,7 +32,10 @@ public class ServerConnection {
     try {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-      System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort() + " with length (bytes) " + data.length + ".");
+      
+      System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort());
+      Client.printPacketInformation(sendPacket);
+      
       serverSocket.send(sendPacket);
     } catch (UnknownHostException e) {
       e.printStackTrace();
@@ -45,7 +55,10 @@ public class ServerConnection {
   public DatagramPacket sendPacketAndReceive(Packet packet) {
     byte[] data = packet.getPacketData();
     DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-    System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort() + " with length (bytes) " + data.length + ".");
+    
+    System.out.println("[SERVER-CONNECTION] Sending packet to server on port " + packet.getRemotePort());
+    Client.printPacketInformation(sendPacket);
+    
     try {
       serverSocket.send(sendPacket);
     } catch (IOException e1) {
@@ -53,18 +66,58 @@ public class ServerConnection {
       return null;
     }
 
-    System.out.println("[SYSTEM] Waiting for response from server on port " + serverSocket.getLocalPort() + ".");
-    byte[] buffer = new byte[516];
-    DatagramPacket responsePacket = new DatagramPacket(buffer, 516);
-    try {
-      serverSocket.receive(responsePacket);
-    } catch (IOException e1) {
-      e1.printStackTrace();
-      return null;
-    }
-
-    System.out.println("\tReceived from server: " + Arrays.toString(buffer));
-    return responsePacket;
+    byte[] buffer = null;
+    DatagramPacket responseDatagram = null;
+    
+    do {
+      buffer = new byte[517];
+      responseDatagram = new DatagramPacket(buffer, 517);
+      System.out.println("[SERVER-CONNECTION] Waiting for response from server on port " + serverSocket.getLocalPort());
+      
+      try {
+        serverSocket.receive(responseDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+        return null;
+      }
+      
+      // ensure the client TID is the same
+      if (!isServerTidValid(responseDatagram)) {
+        System.err.println("[SERVER-CONNECTION] Received packet with wrong TID");
+        System.err.println("  > Server:   " + responseDatagram.getAddress() + " " + responseDatagram.getPort());
+        System.err.println("  > Expected: " + serverAddress + " " + serverPort);
+        // respond to the rogue client with an appropriate error packet
+        ErrorPacket errPacket = new ErrorPacketBuilder()
+            .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
+            .setMessage("Your request had an invalid TID.")
+            .setRemoteHost(responseDatagram.getAddress())
+            .setRemotePort(responseDatagram.getPort())
+            .buildErrorPacket();
+        
+        System.err.println("[SERVER-CONNECTION] Sending error to server with invalid TID\n" + errPacket.toString() + "\n");
+        
+        byte[] errData = errPacket.getPacketData();
+        DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
+            errPacket.getRemoteHost(), errPacket.getRemotePort());
+        
+        try {
+          serverSocket.send(errDatagram);
+        } catch (IOException e) {
+          e.printStackTrace();
+          System.err.println("[SERVER-CONNECTION] Error sending error packet to unknown server. Ignoring this error.");
+        }
+        responseDatagram = null;
+        
+        System.err.println("[SERVER-CONNECTION] Waiting for another packet.");
+      }
+      
+    } while (responseDatagram == null);
+    
+    return responseDatagram;
   }
 
+  private boolean isServerTidValid(DatagramPacket packet) {
+    return serverAddress.equals(packet.getAddress()) && packet.getPort() == serverPort;
+  }
+  
 }
