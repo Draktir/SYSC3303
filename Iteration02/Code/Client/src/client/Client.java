@@ -24,8 +24,6 @@ import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Scanner;
 
-import javax.xml.crypto.Data;
-
 import Configuration.Configuration;
 
 import java.io.File;
@@ -115,6 +113,10 @@ public class Client {
 		if (f.length() > MAX_FILE_SIZE) {
 			System.out.println("The File is too big. size: " + f.length() + " max: " + MAX_FILE_SIZE);
 			return false;
+		}
+		if (f.length() < 1) {
+		  System.out.println("The File is empty. Cannot send an empty file.");
+		  return false;
 		}
 
 		return true;
@@ -276,6 +278,11 @@ public class Client {
 
 		byte[] buffer = new byte[512];
 		int bytesRead = fileReader.readNextBlock(buffer);
+		
+		if (bytesRead < 0) {
+		  System.err.println("Could not read from the file: " + fileReader.getFilename());
+		  return null;
+		}
 
 		byte[] fileData = new byte[bytesRead];
 		System.arraycopy(buffer, 0, fileData, 0, bytesRead);
