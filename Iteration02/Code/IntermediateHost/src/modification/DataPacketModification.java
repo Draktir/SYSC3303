@@ -18,9 +18,9 @@ public class DataPacketModification extends PacketModification {
   }
 
   @Override
-  public byte[] apply(Packet packet) {
+  public byte[] apply(Packet packet, int recvPort) {
     if (super.tidModification != null) {
-      super.performTidModification(packet);
+      super.performTidModification(packet, recvPort);
     }
     
     DataPacket dataPacket = (DataPacket) packet;

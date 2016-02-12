@@ -21,9 +21,9 @@ public abstract class PacketModification {
     this.packetNumber = packetNumber;
   }
 
-  public abstract byte[] apply(Packet packet);
+  public abstract byte[] apply(Packet packet, int recvPort);
   
-  public void performTidModification(Packet packet) {
+  public void performTidModification(Packet packet, int recvPort) {
     System.out.println("Sending packet with wrong TID: port " + tidModification.getPort());
     DatagramSocket tempSock = null;
     try {
@@ -35,7 +35,7 @@ public abstract class PacketModification {
     
     byte[] data = packet.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(data, data.length,
-        packet.getRemoteHost(), packet.getRemotePort());
+        packet.getRemoteHost(), recvPort);
     
     try {
       tempSock.send(sendDatagram);

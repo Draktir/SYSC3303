@@ -117,7 +117,7 @@ public class IntermediateHost {
 
     // PacketModifier figures out if the packet needs to be modified, applies
     // the modification if applicable, and returns the packet data as a byte[].
-    byte[] requestData = packetModifier.process(request);
+    byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
 
     // send ReadRequest
     DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length, request.getRemoteHost(),
@@ -176,7 +176,7 @@ public class IntermediateHost {
       System.out.println("Received data packet:\n" + dataPacket.toString());
 
       // forward to client
-      byte[] dataPacketRaw = packetModifier.process(dataPacket);
+      byte[] dataPacketRaw = packetModifier.process(dataPacket, clientPort);
       DatagramPacket forwardPacket = new DatagramPacket(dataPacketRaw, dataPacketRaw.length, dataPacket.getRemoteHost(),
           clientPort);
 
@@ -225,7 +225,7 @@ public class IntermediateHost {
       System.out.println("Received ACK: " + ack.toString());
 
       // forward ACK to server
-      byte[] ackData = packetModifier.process(ack);
+      byte[] ackData = packetModifier.process(ack, serverPort);
       DatagramPacket forwardAckDatagram = new DatagramPacket(ackData, ackData.length, ack.getRemoteHost(), serverPort);
 
       try {
@@ -248,7 +248,7 @@ public class IntermediateHost {
     // PacketModifier figures out if the packet needs to be modified, applies
     // the modification if
     // applicable, and returns the packet data as a byte[].
-    byte[] requestData = packetModifier.process(request);
+    byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
 
     // send WriteRequest
     DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length, request.getRemoteHost(),
@@ -306,7 +306,7 @@ public class IntermediateHost {
       System.out.println("Received ack:\n" + ack.toString());
 
       // forward to client
-      byte[] ackPacketRaw = packetModifier.process(ack);
+      byte[] ackPacketRaw = packetModifier.process(ack, clientPort);
       DatagramPacket forwardPacket = new DatagramPacket(ackPacketRaw, ackPacketRaw.length, ack.getRemoteHost(),
           clientPort);
 
@@ -357,7 +357,7 @@ public class IntermediateHost {
       System.out.println("Received DataPacket:\n" + dataPacket.toString());
 
       // forward data packet to server
-      byte[] dataPacketData = packetModifier.process(dataPacket);
+      byte[] dataPacketData = packetModifier.process(dataPacket, serverPort);
       DatagramPacket forwardDataPacketDatagram = new DatagramPacket(dataPacketData, dataPacketData.length,
           dataPacket.getRemoteHost(), serverPort);
 

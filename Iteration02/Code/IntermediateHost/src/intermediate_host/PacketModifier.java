@@ -19,25 +19,25 @@ public class PacketModifier {
   int dataCount = 0;
   int ackCount = 0;
   
-  public byte[] process(ReadRequest readRequest) {
+  public byte[] process(ReadRequest readRequest, int recvPort) {
     packetCount++;
     
     if (rrqModification == null) {
       return readRequest.getPacketData();
     }
-    return rrqModification.apply(readRequest);
+    return rrqModification.apply(readRequest, recvPort);
   }
   
-  public byte[] process(WriteRequest writeRequest) {
+  public byte[] process(WriteRequest writeRequest, int recvPort) {
     packetCount++;
     
     if (wrqModification == null) {
       return writeRequest.getPacketData();
     }
-    return wrqModification.apply(writeRequest);
+    return wrqModification.apply(writeRequest, recvPort);
   }
   
-  public byte[] process(DataPacket dataPacket) {
+  public byte[] process(DataPacket dataPacket, int recvPort) {
     packetCount++;
     dataCount++;
     
@@ -46,12 +46,12 @@ public class PacketModifier {
     }
     
     if (dataModification.getPacketNumber() == dataCount) {
-      return dataModification.apply(dataPacket);
+      return dataModification.apply(dataPacket, recvPort);
     }
     return dataPacket.getPacketData();
   }
   
-  public byte[] process(Acknowledgement ackPacket) {
+  public byte[] process(Acknowledgement ackPacket, int recvPort) {
     packetCount++;
     ackCount++;
 
@@ -60,7 +60,7 @@ public class PacketModifier {
     }
     
     if (ackModification.getPacketNumber() == ackCount) {
-      return ackModification.apply(ackPacket);
+      return ackModification.apply(ackPacket, recvPort);
     }
     return ackPacket.getPacketData();
   }

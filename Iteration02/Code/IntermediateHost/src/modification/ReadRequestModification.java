@@ -18,9 +18,9 @@ public class ReadRequestModification extends PacketModification {
     super(1);
   }
   
-  public byte[] apply(Packet packet) {
+  public byte[] apply(Packet packet, int recvPort) {
     if (super.tidModification != null) {
-      super.performTidModification(packet);
+      super.performTidModification(packet, recvPort);
     }
     
     ReadRequest readRequest = (ReadRequest) packet;
