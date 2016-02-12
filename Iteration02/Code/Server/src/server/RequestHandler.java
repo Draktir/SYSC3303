@@ -187,19 +187,19 @@ class RequestHandler implements Runnable {
   }
   
   private void receiveFileFromClient(WriteRequest request) {
-    System.out.println("[SYSTEM] opening " + request.getFilename() + " for writing.");
+    log("Opening " + request.getFilename() + " for writing.");
     FileWriter fileWriter = null;
   
     try {
       fileWriter = new FileWriter(request.getFilename());
     } catch (FileAlreadyExistsException e) {
       // TODO Send error FILE_ALREADY_EXISTS
-      log("[SYSTEM] opening " + request.getFilename() + " for writing failed." + " File already exists!");
+      log("opening " + request.getFilename() + " for writing failed." + " File already exists!");
       e.printStackTrace();
       return;
     } catch (IOException e) {
       // TODO Send error DISK_FULL_OR_ALLOCATION_EXCEEDED
-      log("[SYSTEM] opening " + request.getFilename() + " for writing failed." + " Disk is full!");
+      log("opening " + request.getFilename() + " for writing failed." + " Disk is full!");
       e.printStackTrace();
       return;
     }
@@ -208,7 +208,7 @@ class RequestHandler implements Runnable {
     
     while (true) {
       //1. build an ACK
-      log("[SYSTEM] Sending ACK with block#" + blockNumber);
+      log("Sending ACK with block#" + blockNumber);
       
       Acknowledgement ack = new AcknowledgementBuilder()
           .setRemoteHost(request.getRemoteHost())
