@@ -32,349 +32,366 @@ import file_io.FileReader;
 import file_io.FileWriter;
 
 public class Client {
-	private ServerConnection serverConnection;
-	private FileReader fileReader;
-	private FileWriter fileWriter;
-	private boolean transferComplete = false;
+  final double MAX_FILE_SIZE = 512 * (Math.pow(2, 16) - 1); // 2 byte range for block numbers, less block number 0
+  private ServerConnection serverConnection;
+  private PacketParser packetParser = new PacketParser();
+  private FileReader fileReader;
+  private FileWriter fileWriter;
+  private boolean transferComplete = false;
+  
 
-	/**
-	 * Default Client constructor which instantiates the server Connection
-	 */
-	public Client() {
-		try {
-			serverConnection = new ServerConnection();
-		} catch (SocketException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-	}
+  /**
+   * Default Client constructor, instantiates the server Connection
+   */
+  public Client() {
+    try {
+      serverConnection = new ServerConnection();
+    } catch (SocketException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+  }
 
-	/**
-	 * Main method which creates an instance of Client.
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		Scanner scan = new Scanner(System.in);
-		Client client = new Client();
-		int command;
-		String fileName = "";
+  /**
+   * Main method which creates an instance of Client.
+   * 
+   * @param args
+   */
+  public static void main(String[] args) {
+    Scanner scan = new Scanner(System.in);
+    Client client = new Client();
+    int command;
+    String fileName = "";
 
-		do {
-			System.out.println("TFTP Client");
-			System.out.println("  [ 1 ] Write file to server");
-			System.out.println("  [ 2 ] Read file from server");
-			System.out.println("  [ 0 ] Exit");
-			System.out.print(" > ");
+    do {
+      System.out.println("TFTP Client");
+      System.out.println("  [ 1 ] Write file to server");
+      System.out.println("  [ 2 ] Read file from server");
+      System.out.println("  [ 0 ] Exit");
+      System.out.print(" > ");
 
-			command = scan.nextInt();
+      command = scan.nextInt();
 
-			switch (command) {
-			case 1:
-				do {
-					System.out.print("Please enter a file name: ");
-					fileName = scan.next();
-				} while (!client.validateFilename(fileName));
-				client.sendFileToServer(fileName, "netAsCiI");
-				System.out.println("[SYSTEM] Uploaded file " + fileName + " to server.");
-				System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO:
-																						// remove
-																						// this
-				break;
-			case 2:
-				do {
-					System.out.print("Please enter a file name: ");
-					fileName = scan.next();
-				} while (fileName == null || fileName.length() == 0);
-				client.downloadFileFromServer(fileName, "ocTeT");
-				System.out.println("[SYSTEM] Downloaded file " + fileName + " from server.");
-				System.out.println("[SYSTEM] Please restart the IntermediatHost now."); // TODO:
-																						// remove
-																						// this
-				break;
-			}
-		} while (command != 0);
+      switch (command) {
+      case 1:
+        do {
+          System.out.print("Please enter a file name: ");
+          fileName = scan.next();
+        } while (!client.validateFilename(fileName));
+        client.sendFileToServer(fileName, "netAsCiI");
+        break;
 
-		scan.close();
-	}
+      case 2:
+        do {
+          System.out.print("Please enter a file name: ");
+          fileName = scan.next();
+        } while (fileName == null || fileName.length() == 0);
+        client.downloadFileFromServer(fileName, "ocTeT");
+        break;
+      }
+    } while (command != 0);
 
-	public boolean validateFilename(String filename) {
-		final double MAX_FILE_SIZE = 512 * (Math.pow(2, 16) - 1);
-		File f = new File(filename);
+    scan.close();
+  }
 
-		if (!f.exists()) {
-			System.out.println("The file does not exist.");
-			return false;
-		}
-		if (f.isDirectory()) {
-			System.out.println("The filename you entered is a directory.");
-			return false;
-		}
-		if (f.length() > MAX_FILE_SIZE) {
-			System.out.println("The File is too big. size: " + f.length() + " max: " + MAX_FILE_SIZE);
-			return false;
-		}
-		if (f.length() < 1) {
-		  System.out.println("The File is empty. Cannot send an empty file.");
-		  return false;
-		}
+  public boolean validateFilename(String filename) {
+    File f = new File(filename);
 
-		return true;
-	}
+    if (!f.exists()) {
+      System.out.println("The file does not exist.");
+      return false;
+    }
+    if (f.isDirectory()) {
+      System.out.println("The filename you entered is a directory.");
+      return false;
+    }
+    if (f.length() > MAX_FILE_SIZE) {
+      System.out.println("The File is too big. size: " + f.length() + " max: " + MAX_FILE_SIZE);
+      return false;
+    }
+    if (f.length() < 1) {
+      System.out.println("The File is empty. Cannot send an empty file.");
+      return false;
+    }
 
-	/**
-	 * Initiates sending a file to the server (WriteRequest)
-	 * 
-	 * @param filename
-	 * @param mode
-	 */
-	private void sendFileToServer(String filename, String mode) {
-		transferComplete = false;
-		// open file for reading
-		try {
-			fileReader = new FileReader(filename);
-		} catch (FileNotFoundException e1) {
-			System.err.println("The file you're trying to send could not be fonud on this computer.");
-			return;
-		}
+    return true;
+  }
 
-		InetAddress remoteHost;
-		try {
-			remoteHost = InetAddress.getLocalHost();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return;
-		}
+  /**
+   * Initiates sending a file to the server (WriteRequest)
+   * 
+   * @param filename
+   * @param mode
+   */
+  private void sendFileToServer(String filename, String mode) {
+    transferComplete = false;
 
-		WriteRequest request = new RequestBuilder().setRemoteHost(remoteHost)
-				.setRemotePort(Configuration.INTERMEDIATE_PORT).setFilename(filename).setMode(mode).buildWriteRequest();
+    log("opening " + filename + " for reading");
+    // open file for reading
+    try {
+      fileReader = new FileReader(filename);
+    } catch (FileNotFoundException e1) {
+      log("ERROR: The file you're trying to send could not be found.");
+      return;
+    }
 
-		PacketParser parser = new PacketParser();
-		DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
-		
-		int blockNumber = 0;
-		
-		do {
-			Acknowledgement ack = null;
-			try {
-				ack = parser.parseAcknowledgement(recvdDatagram);
-			} catch (InvalidAcknowledgementException e) {
-				String errMsg = "Not a valid ACK: " + e.getMessage();
-				handlePacketError(errMsg, recvdDatagram);
-				return;
-			}
-			
-			if (ack.getBlockNumber() != blockNumber) {
-		        String errMsg = "ACK has the wrong block number, expected block #" + blockNumber;
-		        System.err.println(errMsg);
-		        handlePacketError(errMsg, recvdDatagram);
-		        return;
-		      }
+    InetAddress remoteHost;
+    try {
+      remoteHost = InetAddress.getLocalHost();
+    } catch (UnknownHostException e) {
+      e.printStackTrace();
+      return;
+    }
 
-			recvdDatagram = handleAcknowledgement(ack);
+    WriteRequest request = new RequestBuilder()
+        .setRemoteHost(remoteHost)
+        .setRemotePort(Configuration.INTERMEDIATE_PORT)
+        .setFilename(filename)
+        .setMode(mode)
+        .buildWriteRequest();
 
-			blockNumber++;
-			
-			// TODO: format error messages properly, they currently always end successfully regardless of error.
+    log("Sending Write Request to server on port " + Configuration.INTERMEDIATE_PORT);
+    log("Expecting ACK with block #0");
+    
+    DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
 
-			if (recvdDatagram != null) {
-				// printPacketInformation(recvdDatagram);
-			} else {
-				System.out.println("[SYSTEM] File successfully transferred.");
-			}
+    log("Packet received.");
+    printPacketInformation(recvdDatagram);
 
-		} while (!transferComplete);
+    int blockNumber = 0;
 
-		System.out.println("[SYSTEM] File transfer ended."); // TODO: this
-																// doesn't
-																// really need
-																// to be here.
-	}
+    do {
+      Acknowledgement ack = null;
+      try {
+        ack = packetParser.parseAcknowledgement(recvdDatagram);
+      } catch (InvalidAcknowledgementException e) {
+        String errMsg = "Not a valid ACK: " + e.getMessage();
+        log(errMsg);
+        handleParseError(errMsg, recvdDatagram);
+        return;
+      }
 
-	/**
-	 * Initiates downloading a file from the server (Read Request)
-	 * 
-	 * @param filename
-	 * @param mode
-	 */
-	public void downloadFileFromServer(String filename, String mode) {
-		transferComplete = false;
-		// create file for reading
-		try {
-			fileWriter = new FileWriter(filename);
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-			System.err.println("Could not create new file for downloading.");
-			return;
-		} catch (FileAlreadyExistsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+      if (ack.getBlockNumber() != blockNumber) {
+        String errMsg = "ACK block #" + ack.getBlockNumber() + "is wrong, expected block #" + blockNumber;
+        log(errMsg);
+        sendErrorPacket(errMsg, recvdDatagram);
+        return;
+      }
 
-		InetAddress remoteHost;
-		try {
-			remoteHost = InetAddress.getLocalHost();
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			return;
-		}
+      log("Received a valid ACK:\n" + ack.toString() + "\n");
+      
+      // now sending next block
+      blockNumber++;
+      
+      log("Reading block #" + blockNumber + " from file");
+      
+      byte[] buffer = new byte[512];
+      int bytesRead = fileReader.readNextBlock(buffer);
 
-		ReadRequest request = new RequestBuilder().setRemoteHost(remoteHost).setRemotePort(Configuration.INTERMEDIATE_PORT)
-				.setFilename(filename).setMode(mode).buildReadRequest();
+      if (bytesRead < 0) {
+        log("ERROR: Could not read from the file: " + fileReader.getFilename());
+        return;
+      }
+      
+      byte[] fileData = new byte[bytesRead];
+      System.arraycopy(buffer, 0, fileData, 0, bytesRead);
 
-		PacketParser parser = new PacketParser();
-		DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
-		
-		int blockNumber = 1;
-		
-		do {
-			DataPacket data = null;
-			try {
-				data = parser.parseDataPacket(recvdDatagram);
-			} catch (InvalidDataPacketException e) {
-				String errMsg = "Not a valid Data Packet: " + e.getMessage();
-				handlePacketError(errMsg, recvdDatagram);
-				return;
-			}
-			
-			if (data.getBlockNumber() != blockNumber) {
-		        String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
-		        System.err.println(errMsg);
-		        handlePacketError(errMsg, recvdDatagram);
-		        return;
-		      }
+      DataPacket dataPacket = new DataPacketBuilder()
+          .setRemoteHost(ack.getRemoteHost())
+          .setRemotePort(ack.getRemotePort())
+          .setBlockNumber(ack.getBlockNumber() + 1)
+          .setFileData(fileData)
+          .buildDataPacket();
+      
+      log("Sending Data Packet to server: \n" + dataPacket.toString() + "\n");
 
-			recvdDatagram = handleDataPacket(data);
-			
-			blockNumber++;
+      // Check if we have read the whole file
+      if (fileData.length < 512) {
+        log("Sending last data packet.");
+        fileReader.close();
 
-			// TODO: format error messages properly, they currently always end successfully regardless of error.
+        // send the last data packet
+        DatagramPacket responseDatagram = serverConnection.sendPacketAndReceive(dataPacket);
+        
+        try {
+          packetParser.parse(responseDatagram);
+        } catch (InvalidPacketException e) {
+          String errMsg = "Invalid ACK: " + e.getMessage();
+          log(errMsg);
+          handleParseError(errMsg, responseDatagram);
+          return;
+        }
+        
+        // we're gonna terminate the connection either way in this iteration
+        transferComplete = true;
+        break;
+      }
 
-			if (recvdDatagram != null) {
-				// printPacketInformation(recvdDatagram);
-			} else {
-				System.out.println("[SYSTEM] File successfully transferred.");
-			}
+      // send the data packet
+      recvdDatagram = serverConnection.sendPacketAndReceive(dataPacket);
+    } while (!transferComplete);
 
-		} while (!transferComplete);
+    log("File transfer successful.");
+  }
 
-		System.out.println("[SYSTEM] File transfer ended."); // TODO: this
-																// doesn't
-																// really need
-																// to be here.
-	}
+  /**
+   * Initiates downloading a file from the server (Read Request)
+   * 
+   * @param filename
+   * @param mode
+   */
+  public void downloadFileFromServer(String filename, String mode) {
+    transferComplete = false;
 
-	/**
-	 * Handles an incoming acknowledgement by sending the next file block
-	 * 
-	 * @param ack
-	 * @return
-	 */
-	private DatagramPacket handleAcknowledgement(Acknowledgement ack) {
-		System.out.println("\n\tACK received, block #" + ack.getBlockNumber());
+    log("Creating file " + filename + " for writing.");
+    
+    // create file for reading
+    try {
+      fileWriter = new FileWriter(filename);
+    } catch (FileNotFoundException e1) {
+      e1.printStackTrace();
+      log("ERROR: Could not create new file for downloading.");
+      return;
+    } catch (FileAlreadyExistsException e) {
+      log("ERROR: " + filename + " already exists on this machine.");
+      e.printStackTrace();
+      return;
+    } catch (IOException e) {
+      log("ERROR: " + e.getMessage());
+      e.printStackTrace();
+      return;
+    }
 
-		byte[] buffer = new byte[512];
-		int bytesRead = fileReader.readNextBlock(buffer);
-		
-		if (bytesRead < 0) {
-		  System.err.println("Could not read from the file: " + fileReader.getFilename());
-		  return null;
-		}
+    InetAddress remoteHost;
+    try {
+      remoteHost = InetAddress.getLocalHost();
+    } catch (UnknownHostException e) {
+      e.printStackTrace();
+      return;
+    }
 
-		byte[] fileData = new byte[bytesRead];
-		System.arraycopy(buffer, 0, fileData, 0, bytesRead);
+    ReadRequest request = new RequestBuilder()
+        .setRemoteHost(remoteHost)
+        .setRemotePort(Configuration.INTERMEDIATE_PORT)
+        .setFilename(filename)
+        .setMode(mode)
+        .buildReadRequest();
 
-		System.out.println("\n\tFile data length (bytes): " + bytesRead);
+    log("Sending Read Request to server.");
+    log("Expecting Data Packet with block #1");
+    
+    DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
 
-		DataPacket dataPacket = new DataPacketBuilder().setRemoteHost(ack.getRemoteHost())
-				.setRemotePort(ack.getRemotePort()).setBlockNumber(ack.getBlockNumber() + 1).setFileData(fileData)
-				.buildDataPacket();
+    int blockNumber = 1;
 
-		printPacketInformation(dataPacket);
+    do {
+      DataPacket dataPacket = null;
+      try {
+        dataPacket = packetParser.parseDataPacket(recvdDatagram);
+      } catch (InvalidDataPacketException e) {
+        String errMsg = "Not a valid Data Packet: " + e.getMessage();
+        log(errMsg);
+        handleParseError(errMsg, recvdDatagram);
+        return;
+      }
 
-		// Check if we have read the whole file
-		if (fileData.length < 512) {
-			System.out.println("[SYSTEM] Sending last data packet.");
-			transferComplete = true;
-			fileReader.close();
+      if (dataPacket.getBlockNumber() != blockNumber) {
+        String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
+        log(errMsg);
+        sendErrorPacket(errMsg, recvdDatagram);
+        return;
+      }
+      
+      log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
+      log("\tWriting file block# " + blockNumber);
+      
+      byte[] fileData = dataPacket.getFileData();
+      try {
+        fileWriter.writeBlock(fileData);
+      } catch (IOException e) {
+        log(e.getMessage());
+        e.printStackTrace();
+        return;
+      }
 
-			// send the last data packet
-			serverConnection.sendPacketAndReceive(dataPacket);
+      Acknowledgement ack = new AcknowledgementBuilder()
+          .setRemoteHost(dataPacket.getRemoteHost())
+          .setRemotePort(dataPacket.getRemotePort())
+          .setBlockNumber(dataPacket.getBlockNumber())
+          .buildAcknowledgement();
+      
+      log("Sending ACK:\n" + ack.toString() + "\n");
 
-			// TODO: We should make sure we get an ACK and resend the last data
-			// packet
-			// if it failed. Not needed for this iteration though.
-			return null;
-		}
+      // Check for the last data packet
+      if (fileData.length < 512) {
+        log("\tAcknowledging last data packet.");
+        transferComplete = true;
+        fileWriter.close();
+        // send the last ACK
+        serverConnection.sendPacket(ack);
+        break;
+      }
 
-		return serverConnection.sendPacketAndReceive(dataPacket);
-	}
+      recvdDatagram = serverConnection.sendPacketAndReceive(ack);
+      blockNumber++;      
+    } while (!transferComplete);
 
-	/**
-	 * Handles an incoming data packet by responding with an ACK
-	 * 
-	 * @param dataPacket
-	 * @return
-	 */
-	private DatagramPacket handleDataPacket(DataPacket dataPacket) {
-		System.out.println("\tDATA received, block #" + dataPacket.getBlockNumber());
+    log("File transfer successful.");
+  }
 
-		System.out.println("\tWriting file block# " + dataPacket.getBlockNumber());
-		byte[] fileData = dataPacket.getFileData();
-		try {
-			fileWriter.writeBlock(fileData);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+  private void handleParseError(String message, DatagramPacket packet) {
+    // first figure out whether datagram is an Error packet
+    ErrorPacket errPacket = null;
+    try {
+      errPacket = packetParser.parseErrorPacket(packet);
+    } catch (InvalidErrorPacketException e) {
+      // Nope, not an error packet, the client screwed up, send him an error
+      log("Invalid packet received. Sending error packet to server.\n");
+      sendErrorPacket(message, packet);
+      return;
+    }
 
-		Acknowledgement ack = new AcknowledgementBuilder().setRemoteHost(dataPacket.getRemoteHost())
-				.setRemotePort(dataPacket.getRemotePort()).setBlockNumber(dataPacket.getBlockNumber())
-				.buildAcknowledgement();
+    // yes, we got an error packet, so we (the server) screwed up.
+    log("Received an error packet: " + errPacket.getErrorCode() + "\n" + errPacket.toString() + "\n");
+    log("");
+    log("received ERROR " + errPacket.getErrorCode() + ": Server says\n'" + errPacket.getMessage() + "'\n");
+  }
+  
+  private void sendErrorPacket(String message, DatagramPacket packet) {
+    ErrorPacket errPacket = new ErrorPacketBuilder()
+        .setRemoteHost(packet.getAddress())
+        .setRemotePort(packet.getPort())
+        .setErrorCode(ErrorCode.ILLEGAL_TFTP_OPERATION)
+        .setMessage(message)
+        .buildErrorPacket();
+    serverConnection.sendPacket(errPacket);
+  }
 
-		printPacketInformation(ack);
+  /**
+   * Prints out request contents as a String and in bytes.
+   * 
+   * @param buffer
+   */
+  public static void printPacketInformation(DatagramPacket packet) {
+    byte[] data = new byte[packet.getLength()];
+    System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
+    String contents = new String(data);
 
-		// Check for the last data packet
-		if (fileData.length < 512) {
-			System.out.println("\tAcknowledging last data packet.");
-			transferComplete = true;
-			fileWriter.close();
-			// send the last ACK
-			serverConnection.sendPacket(ack);
-			return null;
-		}
+    System.out.println("\n-------------------------------------------");
+    System.out.println("\tAddress: " + packet.getAddress());
+    System.out.println("\tPort: " + packet.getPort());
+    System.out.println("\tPacket contents: ");
+    System.out.println("\t" + contents.replaceAll("\n", "\t\n"));
 
-		return serverConnection.sendPacketAndReceive(ack);
-	}
+    System.out.println("\tPacket contents (bytes): ");
+    System.out.print("\t");
+    for (int i = 0; i < data.length; i++) {
+      System.out.print(data[i] + " ");
+    }
+    System.out.println("\n-------------------------------------------\n");
+  }
 
-	private void handlePacketError(String message, DatagramPacket requestPacket) {
-		ErrorPacket errPacket = new ErrorPacketBuilder().setRemoteHost(requestPacket.getAddress())
-				.setRemotePort(requestPacket.getPort()).setErrorCode(ErrorCode.ILLEGAL_TFTP_OPERATION)
-				.setMessage(message).buildErrorPacket();
-		serverConnection.sendPacket(errPacket);
-	}
-
-	/**
-	 * Prints out request contents as a String and in bytes.
-	 * 
-	 * @param buffer
-	 */
-	public void printPacketInformation(Packet packet) {
-		byte[] data = packet.getPacketData();
-		String contents = new String(data); // TODO: format to handle \n in
-											// string. (substrings)
-
-		System.out.println("\n\tPacket contents: ");
-		System.out.println("\t" + contents);
-
-		System.out.println("\tPacket contents (bytes): ");
-		System.out.print("\t");
-		for (int i = 0; i < data.length; i++) {
-			System.out.print(data[i] + " ");
-		}
-		System.out.println();
-	}
+  private void log(String message) {
+    System.out.println("[CLIENT] " + message);
+  }
 }

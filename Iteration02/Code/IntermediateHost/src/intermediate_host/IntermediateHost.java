@@ -482,22 +482,23 @@ public class IntermediateHost {
    * 
    * @param buffer
    */
-  public static void printPacketInformation(DatagramPacket datagram) {
-    byte[] data = new byte[datagram.getLength()];
-    System.arraycopy(datagram.getData(), 0, data, 0, datagram.getLength());
+  public static void printPacketInformation(DatagramPacket packet) {
+    byte[] data = new byte[packet.getLength()];
+    System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
     String contents = new String(data);
     
-    System.out.println("\tAddress: " + datagram.getAddress());
-    System.out.println("\tPort: " + datagram.getPort());
-    System.out.println("\tRequest contents: ");
-    System.out.println("\t" + contents);
+    System.out.println("\n-------------------------------------------");
+    System.out.println("\tAddress: " + packet.getAddress());
+    System.out.println("\tPort: " + packet.getPort());
+    System.out.println("\tPacket contents: ");
+    System.out.println("\t" + contents.replaceAll("\n", "\t\n"));
 
-    System.out.println("\tRequest contents (bytes): ");
+    System.out.println("\tPacket contents (bytes): ");
     System.out.print("\t");
     for (int i = 0; i < data.length; i++) {
       System.out.print(data[i] + " ");
     }
-    System.out.println();
+    System.out.println("-------------------------------------------\n");
   }
   
   private void log(String msg) {

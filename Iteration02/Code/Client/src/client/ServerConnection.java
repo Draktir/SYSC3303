@@ -14,13 +14,11 @@ import packet.ErrorPacket.ErrorCode;
 
 public class ServerConnection {
   private DatagramSocket serverSocket;
-  private InetAddress serverAddress;
-  private int serverPort;
+  private InetAddress serverAddress = null;
+  private int serverPort = -1;
 
-  public ServerConnection(Packet originalResponse) throws SocketException {
+  public ServerConnection() throws SocketException {
     this.serverSocket = new DatagramSocket();
-    this.serverAddress = originalResponse.getRemoteHost();
-    this.serverPort = originalResponse.getRemotePort();
   }
 
   /**
@@ -79,6 +77,12 @@ public class ServerConnection {
       } catch (IOException e) {
         e.printStackTrace();
         return null;
+      }
+      
+      // if this is the first time we talk to this server, record its TID
+      if (this.serverAddress == null) {
+        this.serverAddress = responseDatagram.getAddress();
+        this.serverPort = responseDatagram.getPort();
       }
       
       // ensure the client TID is the same
