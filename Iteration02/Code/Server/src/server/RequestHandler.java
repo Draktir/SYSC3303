@@ -1,5 +1,6 @@
 package server;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -99,13 +100,22 @@ class RequestHandler implements Runnable {
   
   private void sendFileToClient(ReadRequest request) {
     log("opening " + request.getFilename() + " for reading.");
+    
     FileReader fileReader = null;
     try {
       fileReader = new FileReader(request.getFilename());
     } catch (FileNotFoundException e) {
-      log("opening " + request.getFilename() + " for reading failed. " + " File not found!");
+      log("opening " + request.getFilename() + " for reading failed. File not found!");
       // TODO Send an Error (FILE_NOT_FOUND)
       e.printStackTrace();
+      return;
+    }
+    
+    // check file size before sending
+    File f = new File(request.getFilename());
+    final long MAX_FILE_SIZE = (long) ((Math.pow(2, 16) - 1) * 512);
+    if (f.length() > MAX_FILE_SIZE) {
+      log("The requested file is too big: " + f.length() + " bytes. Max is " + MAX_FILE_SIZE + " bytes.");
       return;
     }
     

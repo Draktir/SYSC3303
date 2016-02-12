@@ -96,6 +96,8 @@ public class ClientConnection {
             .setRemotePort(responseDatagram.getPort())
             .buildErrorPacket();
         
+        System.err.println("[CLIENT-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
+        
         byte[] errData = errPacket.getPacketData();
         DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
             errPacket.getRemoteHost(), errPacket.getRemotePort());
@@ -107,6 +109,8 @@ public class ClientConnection {
           System.err.println("[CLIENT-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
         }
         responseDatagram = null;
+        
+        System.err.println("[CLIENT-CONNECTION] Waiting for another packet.");
       }
       
     } while (responseDatagram == null);
