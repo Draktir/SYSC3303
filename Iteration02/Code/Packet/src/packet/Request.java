@@ -39,7 +39,6 @@ public abstract class Request extends Packet {
 
   @Override
   public String toString() {
-    return "Request [filename=" + filename + ", mode=" + mode + ", remoteHost=" + remoteHost + ", remotePort="
-        + remotePort + "]";
+    return "Request [\n    filename=" + filename + ",\n    mode=" + mode + "\n]";
   }
 }

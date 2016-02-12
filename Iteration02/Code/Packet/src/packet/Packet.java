@@ -33,6 +33,6 @@ public abstract class Packet {
 
   @Override
   public String toString() {
-    return "Packet [remoteHost=" + remoteHost + ", remotePort=" + remotePort + "]";
+    return "Packet [\n    remoteHost=" + remoteHost + ",\n    remotePort=" + remotePort + "\n]";
   }
 }

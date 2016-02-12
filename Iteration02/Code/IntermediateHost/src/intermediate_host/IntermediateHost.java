@@ -51,7 +51,7 @@ public class IntermediateHost {
     Scanner scan = new Scanner(System.in);
     do {
       h.go();
-      System.out.print("Do you want to start over? (y/n) ");
+      System.out.print("\nDo you want to start over? (y/n) ");
       exit = !scan.next().equalsIgnoreCase("y");
     } while (!exit);
     scan.close();
@@ -70,7 +70,8 @@ public class IntermediateHost {
       return;
     }
 
-    System.out.println("\nWaiting for client request on port " + Configuration.INTERMEDIATE_PORT);
+    log("");
+    log("Waiting for client request on port " + Configuration.INTERMEDIATE_PORT);
 
     byte[] buffer = new byte[1024];
     DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
@@ -83,27 +84,30 @@ public class IntermediateHost {
         e.printStackTrace();
       }
 
-      System.out.println("Received Packet");
-      printRequestInformation(requestDatagram.getData());
+      log("Received packet");
+      printPacketInformation(requestDatagram);
 
       try {
         request = packetParser.parseRequest(requestDatagram);
       } catch (InvalidPacketException e1) {
         request = null;
-        System.err.println("Not a valid request. Expecting RRQ or WRQ.\n\n");
+        log("Not a valid request. Expecting RRQ or WRQ.\n");
       }
     } while (request == null);
 
     clientPort = requestDatagram.getPort();
+    log("Client is receiving on port " + clientPort);
 
     // determine the type of request and then service the file transfer
     if (request.type() == RequestType.READ) {
+      log("Received valid Read Request: " + request.toString());
       serviceTftpRead((ReadRequest) request);
     } else if (request.type() == RequestType.WRITE) {
+      log("Received valid Write Request: " + request.toString());
       serviceTftpWrite((WriteRequest) request);
     }
 
-    System.out.println("File Transfer ended.");
+    log("File Transfer ended.\n");
 
     clientSocket.close();
   }
@@ -118,10 +122,15 @@ public class IntermediateHost {
     // PacketModifier figures out if the packet needs to be modified, applies
     // the modification if applicable, and returns the packet data as a byte[].
     byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
-
+    
+    log("Forwarding Read Request to server on port " + Configuration.SERVER_PORT);
+    
     // send ReadRequest
     DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length, request.getRemoteHost(),
         Configuration.SERVER_PORT);
+    
+    printPacketInformation(requestDatagram);
+    
     try {
       serverSocket.send(requestDatagram);
     } catch (IOException e) {
@@ -138,10 +147,12 @@ public class IntermediateHost {
       /*****************************************************************************************
        * Receive Data packet from server and forward to client
        */
-
+      
       // wait for data packet
       DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
 
+      log("Waiting for data packet from server on port " + serverSocket.getLocalPort());
+      
       // receive a data packet
       DataPacket dataPacket = null;
       do {
@@ -150,19 +161,25 @@ public class IntermediateHost {
         } catch (IOException e) {
           e.printStackTrace();
         }
-
+        
+        log("Packet received");
+        printPacketInformation(dataPacketDatagram);
+        
         // parse data packet
         try {
           dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
         } catch (InvalidPacketException e) {
+          log("Error parsing data packet: " + e.getMessage());
           // if this is not an error packet or it's an error packet != error
           // code 5 we are done.
           boolean isRecoverableError = handleParseError(dataPacketDatagram, clientSocket,
               dataPacketDatagram.getAddress(), clientPort);
           if (!isRecoverableError) {
+            log("Non-recoverable error. Terminating this connection.");
             transferEnded = true;
             break;
           }
+          log("Error is recoverable.");
           dataPacket = null;
         }
       } while (dataPacket == null);
@@ -170,15 +187,19 @@ public class IntermediateHost {
       if (transferEnded) {
         break;
       }
-
+    
       serverPort = dataPacketDatagram.getPort();
-
-      System.out.println("Received data packet:\n" + dataPacket.toString());
-
+      
+      log("Server is receiving on port " + serverPort);
+      log("Received valid data packet:\n" + dataPacket.toString() + "\n");
+      log("Forward Data Packet to client.");
+      
       // forward to client
       byte[] dataPacketRaw = packetModifier.process(dataPacket, clientPort);
       DatagramPacket forwardPacket = new DatagramPacket(dataPacketRaw, dataPacketRaw.length, dataPacket.getRemoteHost(),
           clientPort);
+      
+      printPacketInformation(forwardPacket);
 
       try {
         clientSocket.send(forwardPacket);
@@ -191,6 +212,7 @@ public class IntermediateHost {
        * Receive ACK from client and forward to server
        */
 
+      log("Waiting for an ACK from the client on port " + clientSocket.getLocalPort());
       // wait for ACK from client
       DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       Acknowledgement ack = null;
@@ -202,18 +224,24 @@ public class IntermediateHost {
           return;
         }
 
+        log("Packet received.");
+        printPacketInformation(ackDatagram);
+        
         // parse ACK
         try {
           ack = packetParser.parseAcknowledgement(ackDatagram);
         } catch (InvalidPacketException e) {
+          log("Error parsing ACK");
           // if this is not an error packet or it's an error packet != error
           // code 5 we are done.
           boolean isRecoverableError = handleParseError(ackDatagram, serverSocket, ackDatagram.getAddress(),
               serverPort);
           if (!isRecoverableError) {
             transferEnded = true;
+            log("Non-recoverable error. Terminating this connection");
             break;
           }
+          log("Error is recoverable.");
           ack = null;
         }
       } while (ack == null);
@@ -222,12 +250,15 @@ public class IntermediateHost {
         break;
       }
 
-      System.out.println("Received ACK: " + ack.toString());
+      log("Received valid ACK:\n" + ack.toString() + "\n");
+      log("Forwarding ACK to server.");
 
       // forward ACK to server
       byte[] ackData = packetModifier.process(ack, serverPort);
       DatagramPacket forwardAckDatagram = new DatagramPacket(ackData, ackData.length, ack.getRemoteHost(), serverPort);
 
+      printPacketInformation(forwardAckDatagram);
+      
       try {
         serverSocket.send(forwardAckDatagram);
       } catch (IOException e) {
@@ -246,14 +277,17 @@ public class IntermediateHost {
     }
 
     // PacketModifier figures out if the packet needs to be modified, applies
-    // the modification if
-    // applicable, and returns the packet data as a byte[].
+    // the modification if applicable, and returns the packet data as a byte[].
     byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
 
+    log("Forwarding Write Request to server on port " + Configuration.SERVER_PORT);
+    
     // send WriteRequest
     DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length, request.getRemoteHost(),
         Configuration.SERVER_PORT);
 
+    printPacketInformation(requestDatagram);
+    
     try {
       serverSocket.send(requestDatagram);
     } catch (IOException e) {
@@ -265,7 +299,7 @@ public class IntermediateHost {
     byte[] recvBuffer = new byte[1024];
     boolean transferEnded = false;
 
-    while (true) {
+    while (!transferEnded) {
       /*****************************************************************************************
        * Receive ACK from server and forward to client
        */
@@ -274,6 +308,8 @@ public class IntermediateHost {
       DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       Acknowledgement ack = null;
 
+      log("Waiting for ACK from server on port " + serverSocket.getLocalPort());
+      
       do {
         try {
           serverSocket.receive(ackDatagram);
@@ -281,18 +317,24 @@ public class IntermediateHost {
           e.printStackTrace();
         }
 
+        log("Packet received.");
+        printPacketInformation(ackDatagram);
+        
         // parse data packet
         try {
           ack = packetParser.parseAcknowledgement(ackDatagram);
         } catch (InvalidPacketException e) {
+          log("Error parsing ACK");
           // if this is not an error packet or it's an error packet != error
           // code 5 we are done.
           boolean isRecoverableError = handleParseError(ackDatagram, clientSocket, ackDatagram.getAddress(),
               clientPort);
           if (!isRecoverableError) {
+            log("Non-recoverable error. Terminating this connection");
             transferEnded = true;
             break;
           }
+          log("Error is recoverable.");
           ack = null;
         }
       } while (ack == null);
@@ -303,13 +345,17 @@ public class IntermediateHost {
 
       serverPort = ackDatagram.getPort();
 
-      System.out.println("Received ack:\n" + ack.toString());
-
+      log("Server is receiving on port " + serverPort);
+      log("Received valid ACK:\n" + ack.toString() + "\n");
+      log("Forwarding ACK to client on port " + clientPort);
+      
       // forward to client
       byte[] ackPacketRaw = packetModifier.process(ack, clientPort);
       DatagramPacket forwardPacket = new DatagramPacket(ackPacketRaw, ackPacketRaw.length, ack.getRemoteHost(),
           clientPort);
 
+      printPacketInformation(forwardPacket);
+      
       try {
         clientSocket.send(forwardPacket);
       } catch (IOException e) {
@@ -325,27 +371,34 @@ public class IntermediateHost {
       DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       DataPacket dataPacket = null;
 
+      log("Waiting for Data Packet from server.");
+      
       do {
-
         try {
           clientSocket.receive(dataPacketDatagram);
         } catch (IOException e) {
           e.printStackTrace();
           return;
         }
+        
+        log("Received packet.");
+        printPacketInformation(dataPacketDatagram);
 
         // parse ACK
         try {
           dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
         } catch (InvalidPacketException e) {
+          log("Error parsing data packet.");
           // if this is not an error packet or it's an error packet != error
           // code 5 we are done.
           boolean isRecoverableError = handleParseError(dataPacketDatagram, serverSocket,
               dataPacketDatagram.getAddress(), serverPort);
           if (!isRecoverableError) {
+            log("Non-recoverable error. Terminating this connnection.");
             transferEnded = true;
             break;
           }
+          log("Error is recoverable.");
           dataPacket = null;
         }
       } while (dataPacket == null);
@@ -354,13 +407,16 @@ public class IntermediateHost {
         break;
       }
 
-      System.out.println("Received DataPacket:\n" + dataPacket.toString());
+      log("Received valid data packet:\n" + dataPacket.toString() + "\n");
+      log("Forwarding Data Packet to server on port " + serverPort);
 
       // forward data packet to server
       byte[] dataPacketData = packetModifier.process(dataPacket, serverPort);
       DatagramPacket forwardDataPacketDatagram = new DatagramPacket(dataPacketData, dataPacketData.length,
           dataPacket.getRemoteHost(), serverPort);
 
+      printPacketInformation(forwardDataPacketDatagram);
+      
       try {
         serverSocket.send(forwardDataPacketDatagram);
       } catch (IOException e) {
@@ -369,7 +425,8 @@ public class IntermediateHost {
 
       // figure out if we're done
       if (dataPacket != null && dataPacket.getBlockNumber() > 0 && dataPacket.getFileData().length < 512) {
-        System.out.println("\nFile Transfer is complete.");
+        log("");
+        log("File Transfer is complete.\n");
         transferEnded = true;
       }
     }
@@ -384,22 +441,25 @@ public class IntermediateHost {
       errPacket = packetParser.parseErrorPacket(datagram);
     } catch (InvalidErrorPacketException e) {
       // Nope, not an error packet, someone screwed up.
-      System.err.println("Invalid packet type received. Connection terminated.\n\n");
+      log("Invalid packet type received. Terminating connection.\n\n");
       return false;
     }
 
-    // if it is and error packet, forward it
-    System.out.println("Received error packet " + errPacket.toString());
-
+    log("Received an error packet: " + errPacket.getErrorCode() + "\n" + errPacket.toString() + "\n");
+    log("Forwarding error packet.");
+    
     byte[] packetData = errPacket.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(packetData, packetData.length, recvHost, recvPort);
+    
+    printPacketInformation(sendDatagram);
+    
     try {
       socket.send(sendDatagram);
     } catch (IOException e) {
       e.printStackTrace();
       return false;
     }
-
+    
     // return true if it's an error code 5 and we want to continue
     return errPacket.getErrorCode() == ErrorPacket.ErrorCode.UNKNOWN_TRANSFER_ID;
   }
@@ -409,17 +469,25 @@ public class IntermediateHost {
    * 
    * @param buffer
    */
-  public void printRequestInformation(byte[] buffer) {
-    String contents = new String(buffer);
-
+  public static void printPacketInformation(DatagramPacket datagram) {
+    byte[] data = new byte[datagram.getLength()];
+    System.arraycopy(datagram.getData(), 0, data, 0, datagram.getLength());
+    String contents = new String(data);
+    
+    System.out.println("\tAddress: " + datagram.getAddress());
+    System.out.println("\tPort: " + datagram.getPort());
     System.out.println("\tRequest contents: ");
     System.out.println("\t" + contents);
 
     System.out.println("\tRequest contents (bytes): ");
     System.out.print("\t");
-    for (int i = 0; i < buffer.length; i++) {
-      System.out.print(buffer[i] + " ");
+    for (int i = 0; i < data.length; i++) {
+      System.out.print(data[i] + " ");
     }
     System.out.println();
+  }
+  
+  private void log(String msg) {
+    System.out.println("[INTERMEDIATE] " + msg);
   }
 }

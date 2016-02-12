@@ -83,7 +83,7 @@ public class ErrorPacket extends Packet {
 
   @Override
   public String toString() {
-    return "ErrorPacket [errorCode=" + errorCode + ", message=" + message + ", remoteHost=" + remoteHost
-        + ", remotePort=" + remotePort + "]";
+    return "ErrorPacket [\n    errorCode=" + errorCode + ",\n    message=" + message + ",\n    remoteHost=" + remoteHost
+        + ",\n    remotePort=" + remotePort + "\n]";
   }
 }

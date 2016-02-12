@@ -25,9 +25,10 @@ public class ReadRequestModification extends PacketModification {
     
     ReadRequest readRequest = (ReadRequest) packet;
 
-    System.out.println("Applying modification: ");
-    System.out.println(" - Original:     " + readRequest.toString());
-    System.out.println(" - Modification: " + this.toString());
+    System.out.println("\n[RRQ-Modification] Applying modification: ");
+    System.out.println("  > Original:     " + readRequest.toString());
+    System.out.println("  > Modification: " + this.toString());
+    System.out.println();
     
     List<Byte> modified = new ArrayList<>();
     
@@ -110,8 +111,10 @@ public class ReadRequestModification extends PacketModification {
 
   @Override
   public String toString() {
-    return "ReadRequestModification [opcode=" + Arrays.toString(opcode) + ", filename=" + Arrays.toString(filename)
-        + ", zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename) + ", mode=" + Arrays.toString(mode)
-        + ", zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode) + ", packetNumber=" + packetNumber + "]";
-  }
+    return "ReadRequestModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    filename="
+        + Arrays.toString(filename) + ",\n    zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename)
+        + ",\n    mode=" + Arrays.toString(mode) + ",\n    zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode)
+        + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd=" + Arrays.toString(appendToEnd)
+        + ",\n    tidModification=" + tidModification.toString() + "\n]";
+  }  
 }

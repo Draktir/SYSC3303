@@ -53,7 +53,7 @@ public class Acknowledgement extends Packet {
 
   @Override
   public String toString() {
-    return "Acknowledgement [blockNumber=" + blockNumber + ", remoteHost=" + remoteHost + ", remotePort=" + remotePort
-        + "]";
+    return "Acknowledgement [\n    blockNumber=" + blockNumber + ",\n    remoteHost=" + remoteHost
+        + ",\n    remotePort=" + remotePort + "\n]";
   }
 }
