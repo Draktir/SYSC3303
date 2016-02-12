@@ -19,7 +19,7 @@ public class RequestParser {
     
     byte requestType = rawRequest[1];
     if (requestType != 1 && requestType != 2) {
-      throw new InvalidRequestException("Not a valid request opcode. Got 0" + rawRequest[0]
+      throw new InvalidRequestException("Not a valid request opcode. Got " + rawRequest[1] + rawRequest[0]
           + ", expected 01 or 02");
     }
     

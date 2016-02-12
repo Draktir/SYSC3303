@@ -59,7 +59,7 @@ class Listener implements Runnable {
       
       System.out.println("[SYSTEM] New Connection request received, creating new Thread.");
       
-      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Request " + 1 + connections++);
+      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Connection #" + connections++);
       userConnection.start();
     }
   }

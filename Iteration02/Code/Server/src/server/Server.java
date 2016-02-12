@@ -8,7 +8,6 @@ package server;
  * @since 25-01-2016
  */
 
-import java.net.SocketException;
 import java.util.Scanner;
 
 import Configuration.Configuration;
@@ -46,11 +45,12 @@ public class Server {
 		while (!shutdown) {
 		  command = sc.nextLine();
 		    if (command.equals("shutdown")) {
-			  shutdown = true;
+		       shutdown = true;
 		      listener.requestStop();
 		    }
 		}
 		
+		sc.close();
 	}
 }
 

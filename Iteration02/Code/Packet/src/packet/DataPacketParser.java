@@ -21,7 +21,7 @@ public class DataPacketParser {
       throw new InvalidDataPacketException("Malformed packet: first byte is " + rawData[0] + " expected 0");
     }
     if (rawData[1] != 3) {
-      throw new InvalidDataPacketException("Invalid opcode: got 0" + rawData[1] + ", expected 03");
+      throw new InvalidDataPacketException("Invalid opcode: got " + rawData[0] + rawData[1] + ", expected 03");
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};

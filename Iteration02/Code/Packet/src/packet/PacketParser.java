@@ -32,7 +32,7 @@ public class PacketParser {
       case 5:
         return errorPacketParser.parse(datagramPacket);
       default:
-        throw new InvalidPacketException("Invalid opcode 0" + data[1]);
+        throw new InvalidPacketException("Invalid opcode " + data[0] + data[1]);
     }  
   }
   

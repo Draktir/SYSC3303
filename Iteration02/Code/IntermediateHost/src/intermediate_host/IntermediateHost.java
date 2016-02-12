@@ -51,7 +51,7 @@ public class IntermediateHost {
     Scanner scan = new Scanner(System.in);
     do {
       h.go();
-      System.out.print("Do you want to go again? (y/n) ");
+      System.out.print("Do you want to start over? (y/n) ");
       exit = !scan.next().equalsIgnoreCase("y");
     } while (!exit);
     scan.close();
@@ -116,8 +116,7 @@ public class IntermediateHost {
     }
 
     // PacketModifier figures out if the packet needs to be modified, applies
-    // the modification if
-    // applicable, and returns the packet data as a byte[].
+    // the modification if applicable, and returns the packet data as a byte[].
     byte[] requestData = packetModifier.process(request);
 
     // send ReadRequest

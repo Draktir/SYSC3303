@@ -12,7 +12,7 @@ public class ModificationMenu {
     PacketModifier modifier = new PacketModifier();
     int menuSelection = -1;
 
-    while (menuSelection <= 0 || menuSelection > 4) {
+    while (menuSelection < 0 || menuSelection > 4) {
       // main menu
       System.out.println("TFTP Error Simulator");
       System.out.println("\nWhich type of packet do you want to modify.");
@@ -39,7 +39,7 @@ public class ModificationMenu {
       AcknowledgementModification ackMod = configureAcknowledgementModification();
       modifier.setAckModification(ackMod);
     } else {
-      System.err.println("You have made an invalid selection! No modifications will be made.");
+      System.out.println("No modifications will be made.");
     }
     
     return modifier;
@@ -164,6 +164,7 @@ public class ModificationMenu {
           break;
         case 7:
           writeReqMod.setTidModification(tidMod);
+          break;
         default:
           System.err.println("Invalid field selection");
           continue;

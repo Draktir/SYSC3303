@@ -32,13 +32,14 @@ public class ClientConnection {
     byte[] data = packet.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(
         data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-    System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
+    
+    System.out.println("[CLIENT-CONNECTION] sending packet");
+    RequestHandler.printPacketInformation(sendDatagram);
     
     try {
       clientSocket.send(sendDatagram);
     } catch (IOException e) {
       e.printStackTrace();
-      System.exit(1);
     }
   }
   
@@ -55,8 +56,10 @@ public class ClientConnection {
     DatagramPacket sendDatagram = new DatagramPacket(
         data, data.length, packet.getRemoteHost(), packet.getRemotePort());
     
+    System.out.println("[CLIENT-CONNECTION] sending packet");
+    RequestHandler.printPacketInformation(sendDatagram);
+    
     // 2. send datagram packet
-    System.out.println("[SYSTEM] Sending response to client on port " + packet.getRemotePort());
     try {
       clientSocket.send(sendDatagram);
     } catch (IOException e) {
@@ -71,7 +74,7 @@ public class ClientConnection {
     do {
       buffer = new byte[517];
       responseDatagram = new DatagramPacket(buffer, 517);
-      System.out.println("[SYSTEM] Waiting for response from client on port " + clientSocket.getLocalPort());
+      System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
       
       try {
         clientSocket.receive(responseDatagram);
@@ -82,7 +85,7 @@ public class ClientConnection {
       
       // ensure the client TID is the same
       if (!isClientTidValid(responseDatagram)) {
-        System.err.println("Received packet with wrong TID");
+        System.err.println("[CLIENT-CONNECTION] Received packet with wrong TID");
         System.err.println("  > Client:   " + responseDatagram.getAddress() + " " + responseDatagram.getPort());
         System.err.println("  > Expected: " + clientAddress + " " + clientPort);
         // respond to the rogue client with an appropriate error packet
@@ -101,7 +104,7 @@ public class ClientConnection {
           clientSocket.send(errDatagram);
         } catch (IOException e) {
           e.printStackTrace();
-          System.err.println("Error sending error packet to unknown client. Ignoring this error.");
+          System.err.println("[CLIENT-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
         }
         responseDatagram = null;
       }
@@ -109,7 +112,7 @@ public class ClientConnection {
     } while (responseDatagram == null);
     
     
-    System.out.println("Received packet from client, length: " + responseDatagram.getLength());
+    System.out.println("[CLIENT-CONNECTION] Received packet from client, length: " + responseDatagram.getLength());
     return responseDatagram;
   }
   

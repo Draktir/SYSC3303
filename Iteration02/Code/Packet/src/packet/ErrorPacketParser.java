@@ -22,7 +22,7 @@ public class ErrorPacketParser {
       throw new InvalidErrorPacketException("Malformed packet: first byte is " + rawData[0] + " expected 0");
     }
     if (rawData[1] != 5) {
-      throw new InvalidErrorPacketException("Invalid opcode: got 0" + rawData[1] + ", expected 05");
+      throw new InvalidErrorPacketException("Invalid opcode: got " + rawData[0] + rawData[1] + ", expected 05");
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};

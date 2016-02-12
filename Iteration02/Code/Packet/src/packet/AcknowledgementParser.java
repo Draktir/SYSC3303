@@ -18,7 +18,7 @@ public class AcknowledgementParser {
       throw new InvalidAcknowledgementException("Malformed packet: first byte is " + rawData[0] + " expected 0");
     }
     if (rawData[1] != 4) {
-      throw new InvalidAcknowledgementException("Invalid opcode: got 0" + rawData[1] + ", expected 03");
+      throw new InvalidAcknowledgementException("Invalid opcode: got " + rawData[0] + rawData[1] + ", expected 03");
     }
     
     byte[] blockNumberBytes = {rawData[2], rawData[3]};
