@@ -4,6 +4,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
+import Configuration.Configuration;
+
 /**
  * The Listener class is implemented in order to allow the Server application
  * to continue to accept input while still listening for Client requests
@@ -46,7 +48,7 @@ class Listener implements Runnable {
       DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
       
       try {
-        System.out.println("[SYSTEM] Listening for requests.");
+        System.out.println("[SYSTEM] Listening for requests on port " + Configuration.SERVER_PORT);
         receiveSocket.receive(receivePacket);
       }
       catch (IOException e) {
@@ -59,7 +61,7 @@ class Listener implements Runnable {
       
       System.out.println("[SYSTEM] New Connection request received, creating new Thread.");
       
-      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Connection #" + connections++);
+      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Connection #" + ++connections);
       userConnection.start();
     }
   }

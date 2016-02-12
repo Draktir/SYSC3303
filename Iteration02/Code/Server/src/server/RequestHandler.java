@@ -16,6 +16,7 @@ import packet.ErrorPacket;
 import packet.ErrorPacketBuilder;
 import packet.InvalidAcknowledgementException;
 import packet.InvalidDataPacketException;
+import packet.InvalidErrorPacketException;
 import packet.InvalidRequestException;
 import packet.PacketParser;
 import packet.ReadRequest;
@@ -37,6 +38,7 @@ import packet.Request.RequestType;
 class RequestHandler implements Runnable {
   private DatagramPacket requestPacket;
   private ClientConnection clientConnection;
+  private PacketParser packetParser = new PacketParser();
   
   /**
    * Default RequestHandler constructor instantiates requestPacekt to
@@ -61,7 +63,6 @@ class RequestHandler implements Runnable {
       return;
     }
     
-    PacketParser parser = new PacketParser();
     Request request = null;
     
     System.out.println("---------------------------------------------------------");
@@ -70,11 +71,11 @@ class RequestHandler implements Runnable {
     
     // 1. parse the orignal client request
     try {
-      request = parser.parseRequest(requestPacket);
+      request = packetParser.parseRequest(requestPacket);
     } catch (InvalidRequestException e) {
       String errMsg = "Invalid request: " + e.getMessage();
       log(errMsg);
-      handlePacketError(errMsg, requestPacket);
+      handleParseError(errMsg, requestPacket);
       return;
     }
     
@@ -90,7 +91,7 @@ class RequestHandler implements Runnable {
     } else {
       // should never really get here
       log("Could not identify request type, but it was parsed.");
-      handlePacketError("Invalid request. Expected RRQ or WRQ.", requestPacket);
+      handleParseError("Invalid request. Expected RRQ or WRQ.", requestPacket);
     }
     
     log("Terminating thread");
@@ -111,9 +112,8 @@ class RequestHandler implements Runnable {
     int blockNumber = 1;
     int bytesRead;
     byte[] fileBuffer = new byte[512];
-    PacketParser packetParser = new PacketParser();
-    
-    do {
+        
+    do {// while bytesRead == 512
       // 1. read the next block from the file 
       log("reading block #" + blockNumber + " from file.");
       bytesRead = fileReader.readNextBlock(fileBuffer);
@@ -131,12 +131,11 @@ class RequestHandler implements Runnable {
           .buildDataPacket();
       
       log("sending data packet, block #" + dataPacket.getBlockNumber());
+      log("expecting ACK, block #" + blockNumber);
       
       // 4. send data packet and wait for response
       DatagramPacket responseDatagram;
       responseDatagram = clientConnection.sendPacketAndReceive(dataPacket);
-      
-      log("waiting for ACK, block #" + blockNumber);
       
       if (responseDatagram == null) {
         // TODO: handle timeouts
@@ -144,7 +143,7 @@ class RequestHandler implements Runnable {
         return;
       }
       
-      log("received datagram packet, parsing...");
+      log("Received packet.");
       printPacketInformation(responseDatagram);
       
       // 5. parse client response
@@ -154,20 +153,19 @@ class RequestHandler implements Runnable {
       } catch (InvalidAcknowledgementException e) {
         String errMsg = "Not a valid ACK: " + e.getMessage();
         log(errMsg);
-        handlePacketError(errMsg, responseDatagram);
+        handleParseError(errMsg, responseDatagram);
         return;
       }
        
       // make sure the block number is correct
       if (ack.getBlockNumber() != blockNumber) {
-        String errMsg = "ACK has the wrong block number, expected block #" + blockNumber;
+        String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
         log(errMsg);
-        handlePacketError(errMsg, responseDatagram);
+        sendErrorPacket(errMsg, responseDatagram);
         return;
       }
       
-      log("Received valid ACK packet with block #" + ack.getBlockNumber());
-      log("");
+      log("Received valid ACK packet\n" + ack.toString() + "\n");
       
       // 6. repeat
       blockNumber++;
@@ -175,8 +173,7 @@ class RequestHandler implements Runnable {
     
     fileReader.close();
     
-    System.out.println("File " + request.getFilename() +" successfully sent to client in " + 
-        (blockNumber - 1) + " blocks.");
+    log("File " + request.getFilename() +" successfully sent to client in " + (blockNumber - 1) + " blocks.");
   }
   
   private void receiveFileFromClient(WriteRequest request) {
@@ -198,7 +195,6 @@ class RequestHandler implements Runnable {
     }
 
     int blockNumber = 0;
-    PacketParser packetParser = new PacketParser();
     
     while (true) {
       //1. build an ACK
@@ -215,7 +211,7 @@ class RequestHandler implements Runnable {
       
       if (receivedDatagram == null) {
         // TODO: handle timeouts
-        System.err.println("Did not receive a data packet from the client.");
+        log("Did not receive a data packet from the client.");
         return;
       }
       
@@ -231,19 +227,19 @@ class RequestHandler implements Runnable {
       } catch (InvalidDataPacketException e) {
         String errMsg = "Not a valid Data Packet: " + e.getMessage();
         log(errMsg);
-        handlePacketError(errMsg, receivedDatagram);
+        handleParseError(errMsg, receivedDatagram);
         return;
       }
       
       // make sure the block number is correct
       if (dataPacket.getBlockNumber() != blockNumber) {
-        String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
+        String errMsg = "Data packet has the wrong block#, got #" + dataPacket.getBlockNumber() + "expected #" + blockNumber;
         log(errMsg);
-        handlePacketError(errMsg, receivedDatagram);
+        sendErrorPacket(errMsg, receivedDatagram);
         return;
       }
       
-      log("Received valid Data packet with block #" + dataPacket.getBlockNumber());
+      log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
       log("Writing data to disk");
       
       //3. write file data to disk
@@ -281,13 +277,34 @@ class RequestHandler implements Runnable {
           + blockNumber + " blocks.");
   }
   
-  private void handlePacketError(String message, DatagramPacket requestPacket) {
+  private void handleParseError(String message, DatagramPacket datagram) {
+    // first figure out whether datagram is an Error packet
+    ErrorPacket errPacket = null;
+    try {
+      errPacket = packetParser.parseErrorPacket(datagram);
+    } catch (InvalidErrorPacketException e) {
+      // Nope, not an error packet, the client screwed up, send him an error
+      log("Invalid packet received. Sending error packet to client.\n");
+      sendErrorPacket(message, datagram);
+      return;
+    }
+
+    // yes, we got an error packet, so we (the server) screwed up.
+    log("Received an error packet: " + errPacket.getErrorCode() + "\n" + errPacket.toString() + "\n");
+    log("");
+    log("received ERROR " + errPacket.getErrorCode() + ": Client says\n'" + errPacket.getMessage() + "'\n");
+  }
+  
+  private void sendErrorPacket(String message, DatagramPacket requestPacket) {
     ErrorPacket errPacket = new ErrorPacketBuilder()
         .setRemoteHost(requestPacket.getAddress())
         .setRemotePort(requestPacket.getPort())
         .setErrorCode(ErrorCode.ILLEGAL_TFTP_OPERATION)
         .setMessage(message)
         .buildErrorPacket();
+    
+    log("Sending error to client:\n" + errPacket.toString());
+    
     clientConnection.sendPacket(errPacket);
   }
     
