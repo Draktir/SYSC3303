@@ -97,7 +97,7 @@ public abstract class PacketModification {
 
   @Override
   public String toString() {
-    return "Modification [packetNumber=" + packetNumber + "]";
+    return "TidModification [packetNumber=" + packetNumber + "]";
   }
   
   public static List<Byte> byteArrayToList(byte[] arr) {

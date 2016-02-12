@@ -1,15 +1,18 @@
 package modification;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import packet.Packet;
+import packet.WriteRequest;
 
 public class WriteRequestModification extends PacketModification {
   byte[] opcode = null;
   byte[] filename = null;
-  byte zeroByteAfterFilename = -1;
+  byte[] zeroByteAfterFilename = null;
   byte[] mode = null;
-  byte zeroByteAfterMode = -1;
+  byte[] zeroByteAfterMode = null;
   
   public WriteRequestModification() {
     super(1);
@@ -17,8 +20,53 @@ public class WriteRequestModification extends PacketModification {
 
   @Override
   public byte[] apply(Packet packet) {
-    // TODO Auto-generated method stub
-    return null;
+    if (super.tidModification != null) {
+      super.performTidModification(packet);
+    }
+    
+    WriteRequest writeRequest = (WriteRequest) packet;
+
+    System.out.println("Applying modification: ");
+    System.out.println(" - Original:     " + writeRequest.toString());
+    System.out.println(" - Modification: " + this.toString());
+    
+    List<Byte> modified = new ArrayList<>();
+    
+    if (opcode != null) {
+      modified.addAll(PacketModification.byteArrayToList(opcode));
+    } else {
+      modified.addAll(PacketModification.byteArrayToList(writeRequest.getOpcode()));
+    }
+    
+    if (filename != null) {
+      modified.addAll(PacketModification.byteArrayToList(filename));
+    } else {
+      modified.addAll(PacketModification.byteArrayToList(writeRequest.getFilename().getBytes()));
+    }
+    
+    if (zeroByteAfterFilename != null) {
+      modified.addAll(PacketModification.byteArrayToList(zeroByteAfterFilename));
+    } else {
+      modified.add(new Byte((byte) 0));
+    }
+    
+    if (mode != null) {
+      modified.addAll(PacketModification.byteArrayToList(mode));
+    } else {
+      modified.addAll(PacketModification.byteArrayToList(writeRequest.getMode().getBytes()));
+    }
+    
+    if (zeroByteAfterMode != null) {
+      modified.addAll(PacketModification.byteArrayToList(zeroByteAfterMode));
+    } else {
+      modified.add(new Byte((byte) 0));
+    }
+    
+    if (appendToEnd != null) {
+      modified.addAll(PacketModification.byteArrayToList(appendToEnd));
+    }
+
+    return PacketModification.byteListToArray(modified);
   }
   
   public byte[] getOpcode() {
@@ -37,11 +85,11 @@ public class WriteRequestModification extends PacketModification {
     this.filename = filename;
   }
 
-  public byte getZeroByteAfterFilename() {
+  public byte[] getZeroByteAfterFilename() {
     return zeroByteAfterFilename;
   }
 
-  public void setZeroByteAfterFilename(byte zeroByteAfterFilename) {
+  public void setZeroByteAfterFilename(byte[] zeroByteAfterFilename) {
     this.zeroByteAfterFilename = zeroByteAfterFilename;
   }
 
@@ -53,18 +101,18 @@ public class WriteRequestModification extends PacketModification {
     this.mode = mode;
   }
 
-  public byte getZeroByteAfterMode() {
+  public byte[] getZeroByteAfterMode() {
     return zeroByteAfterMode;
   }
 
-  public void setZeroByteAfterMode(byte zeroByteAfterMode) {
+  public void setZeroByteAfterMode(byte[] zeroByteAfterMode) {
     this.zeroByteAfterMode = zeroByteAfterMode;
   }
 
   @Override
   public String toString() {
     return "WriteRequestModification [opcode=" + Arrays.toString(opcode) + ", filename=" + Arrays.toString(filename)
-        + ", zeroByteAfterFilename=" + zeroByteAfterFilename + ", mode=" + Arrays.toString(mode)
-        + ", zeroByteAfterMode=" + zeroByteAfterMode + ", packetNumber=" + packetNumber + "]";
+        + ", zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename) + ", mode=" + Arrays.toString(mode)
+        + ", zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode) + ", packetNumber=" + packetNumber + "]";
   }
 }

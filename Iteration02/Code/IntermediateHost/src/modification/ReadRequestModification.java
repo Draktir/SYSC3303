@@ -10,9 +10,9 @@ import packet.ReadRequest;
 public class ReadRequestModification extends PacketModification {
   byte[] opcode = null;
   byte[] filename = null;
-  byte zeroByteAfterFilename = -1;
+  byte[] zeroByteAfterFilename = null;
   byte[] mode = null;
-  byte zeroByteAfterMode = -1;
+  byte[] zeroByteAfterMode = null;
   
   public ReadRequestModification() {
     super(1);
@@ -43,8 +43,8 @@ public class ReadRequestModification extends PacketModification {
       modified.addAll(PacketModification.byteArrayToList(readRequest.getFilename().getBytes()));
     }
     
-    if (zeroByteAfterFilename != -1) {
-      modified.add(new Byte(zeroByteAfterFilename));
+    if (zeroByteAfterFilename != null) {
+      modified.addAll(PacketModification.byteArrayToList(zeroByteAfterFilename));
     } else {
       modified.add(new Byte((byte) 0));
     }
@@ -55,14 +55,16 @@ public class ReadRequestModification extends PacketModification {
       modified.addAll(PacketModification.byteArrayToList(readRequest.getMode().getBytes()));
     }
     
-    if (zeroByteAfterMode != -1) {
-      modified.add(new Byte(zeroByteAfterFilename));
+    if (zeroByteAfterMode != null) {
+      modified.addAll(PacketModification.byteArrayToList(zeroByteAfterMode));
     } else {
       modified.add(new Byte((byte) 0));
     }
     
-    if ()
-    
+    if (appendToEnd != null) {
+      modified.addAll(PacketModification.byteArrayToList(appendToEnd));
+    }
+
     return PacketModification.byteListToArray(modified);
   }
   
@@ -82,11 +84,11 @@ public class ReadRequestModification extends PacketModification {
     this.filename = filename;
   }
 
-  public byte getZeroByteAfterFilename() {
+  public byte[] getZeroByteAfterFilename() {
     return zeroByteAfterFilename;
   }
 
-  public void setZeroByteAfterFilename(byte zeroByteAfterFilename) {
+  public void setZeroByteAfterFilename(byte[] zeroByteAfterFilename) {
     this.zeroByteAfterFilename = zeroByteAfterFilename;
   }
 
@@ -98,18 +100,18 @@ public class ReadRequestModification extends PacketModification {
     this.mode = mode;
   }
 
-  public byte getZeroByteAfterMode() {
+  public byte[] getZeroByteAfterMode() {
     return zeroByteAfterMode;
   }
 
-  public void setZeroByteAfterMode(byte zeroByteAfterMode) {
+  public void setZeroByteAfterMode(byte[] zeroByteAfterMode) {
     this.zeroByteAfterMode = zeroByteAfterMode;
   }
 
   @Override
   public String toString() {
     return "ReadRequestModification [opcode=" + Arrays.toString(opcode) + ", filename=" + Arrays.toString(filename)
-        + ", zeroByteAfterFilename=" + zeroByteAfterFilename + ", mode=" + Arrays.toString(mode)
-        + ", zeroByteAfterMode=" + zeroByteAfterMode + ", packetNumber=" + packetNumber + "]";
+        + ", zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename) + ", mode=" + Arrays.toString(mode)
+        + ", zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode) + ", packetNumber=" + packetNumber + "]";
   }
 }

@@ -99,7 +99,7 @@ class RequestHandler implements Runnable {
       fileReader = new FileReader(request.getFilename());
     } catch (FileNotFoundException e) {
       System.err.println("[SYSTEM] opening " + request.getFilename() + " for reading failed. "
-      		+ " File not found!");// TODO Send an Error (FILE_NOT_FOUND
+      		+ " File not found!");// TODO Send an Error (FILE_NOT_FOUND)
       e.printStackTrace();
       return;
     }
