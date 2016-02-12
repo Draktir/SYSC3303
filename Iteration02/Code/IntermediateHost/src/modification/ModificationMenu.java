@@ -42,7 +42,6 @@ public class ModificationMenu {
       System.err.println("You have made an invalid selection! No modifications will be made.");
     }
     
-    scan.close();
     return modifier;
   }
 
@@ -59,43 +58,25 @@ public class ModificationMenu {
       System.out.println("  [ 4 ] Mode");
       System.out.println("  [ 5 ] zero-byte after mode");
       System.out.println("  [ 6 ] Append data at the end");
+      System.out.println("  [ 7 ] Modify TID (sending port number)");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
     
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 6) {
+      if (fieldSelection <= 0 || fieldSelection > 7) {
         continue;
       }
       
-      System.out.println("\nHow do you want to modify the field?");
-      System.out.println("  [ 1 ] Replace with bytes");
-      System.out.println("  [ 2 ] Replace with int");
-      System.out.println("  [ 3 ] Replace with string");
-      System.out.println("  [ 4 ] Remove field");
-      System.out.print(" > ");
-       
-      int modType = scan.nextInt(); 
-      byte[] modValue;
+      byte[] modValue = null;
+      TidModification tidMod = null;
       
-      switch (modType) {
-        case 1:
-          modValue = getByteUserInput();
-          break;
-        case 2:
-          modValue = getIntUserInput();
-          break;
-        case 3:
-          modValue = getStringUserInput();
-          break;
-        case 4:
-          modValue = new byte[0];
-          break;
-        default:
-          System.err.println("Invalid selection");
-          continue;
+      if (fieldSelection == 7) {
+        tidMod = configureTidModification();
+      } else {
+        modValue = getModValueFromUser();
       }
-
+      
       switch (fieldSelection) {
         case 1:
           readReqMod.setOpcode(modValue);
@@ -114,6 +95,10 @@ public class ModificationMenu {
           break;
         case 6:
           readReqMod.setAppendToEnd(modValue);
+          break;
+        case 7:
+          readReqMod.setTidModification(tidMod);
+          break;
         default:
           System.err.println("Invalid field selection");
           continue;
@@ -132,50 +117,32 @@ public class ModificationMenu {
     int fieldSelection = -1;
     
     while (fieldSelection != 0) {
-      System.out.println("Which field do you want to modify?");
+      System.out.println("\nWhich field do you want to modify?");
       System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
       System.out.println("  [ 2 ] Filename");
       System.out.println("  [ 3 ] zero-byte after filename");
       System.out.println("  [ 4 ] Mode");
       System.out.println("  [ 5 ] zero-byte after mode");
       System.out.println("  [ 6 ] Append data at the end");
+      System.out.println("  [ 7 ] Modify TID (sending port number)");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
     
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 6) {
+      if (fieldSelection <= 0 || fieldSelection > 7) {
         continue;
       }
       
-      System.out.println("How do you want to modify the field?");
-      System.out.println("  [ 1 ] Replace with bytes");
-      System.out.println("  [ 2 ] Replace with int");
-      System.out.println("  [ 3 ] Replace with string");
-      System.out.println("  [ 4 ] Remove field");
-      System.out.print(" > ");
-       
-      int modType = scan.nextInt(); 
-      byte[] modValue;
+      byte[] modValue = null;
+      TidModification tidMod = null;
       
-      switch (modType) {
-        case 1:
-          modValue = getByteUserInput();
-          break;
-        case 2:
-          modValue = getIntUserInput();
-          break;
-        case 3:
-          modValue = getStringUserInput();
-          break;
-        case 4:
-          modValue = new byte[0];
-          break;
-        default:
-          System.err.println("Invalid selection");
-          continue;
+      if (fieldSelection == 7) {
+        tidMod = configureTidModification();
+      } else {
+        modValue = getModValueFromUser();
       }
-
+      
       switch (fieldSelection) {
         case 1:
           writeReqMod.setOpcode(modValue);
@@ -195,6 +162,8 @@ public class ModificationMenu {
         case 6:
           writeReqMod.setAppendToEnd(modValue);
           break;
+        case 7:
+          writeReqMod.setTidModification(tidMod);
         default:
           System.err.println("Invalid field selection");
           continue;
@@ -209,53 +178,35 @@ public class ModificationMenu {
   
   private DataPacketModification configureDataPacketModification() {
     int packetNumber;
-    System.out.print("Which one of the Data Packets do you want to modify? #");
+    System.out.print("\nWhich one of the Data Packets do you want to modify? #");
     packetNumber = scan.nextInt();
     
     DataPacketModification dataMod = new DataPacketModification(packetNumber);
     
     int fieldSelection = -1;
     while (fieldSelection != 0) {
-      System.out.println("Which field do you want to modify?");
+      System.out.println("\nWhich field do you want to modify?");
       System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
       System.out.println("  [ 2 ] Block Number (bytes 3 & 4)");
       System.out.println("  [ 3 ] Data");
       System.out.println("  [ 4 ] Append data at the end");
+      System.out.println("  [ 5 ] Modify TID (sending port number)");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 4) {
+      if (fieldSelection <= 0 || fieldSelection > 5) {
         continue;
       }
       
-      System.out.println("How do you want to modify the field?");
-      System.out.println("  [ 1 ] Replace with bytes");
-      System.out.println("  [ 2 ] Replace with int");
-      System.out.println("  [ 3 ] Replace with string");
-      System.out.println("  [ 4 ] Remove field");
-      System.out.print(" > ");
-       
-      int modType = scan.nextInt(); 
-      byte[] modValue;
-
-      switch (modType) {
-        case 1:
-          modValue = getByteUserInput();
-          break;
-        case 2:
-          modValue = getIntUserInput();
-          break;
-        case 3:
-          modValue = getStringUserInput();
-          break;
-        case 4:
-          modValue = new byte[0];
-          break;
-        default:
-          System.err.println("Invalid selection");
-          continue;
+      byte[] modValue = null;
+      TidModification tidMod = null;
+      
+      if (fieldSelection == 5) {
+        tidMod = configureTidModification();
+      } else {
+        modValue = getModValueFromUser();
       }
 
       switch (fieldSelection) {
@@ -270,6 +221,10 @@ public class ModificationMenu {
           break;
         case 4:
           dataMod.setAppendToEnd(modValue);
+          break;
+        case 5:
+          dataMod.setTidModification(tidMod);
+          break;
         default:
           System.err.println("Invalid field selection");
           break;
@@ -284,36 +239,81 @@ public class ModificationMenu {
 
   private AcknowledgementModification configureAcknowledgementModification() {
     int packetNumber;
-    System.out.print("Which one of the Acknowledgements do you want to modify? #");
+    System.out.print("\nWhich one of the Acknowledgements do you want to modify? #");
     packetNumber = scan.nextInt();
     
     AcknowledgementModification ackMod = new AcknowledgementModification(packetNumber);
     
     int fieldSelection = -1;
     while (fieldSelection != 0) {
-      System.out.println("Which field do you want to modify?");
+      System.out.println("\nWhich field do you want to modify?");
       System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
       System.out.println("  [ 2 ] Block Number (bytes 3 & 4)");
       System.out.println("  [ 3 ] Append data at the end");
+      System.out.println("  [ 4 ] Modify TID (sending port number)");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 3) {
+      if (fieldSelection <= 0 || fieldSelection > 4) {
         continue;
       }
       
-      System.out.println("How do you want to modify the field?");
+      byte[] modValue = null;
+      TidModification tidMod = null;
+      
+      if (fieldSelection == 4) {
+        tidMod = configureTidModification();
+      } else {
+        modValue = getModValueFromUser();
+      }
+
+      switch (fieldSelection) {
+        case 1:
+          ackMod.setOpcode(modValue);
+          break;
+        case 2:
+          ackMod.setBlockNumber(modValue);
+          break;
+        case 3:
+          ackMod.setAppendToEnd(modValue);
+          break;
+        case 4:
+          ackMod.setTidModification(tidMod);
+          break;
+        default:
+          System.err.println("Invalid field selection");
+          break;
+      }
+    }
+    
+    System.out.println("\n" + ackMod.toString());
+    System.out.println("\n");
+    
+    return ackMod;
+  }
+  
+  private TidModification configureTidModification() {
+    System.out.println("\nEnter the new sending port: ");
+    int port = scan.nextInt();
+    return new TidModification(port);
+  }
+  
+  private byte[] getModValueFromUser() {
+    int modType = -1;
+    byte[] modValue = null;
+    
+    while (modType < 1 || modType > 4) {
+      System.out.println("\nHow do you want to modify the field?");
       System.out.println("  [ 1 ] Replace with bytes");
       System.out.println("  [ 2 ] Replace with int");
       System.out.println("  [ 3 ] Replace with string");
       System.out.println("  [ 4 ] Remove field");
       System.out.print(" > ");
        
-      int modType = scan.nextInt(); 
-      byte[] modValue;
-
+      modType = scan.nextInt(); 
+      
       switch (modType) {
         case 1:
           modValue = getByteUserInput();
@@ -329,34 +329,15 @@ public class ModificationMenu {
           break;
         default:
           System.err.println("Invalid selection");
-          continue;
-      }
-
-      switch (fieldSelection) {
-        case 1:
-          ackMod.setOpcode(modValue);
-          break;
-        case 2:
-          ackMod.setBlockNumber(modValue);
-          break;
-        case 3:
-          ackMod.setAppendToEnd(modValue);
-          break;
-        default:
-          System.err.println("Invalid field selection");
-          break;
       }
     }
-    
-    System.out.println("\n" + ackMod.toString());
-    System.out.println("\n");
-    
-    return ackMod;
+    return modValue;
   }
   
   private byte[] getByteUserInput() {
-    System.out.print("Enter bytes separated by spaces: ");
-    String bytesStr = scan.next();
+    System.out.print("Enter bytes separated by spaces:");
+    scan.nextLine(); // don't ask me why we need this, Java's Scanner is a pain in the ...
+    String bytesStr = scan.nextLine(); 
 
     String[] splitBytes = bytesStr.split(" ");
     byte[] result = new byte[splitBytes.length];
@@ -370,7 +351,7 @@ public class ModificationMenu {
   }
 
   private byte[] getIntUserInput() {
-    System.out.print("Enter your int: ");
+    System.out.print("Enter an int: ");
     BigInteger newInt = BigInteger.valueOf(scan.nextInt());
     byte[] result = newInt.toByteArray();
 
@@ -383,8 +364,9 @@ public class ModificationMenu {
   }
 
   private byte[] getStringUserInput() {
-    System.out.print("Enter your string: ");
-    String str = scan.next();
+    System.out.print("Enter a string: ");
+    scan.nextLine();
+    String str = scan.nextLine();
 
     return str.getBytes();
   }
