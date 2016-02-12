@@ -53,7 +53,6 @@ class RequestHandler implements Runnable {
   
   /**
    * Processes the received request and initiates file transfer.
-   * 
    */
   public void run() {
     try {
@@ -123,7 +122,7 @@ class RequestHandler implements Runnable {
     int bytesRead;
     byte[] fileBuffer = new byte[512];
         
-    do {// while bytesRead == 512
+    do {
       // 1. read the next block from the file 
       log("reading block #" + blockNumber + " from file.");
       bytesRead = fileReader.readNextBlock(fileBuffer);

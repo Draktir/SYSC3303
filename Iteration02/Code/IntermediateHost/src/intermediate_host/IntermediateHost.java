@@ -51,7 +51,8 @@ public class IntermediateHost {
     Scanner scan = new Scanner(System.in);
     do {
       h.go();
-      System.out.print("\nDo you want to start over? (y/n) ");
+      System.out.println("\nSimulation complete!\n");
+      System.out.print("Do you want to simulate another error scenario? (y/n) ");
       exit = !scan.next().equalsIgnoreCase("y");
     } while (!exit);
     scan.close();
@@ -263,6 +264,12 @@ public class IntermediateHost {
         serverSocket.send(forwardAckDatagram);
       } catch (IOException e) {
         e.printStackTrace();
+      }
+      
+      // check if we're done
+      if (dataPacket.getFileData().length < 512) {
+        log("File transfer complete.");
+        transferEnded = true;
       }
     }
 
