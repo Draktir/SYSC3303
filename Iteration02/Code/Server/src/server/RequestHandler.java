@@ -193,6 +193,7 @@ class RequestHandler implements Runnable {
     try {
       fileWriter = new FileWriter(request.getFilename());
     } catch (FileAlreadyExistsException e) {
+      // TODO this exception is not thrown in this iteration. The file is simply overwritten
       // TODO Send error FILE_ALREADY_EXISTS
       log("opening " + request.getFilename() + " for writing failed." + " File already exists!");
       e.printStackTrace();
