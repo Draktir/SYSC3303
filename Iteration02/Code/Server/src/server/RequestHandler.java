@@ -76,6 +76,7 @@ class RequestHandler implements Runnable {
       String errMsg = "Invalid request: " + e.getMessage();
       log(errMsg);
       handleParseError(errMsg, requestPacket);
+      log("Terminating this connection thread");
       return;
     }
     
