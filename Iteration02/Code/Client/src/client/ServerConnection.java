@@ -31,7 +31,7 @@ public class ServerConnection {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
       
-      System.out.println("[SYSTEM] Sending request to server on port " + packet.getRemotePort());
+      System.out.println("[SERVER-CONNECTINO] Sending packet to server on port " + packet.getRemotePort());
       Client.printPacketInformation(sendPacket);
       
       serverSocket.send(sendPacket);

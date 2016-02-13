@@ -172,7 +172,7 @@ public class Client {
       }
 
       if (ack.getBlockNumber() != blockNumber) {
-        String errMsg = "ACK block #" + ack.getBlockNumber() + "is wrong, expected block #" + blockNumber;
+        String errMsg = "ACK block #" + ack.getBlockNumber() + " is wrong, expected block #" + blockNumber;
         log(errMsg);
         sendErrorPacket(errMsg, recvdDatagram);
         return;
@@ -364,6 +364,8 @@ public class Client {
         .setErrorCode(ErrorCode.ILLEGAL_TFTP_OPERATION)
         .setMessage(message)
         .buildErrorPacket();
+    
+    log("Sending error packet to server:\n" + errPacket.toString() + "\n");
     serverConnection.sendPacket(errPacket);
   }
 
