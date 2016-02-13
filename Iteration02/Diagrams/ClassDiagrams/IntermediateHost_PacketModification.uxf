@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>8</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>376</x>
+      <y>0</y>
+      <w>408</w>
+      <h>192</h>
+    </coordinates>
+    <panel_attributes>ModificationMenu
+--
+-scan: Scanner
+--
++ModificationMenu()
++show(): PacketModifier
+-configureReadRequestModification(): ReadRequestModification
+-configureWriteRequestModification(): WriteRequestModification
+-configureDataPacketModification(): DataPacketModification
+-configureAcknowledgementModification(): AckknowledgementModification
+-configureTidModification(): TidModification
+-getModValueFromuser(): byte[]
+-getByteUserInput(): byte[]
+-getIntUserInput(): byte[]
+-getStringUserInput(): byte[]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>464</x>
+      <y>280</y>
+      <w>232</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>PacketModifier
+--
+-packetCount: int
+-dataCount: int
+-ackCount: int
+--
++PacketModifier()
++process(ReadRequest, int): byte[]
++process(WriteRequest, int): byte[]
++process(DataPacket, int): byte[]
++process(Acknowledgement, int): byte[]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>464</x>
+      <y>496</y>
+      <w>232</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>/PacketModification/
+--
+-packetNumber: int
+-appendToEnd: byte[]
+--
++PacketModification(int)
+/+apply(Packet, int): byte[]/
++performTidModification(Packet, int)
+_+byteArrayToList(byte[]): List&lt;Byte&gt;_
+_+byteListToArray(List&lt;Byte&gt;): byte[]_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>800</x>
+      <y>752</y>
+      <w>232</w>
+      <h>96</h>
+    </coordinates>
+    <panel_attributes>AcknowledgementModification
+--
+-opcode: byte[]
+-blockNumber: byte[]
+--
++PacketModification(int)
+/+apply(Packet, int): byte[]/
++performTidModification(Packet, int)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>200</x>
+      <y>520</y>
+      <w>136</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>TidModification
+--
+-port: int
+--
++TidModification(int)
++toString(): String
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>208</x>
+      <y>752</y>
+      <w>176</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>ReadRequestModification
+--
+-opcode: byte[]
+-filename: byte[]
+-zeroByteAfterFilename: byte[]
+-mode: byte[]
+-zeroByteAfterMode
+--
++PacketModification()
++apply(Packet, int): byte[]
++toString(): String</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>600</x>
+      <y>752</y>
+      <w>176</w>
+      <h>136</h>
+    </coordinates>
+    <panel_attributes>WriteRequestModification
+--
+-opcode: byte[]
+-filename: byte[]
+-zeroByteAfterFilename: byte[]
+-mode: byte[]
+-zeroByteAfterMode
+--
++PacketModification()
++apply(Packet, int): byte[]
++toString(): String</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>416</x>
+      <y>752</y>
+      <w>160</w>
+      <h>96</h>
+    </coordinates>
+    <panel_attributes>DataPacketModification
+--
+-opcode: byte[]
+-blockNumber: byte[]
+-data: byte[]
+--
++DataPacketModification(int)
++apply(Packet, int): byte[]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>568</x>
+      <y>184</y>
+      <w>24</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;120.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>160</x>
+      <y>312</y>
+      <w>200</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>IntermediateHost
+--
+/see IntermediateHost class diagram/
+/for implementation details/
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>352</x>
+      <y>336</y>
+      <w>128</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>140.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>576</x>
+      <y>408</y>
+      <w>40</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=0..*</panel_attributes>
+    <additional_attributes>10.0;110.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>328</x>
+      <y>552</y>
+      <w>152</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=0..1</panel_attributes>
+    <additional_attributes>10.0;10.0;170.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>576</x>
+      <y>624</y>
+      <w>24</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;80.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>288</x>
+      <y>680</y>
+      <w>312</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>370.0;10.0;10.0;10.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>488</x>
+      <y>680</y>
+      <w>24</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>680</x>
+      <y>680</y>
+      <w>24</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>576</x>
+      <y>680</y>
+      <w>352</w>
+      <h>88</h>
+    </coordinates>
+    <panel_attributes>lt=-</panel_attributes>
+    <additional_attributes>10.0;10.0;420.0;10.0;420.0;90.0</additional_attributes>
+  </element>
+</diagram>

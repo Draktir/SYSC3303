@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>9</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>351</x>
+      <y>297</y>
+      <w>288</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>RequestHandler
+--
+-requestPacket: DatagramPacket
+-packetParser: PacketParser
+--
++RequestHandler(DatagramPacket)
++run()
+_+printPacketInformation(DatagramPacket)_
+-sendFileClient(ReadRequest)
+-receiveFileFromClient(WriteRequest)
+-handleParseError(String, DatagramPacket)
+-sendErrorPacket(String, DatagramPacket)
+-log(String)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>729</x>
+      <y>297</y>
+      <w>306</w>
+      <h>144</h>
+    </coordinates>
+    <panel_attributes>ClientConnection
+--
+-clientSocket: DatagramSocket
+-clientAddress: InetAddress
+-clientPort: int
+--
++ClientConnection(DatagramPacket)
++sendPacket(Packet)
++sendPacketAndReceive(Packet): DatagramPacket
+-isClientTidValid(DatagramPacket): boolean</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>378</x>
+      <y>90</y>
+      <w>234</w>
+      <h>126</h>
+    </coordinates>
+    <panel_attributes>Listener
+--
+-receiveSocket: DatagramSocket
+-stopRequested: boolean
+--
++Listener()
++run()
++requestStop(): void {guarded}
+-stopRequested(): boolean {guarded}</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>198</x>
+      <y>99</y>
+      <w>108</w>
+      <h>81</h>
+    </coordinates>
+    <panel_attributes>Server
+--
+
+--
++Server()
+_+main(String[])_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>297</x>
+      <y>144</y>
+      <w>99</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>90.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>486</x>
+      <y>207</y>
+      <w>27</w>
+      <h>108</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;100.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>630</x>
+      <y>369</y>
+      <w>117</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>110.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>45</x>
+      <y>288</y>
+      <w>180</w>
+      <h>108</h>
+    </coordinates>
+    <panel_attributes>FileReader
+--
+-filename: String
+-fileIn: BufferedInputStream
+--
++FileReader(String)
++readNextBlock(byte[]): int
++close(): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>216</x>
+      <y>324</y>
+      <w>153</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;150.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>216</x>
+      <y>432</y>
+      <w>153</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+</panel_attributes>
+    <additional_attributes>10.0;20.0;150.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>45</x>
+      <y>414</y>
+      <w>180</w>
+      <h>108</h>
+    </coordinates>
+    <panel_attributes>FileWriter
+--
+-filename: String
+-fileOut: BufferedInputStream
+--
++FileWriter(String)
++writeBlock(byte[]): int
++close(): void</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
