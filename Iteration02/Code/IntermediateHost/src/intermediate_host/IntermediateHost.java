@@ -388,7 +388,7 @@ public class IntermediateHost {
       DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       DataPacket dataPacket = null;
 
-      log("Waiting for Data Packet from server.");
+      log("Waiting for Data Packet from client.");
       
       do {
         try {
