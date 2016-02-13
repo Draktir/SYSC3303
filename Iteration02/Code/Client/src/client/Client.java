@@ -154,6 +154,10 @@ public class Client {
     log("Expecting ACK with block #0");
     
     DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
+    
+    // remember the server's TID
+    serverConnection.setServerAddress(recvdDatagram.getAddress());
+    serverConnection.setServerPort(recvdDatagram.getPort());
 
     log("Packet received.");
     printPacketInformation(recvdDatagram);
@@ -282,6 +286,10 @@ public class Client {
     
     DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
 
+    // remember the server's TID
+    serverConnection.setServerAddress(recvdDatagram.getAddress());
+    serverConnection.setServerPort(recvdDatagram.getPort());
+    
     int blockNumber = 1;
 
     do {

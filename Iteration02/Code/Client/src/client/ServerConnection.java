@@ -79,12 +79,6 @@ public class ServerConnection {
         return null;
       }
       
-      // if this is the first time we talk to this server, record its TID
-      if (this.serverAddress == null) {
-        this.serverAddress = responseDatagram.getAddress();
-        this.serverPort = responseDatagram.getPort();
-      }
-      
       // ensure the client TID is the same
       if (!isServerTidValid(responseDatagram)) {
         System.err.println("[SERVER-CONNECTION] Received packet with wrong TID");
@@ -119,9 +113,25 @@ public class ServerConnection {
     
     return responseDatagram;
   }
-
+  
   private boolean isServerTidValid(DatagramPacket packet) {
+    if (serverAddress == null) return true;
     return serverAddress.equals(packet.getAddress()) && packet.getPort() == serverPort;
   }
-  
+
+  public InetAddress getServerAddress() {
+    return serverAddress;
+  }
+
+  public void setServerAddress(InetAddress serverAddress) {
+    this.serverAddress = serverAddress;
+  }
+
+  public int getServerPort() {
+    return serverPort;
+  }
+
+  public void setServerPort(int serverPort) {
+    this.serverPort = serverPort;
+  }
 }
