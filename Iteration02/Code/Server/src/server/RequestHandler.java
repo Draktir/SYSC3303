@@ -338,7 +338,7 @@ class RequestHandler implements Runnable {
     for (int i = 0; i < data.length; i++) {
       System.out.print(data[i] + " ");
     }
-    System.out.println("-------------------------------------------\n");
+    System.out.println("\n-------------------------------------------\n");
   }
   
   private void log(String msg) {
