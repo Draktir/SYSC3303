@@ -1,0 +1,9 @@
+Team Work Breakdown:
+
+Amr Gawish:         Planning, Timing Diagrams, Client menu
+Loktin Wong:        Planning, Client error checking & handling
+Yanzhe Zhang:       Planning, IntermediateHost Menu, Error scenario testing, Class & Timing Diagrams
+Rui Li:             Planning, Format debugging output 
+Philip Klostermann: Planning, Server error checking & handling, Intermediate Host error simulation, Class & Timing Diagrams 
+
+
