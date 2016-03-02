@@ -4,7 +4,7 @@
 1. (L) TFTP's protocol for handling timeouts/retransmit needs to be implemented. This needs to be done for Client, Server and probably Intermediate Host as well.
   1. If the recipient does not respond within the timeout period, the sender retransmits the last packet.
   2. Delayed packets should not cause termination of the request. 
-2. Client needs to handle network errors.
+2. (L) Client needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
 3. Server needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
