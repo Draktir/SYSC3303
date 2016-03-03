@@ -22,6 +22,15 @@ public class AcknowledgementModification extends PacketModification {
       super.performTidModification(packet, recvPort);
     }
     
+    if (super.delayModification != null) {
+      super.performDelayPacketModification(packet, delayModification.getDelay());
+      return null;
+    }
+    
+    if (super.dropModification != null) {
+      return null;
+    }
+    
     Acknowledgement ackPacket = (Acknowledgement) packet;
     List<Byte> modified = new ArrayList<>();
     

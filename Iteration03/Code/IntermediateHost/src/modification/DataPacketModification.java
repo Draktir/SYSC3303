@@ -23,6 +23,15 @@ public class DataPacketModification extends PacketModification {
       super.performTidModification(packet, recvPort);
     }
     
+    if (super.delayModification != null) {
+      super.performDelayPacketModification(packet, delayModification.getDelay());
+      return null;
+    }
+    
+    if (super.dropModification != null) {
+      return null;
+    }
+    
     DataPacket dataPacket = (DataPacket) packet;
     List<Byte> modified = new ArrayList<>();
     

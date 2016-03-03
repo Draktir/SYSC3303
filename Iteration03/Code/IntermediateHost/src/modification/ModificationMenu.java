@@ -59,6 +59,8 @@ public class ModificationMenu {
       System.out.println("  [ 5 ] zero-byte after mode");
       System.out.println("  [ 6 ] Append data at the end");
       System.out.println("  [ 7 ] Modify TID (sending port number)");
+      System.out.println("  [ 8 ] Delay packet");
+      System.out.println("  [ 9 ] Drop packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
     
@@ -70,9 +72,15 @@ public class ModificationMenu {
       
       byte[] modValue = null;
       TidModification tidMod = null;
+      DelayPacketModification delayMod = null;
+      DropPacketModification dropMod = null;
       
       if (fieldSelection == 7) {
         tidMod = configureTidModification();
+      } else if (fieldSelection == 8) {
+        delayMod = configureDelayPacketModification();
+      } else if (fieldSelection == 9) {
+        dropMod = new DropPacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -98,6 +106,12 @@ public class ModificationMenu {
           break;
         case 7:
           readReqMod.setTidModification(tidMod);
+          break;
+        case 8:
+          readReqMod.setDelayModification(delayMod);
+          break;
+        case 9:
+          readReqMod.setDropModification(dropMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -125,6 +139,8 @@ public class ModificationMenu {
       System.out.println("  [ 5 ] zero-byte after mode");
       System.out.println("  [ 6 ] Append data at the end");
       System.out.println("  [ 7 ] Modify TID (sending port number)");
+      System.out.println("  [ 8 ] Delay packet");
+      System.out.println("  [ 9 ] Drop packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
     
@@ -136,9 +152,15 @@ public class ModificationMenu {
       
       byte[] modValue = null;
       TidModification tidMod = null;
+      DelayPacketModification delayMod = null;
+      DropPacketModification dropMod = null;
       
       if (fieldSelection == 7) {
         tidMod = configureTidModification();
+      } else if (fieldSelection == 8) {
+        delayMod = configureDelayPacketModification();
+      } else if (fieldSelection == 9) {
+        dropMod = new DropPacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -164,6 +186,12 @@ public class ModificationMenu {
           break;
         case 7:
           writeReqMod.setTidModification(tidMod);
+          break;
+        case 8:
+          writeReqMod.setDelayModification(delayMod);
+          break;
+        case 9:
+          writeReqMod.setDropModification(dropMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -192,6 +220,8 @@ public class ModificationMenu {
       System.out.println("  [ 3 ] Data");
       System.out.println("  [ 4 ] Append data at the end");
       System.out.println("  [ 5 ] Modify TID (sending port number)");
+      System.out.println("  [ 6 ] Delay packet");
+      System.out.println("  [ 7 ] Drop packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
@@ -203,9 +233,15 @@ public class ModificationMenu {
       
       byte[] modValue = null;
       TidModification tidMod = null;
+      DelayPacketModification delayMod = null;
+      DropPacketModification dropMod = null;
       
       if (fieldSelection == 5) {
         tidMod = configureTidModification();
+      } else if (fieldSelection == 8) {
+        delayMod = configureDelayPacketModification();
+      } else if (fieldSelection == 9) {
+        dropMod = new DropPacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -225,6 +261,12 @@ public class ModificationMenu {
           break;
         case 5:
           dataMod.setTidModification(tidMod);
+          break;
+        case 6:
+          dataMod.setDelayModification(delayMod);
+          break;
+        case 7:
+          dataMod.setDropModification(dropMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -252,6 +294,8 @@ public class ModificationMenu {
       System.out.println("  [ 2 ] Block Number (bytes 3 & 4)");
       System.out.println("  [ 3 ] Append data at the end");
       System.out.println("  [ 4 ] Modify TID (sending port number)");
+      System.out.println("  [ 5 ] Delay packet");
+      System.out.println("  [ 6 ] Drop packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
@@ -263,9 +307,15 @@ public class ModificationMenu {
       
       byte[] modValue = null;
       TidModification tidMod = null;
+      DelayPacketModification delayMod = null;
+      DropPacketModification dropMod = null;
       
       if (fieldSelection == 4) {
         tidMod = configureTidModification();
+      } else if (fieldSelection == 8) {
+        delayMod = configureDelayPacketModification();
+      } else if (fieldSelection == 9) {
+        dropMod = new DropPacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -282,6 +332,12 @@ public class ModificationMenu {
           break;
         case 4:
           ackMod.setTidModification(tidMod);
+          break;
+        case 5:
+          ackMod.setDelayModification(delayMod);
+          break;
+        case 6:
+          ackMod.setDropModification(dropMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -301,6 +357,15 @@ public class ModificationMenu {
     return new TidModification(port);
   }
   
+  private DelayPacketModification configureDelayPacketModification() {
+    int delay = -1;
+    while (delay < 0) {
+      System.out.println("\nEnter the delay in seconds: ");
+      delay = scan.nextInt();
+    }
+    return new DelayPacketModification(delay);
+  }
+  
   private byte[] getModValueFromUser() {
     int modType = -1;
     byte[] modValue = null;
@@ -311,6 +376,8 @@ public class ModificationMenu {
       System.out.println("  [ 2 ] Replace with int");
       System.out.println("  [ 3 ] Replace with string");
       System.out.println("  [ 4 ] Remove field");
+      System.out.println("  [ 5 ] Delay packet");
+      System.out.println("  [ 6 ] Drop packet");
       System.out.print(" > ");
        
       modType = scan.nextInt(); 

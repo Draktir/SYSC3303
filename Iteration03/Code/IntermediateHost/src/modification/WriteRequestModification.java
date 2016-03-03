@@ -24,6 +24,15 @@ public class WriteRequestModification extends PacketModification {
       super.performTidModification(packet, recvPort);
     }
     
+    if (super.delayModification != null) {
+      super.performDelayPacketModification(packet, delayModification.getDelay());
+      return null;
+    }
+    
+    if (super.dropModification != null) {
+      return null;
+    }
+    
     WriteRequest writeRequest = (WriteRequest) packet;
 
     System.out.println("\n[WRQ-Modification] Applying modification: ");

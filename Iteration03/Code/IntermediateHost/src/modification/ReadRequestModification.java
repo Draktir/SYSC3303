@@ -23,6 +23,15 @@ public class ReadRequestModification extends PacketModification {
       super.performTidModification(packet, recvPort);
     }
     
+    if (super.delayModification != null) {
+      super.performDelayPacketModification(packet, delayModification.getDelay());
+      return null;
+    }
+    
+    if (super.dropModification != null) {
+      return null;
+    }
+    
     ReadRequest readRequest = (ReadRequest) packet;
 
     System.out.println("\n[RRQ-Modification] Applying modification: ");

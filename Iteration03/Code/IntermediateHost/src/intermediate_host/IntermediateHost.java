@@ -44,7 +44,6 @@ public class IntermediateHost {
    * receive TFTP requests.
    * 
    * @param args
-   *          unused
    */
   public static void main(String[] args) {
     IntermediateHost h = new IntermediateHost();
@@ -126,6 +125,11 @@ public class IntermediateHost {
     // PacketModifier figures out if the packet needs to be modified, applies
     // the modification if applicable, and returns the packet data as a byte[].
     byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
+    
+    // Packet modifier will return null if we want to drop or delay the packet.
+    if (requestData == null) {
+      log("ReadRequest has been cancelled. Not forwarding: " + request.toString());
+    }
     
     log("Forwarding Read Request to server on port " + Configuration.SERVER_PORT);
     
@@ -210,6 +214,12 @@ public class IntermediateHost {
       
       // forward to client
       byte[] dataPacketRaw = packetModifier.process(dataPacket, clientPort);
+      
+      // Packet modifier will return null if we want to drop or delay the packet.
+      if (dataPacketRaw == null) {
+        log("DataPacket has been cancelled. Not forwarding: " + dataPacket.toString());
+      }
+      
       DatagramPacket forwardPacket = new DatagramPacket(dataPacketRaw, dataPacketRaw.length, dataPacket.getRemoteHost(),
           clientPort);
       
@@ -281,6 +291,12 @@ public class IntermediateHost {
 
       // forward ACK to server
       byte[] ackData = packetModifier.process(ack, serverPort);
+      
+      // Packet modifier will return null if we want to drop or delay the packet.
+      if (ackData == null) {
+        log("ACK has been cancelled. Not forwarding: " + ack.toString());
+      }
+      
       DatagramPacket forwardAckDatagram = new DatagramPacket(ackData, ackData.length, ack.getRemoteHost(), serverPort);
 
       printPacketInformation(forwardAckDatagram);
@@ -397,6 +413,12 @@ public class IntermediateHost {
       
       // forward to client
       byte[] ackPacketRaw = packetModifier.process(ack, clientPort);
+      
+      // Packet modifier will return null if we want to drop or delay the packet.
+      if (ackPacketRaw == null) {
+        log("ACK has been cancelled. Not forwarding: " + ack.toString());
+      }
+      
       DatagramPacket forwardPacket = new DatagramPacket(ackPacketRaw, ackPacketRaw.length, ack.getRemoteHost(),
           clientPort);
 
@@ -479,6 +501,12 @@ public class IntermediateHost {
 
       // forward data packet to server
       byte[] dataPacketData = packetModifier.process(dataPacket, serverPort);
+      
+      // Packet modifier will return null if we want to drop or delay the packet.
+      if (dataPacketData == null) {
+        log("DataPacket has been cancelled. Not forwarding: " + dataPacket.toString());
+      }
+      
       DatagramPacket forwardDataPacketDatagram = new DatagramPacket(dataPacketData, dataPacketData.length,
           dataPacket.getRemoteHost(), serverPort);
 
