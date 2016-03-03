@@ -3,7 +3,9 @@ package modification;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,9 +25,9 @@ public abstract class PacketModification {
     this.packetNumber = packetNumber;
   }
 
-  public abstract byte[] apply(Packet packet, int recvPort);
+  public abstract byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort);
   
-  public void performTidModification(Packet packet, int recvPort) {
+  public void performTidModification(Packet packet, int remoteReceivePort) {
     System.out.println("[Modification] Sending packet with wrong TID: port " + tidModification.getPort());
     DatagramSocket tempSock = null;
     try {
@@ -37,7 +39,7 @@ public abstract class PacketModification {
     
     byte[] data = packet.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(data, data.length,
-        packet.getRemoteHost(), recvPort);
+        packet.getRemoteHost(), remoteReceivePort);
     
     try {
       tempSock.send(sendDatagram);
@@ -73,7 +75,7 @@ public abstract class PacketModification {
     tempSock.close();
   }
   
-  public void performDelayPacketModification(Packet packet, int delay) {
+  public void performDelayPacketModification(Packet packet, int localReceivePort) {
     /*
      * Start a new thread that will hold on to the packet and sleep for a while.
      * Then send the same packet again to the same port on the Intermediate host.
@@ -81,6 +83,8 @@ public abstract class PacketModification {
      * N.B. I'll have to test this on the lab computers. Java 8's Lambdas *may*
      * not work with that version of Eclipse.
      */
+    
+    int delay = this.delayModification.getDelay();
     
     Runnable delayTask = () -> {
       System.out.println("[Modification] Delaying packet for " + delay + "s: " + packet.toString());
@@ -101,9 +105,18 @@ public abstract class PacketModification {
         return;
       }
       
+      InetAddress localhost;
+      try {
+        localhost = InetAddress.getLocalHost();
+      } catch (UnknownHostException e) {
+        e.printStackTrace();
+        tempSocket.close();
+        return;
+      }
+      
       byte[] data = packet.getPacketData();
       DatagramPacket datagram = new DatagramPacket(data, data.length,
-          packet.getRemoteHost(), packet.getRemotePort());
+          localhost, localReceivePort);
       
       try {
         tempSocket.send(datagram);

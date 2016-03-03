@@ -17,13 +17,13 @@ public class AcknowledgementModification extends PacketModification {
   }
 
   @Override
-  public byte[] apply(Packet packet, int recvPort) {
+  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort) {
     if (super.tidModification != null) {
-      super.performTidModification(packet, recvPort);
+      super.performTidModification(packet, remoteReceivePort);
     }
     
     if (super.delayModification != null) {
-      super.performDelayPacketModification(packet, delayModification.getDelay());
+      super.performDelayPacketModification(packet, localReceivePort);
       return null;
     }
     
@@ -85,6 +85,7 @@ public class AcknowledgementModification extends PacketModification {
   public String toString() {
     return "AcknowledgementModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    blockNumber="
         + Arrays.toString(blockNumber) + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd="
-        + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + "\n]";
+        + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + ",\n    delayModification="
+        + delayModification + ",\n    dropModification=" + dropModification + "\n]";
   }
 }

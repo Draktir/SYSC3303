@@ -17,6 +17,9 @@ import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import Configuration.Configuration;
@@ -59,6 +62,8 @@ public class IntermediateHost {
   }
 
   public void go() {
+    List<Thread> connectionThreads = new ArrayList<>();
+    
     // Show the Modification configuration menu
     ModificationMenu modMenu = new ModificationMenu();
     // .show() returns a packetModifier based on the user's configuration
@@ -72,451 +77,54 @@ public class IntermediateHost {
     }
 
     log("");
-    log("Waiting for client request on port " + Configuration.INTERMEDIATE_PORT);
+    log("Waiting for client requests on port " + Configuration.INTERMEDIATE_PORT);
 
-    byte[] buffer = new byte[1024];
-    DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
-
-    Request request = null;
+    // run forever
     do {
-      try {
-        clientSocket.receive(requestDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }  
-
-      log("Received packet");
-      printPacketInformation(requestDatagram);
-
-      try {
-        request = packetParser.parseRequest(requestDatagram);
-      } catch (InvalidPacketException e1) {
-        request = null;
-        log("Not a valid request. Expecting RRQ or WRQ.\n");
-      }
-    } while (request == null);
-
-    clientPort = requestDatagram.getPort();
-    log("Client is receiving on port " + clientPort);
-
-    // determine the type of request and then service the file transfer
-    if (request.type() == RequestType.READ) {
-      log("Received valid Read Request: " + request.toString());
-      serviceTftpRead((ReadRequest) request);
-    } else if (request.type() == RequestType.WRITE) {
-      log("Received valid Write Request: " + request.toString());
-      serviceTftpWrite((WriteRequest) request);
-    }
-
-    log("File Transfer ended.\n");
-
-    clientSocket.close();
-  }
-
-  public void serviceTftpRead(ReadRequest request) {
-    try {
-      serverSocket = new DatagramSocket();
-    } catch (SocketException e) {
-      e.printStackTrace();
-    }
-
-    // PacketModifier figures out if the packet needs to be modified, applies
-    // the modification if applicable, and returns the packet data as a byte[].
-    byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
-    
-    // Packet modifier will return null if we want to drop or delay the packet.
-    if (requestData == null) {
-      log("ReadRequest has been cancelled. Not forwarding: " + request.toString());
-    }
-    
-    log("Forwarding Read Request to server on port " + Configuration.SERVER_PORT);
-    
-    // send ReadRequest
-    DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length, request.getRemoteHost(),
-        Configuration.SERVER_PORT);
-    
-    printPacketInformation(requestDatagram);
-    
-    try {
-      serverSocket.send(requestDatagram);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return;
-    }
-
-    int serverPort;
-    byte[] recvBuffer = new byte[1024];
-    boolean transferEnded = false;
-
-    while (!transferEnded) {
-
-      /*****************************************************************************************
-       * Receive Data packet from server and forward to client
-       */
-      
-      // wait for data packet
-      DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
-      // receive a data packet
-      DataPacket dataPacket = null;
+      byte[] buffer = new byte[1024];
+      DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
+  
+      Request request = null;
       do {
-    	boolean packetReceived = false;
-    	while (!packetReceived) {
-		  try {
-		    log("Waiting for data packet from server on port " + serverSocket.getLocalPort());
-            serverSocket.receive(dataPacketDatagram);
-            packetReceived = true;
-		  } catch (SocketTimeoutException e) {
-			try {
-		      clientSocket.send(requestDatagram);
-		    } catch (IOException e1) {
-		      e1.printStackTrace();
-		      return;
-		    }
-          } catch (IOException e) {
-            e.printStackTrace();
-          }	
-    	}
-        
-        log("Packet received");
-        printPacketInformation(dataPacketDatagram);
-        
-        // parse data packet
         try {
-          dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
-        } catch (InvalidPacketException e) {
-          log("Error parsing data packet: " + e.getMessage());
-          // if this is not an error packet or it's an error packet != error
-          // code 5 we are done.
-          boolean isRecoverableError = handleParseError(dataPacketDatagram, clientSocket,
-              dataPacketDatagram.getAddress(), clientPort);
-          if (!isRecoverableError) {
-            log("Non-recoverable error. Terminating this connection.");
-            transferEnded = true;
-            break;
-          }
-          log("Error is recoverable.");
-          dataPacket = null;
+          clientSocket.receive(requestDatagram);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }  
+  
+        log("Received packet");
+        printPacketInformation(requestDatagram);
+  
+        try {
+          request = packetParser.parseRequest(requestDatagram);
+        } catch (InvalidPacketException e1) {
+          request = null;
+          log("Not a valid request. Expecting RRQ or WRQ.\n");
         }
-      } while (dataPacket == null);
-
-      if (transferEnded) {
-        break;
+      } while (request == null);
+  
+      clientPort = requestDatagram.getPort();
+      log("Client is receiving on port " + clientPort);
+  
+      // determine the type of request and then service the file transfer
+      if (request.type() == RequestType.READ) {
+        log("Received valid Read Request: " + request.toString());
+        Runnable tftpReadTransfer = new TftpReadTransfer((ReadRequest) request, packetModifier);
+        Thread t = new Thread(tftpReadTransfer, "#" + (connectionThreads.size() + 1));
+        connectionThreads.add(t);
+        t.start();
+        
+      } else if (request.type() == RequestType.WRITE) {
+        log("Received valid Write Request: " + request.toString());
+        serviceTftpWrite((WriteRequest) request);
       }
+    } while (connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
-      serverPort = dataPacketDatagram.getPort();
-      
-      log("Server is receiving on port " + serverPort);
-      log("Received valid data packet:\n" + dataPacket.toString() + "\n");
-      log("Forward Data Packet to client.");
-      
-      // forward to client
-      byte[] dataPacketRaw = packetModifier.process(dataPacket, clientPort);
-      
-      // Packet modifier will return null if we want to drop or delay the packet.
-      if (dataPacketRaw == null) {
-        log("DataPacket has been cancelled. Not forwarding: " + dataPacket.toString());
-      }
-      
-      DatagramPacket forwardPacket = new DatagramPacket(dataPacketRaw, dataPacketRaw.length, dataPacket.getRemoteHost(),
-          clientPort);
-      
-      printPacketInformation(forwardPacket);
-
-      try {
-        clientSocket.send(forwardPacket);
-      } catch (IOException e) {
-        e.printStackTrace();
-        return;
-      }
-
-      /*****************************************************************************************
-       * Receive ACK from client and forward to server
-       */
-
-      // wait for ACK from client
-      DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
-      Acknowledgement ack = null;
-      do {
-    	boolean packetReceived = false;
-    	while (!packetReceived) {
-		  try {
-            log("Waiting for an ACK from the client on port " + clientSocket.getLocalPort());
-            clientSocket.receive(ackDatagram);
-            packetReceived = true;
-          } catch (SocketTimeoutException e) {
-            try {
-	          clientSocket.send(forwardPacket);
-    	    } catch (IOException e1) {
-      	      e1.printStackTrace();
-    	      return;
-    	    }
-          } catch (IOException e) {
-            e.printStackTrace();
-            return;
-          }	
-    	}
-        
-        log("Packet received.");
-        printPacketInformation(ackDatagram);
-        
-        // parse ACK
-        try {
-          ack = packetParser.parseAcknowledgement(ackDatagram);
-        } catch (InvalidPacketException e) {
-          log("Error parsing ACK");
-          // if this is not an error packet or it's an error packet != error
-          // code 5 we are done.
-          boolean isRecoverableError = handleParseError(ackDatagram, serverSocket, ackDatagram.getAddress(),
-              serverPort);
-          if (!isRecoverableError) {
-            transferEnded = true;
-            log("Non-recoverable error. Terminating this connection");
-            break;
-          }
-          log("Error is recoverable.");
-          ack = null;
-        }
-      } while (ack == null);
-
-      if (transferEnded) {
-        break;
-      }
-
-      log("Received valid ACK:\n" + ack.toString() + "\n");
-      log("Forwarding ACK to server.");
-
-      // forward ACK to server
-      byte[] ackData = packetModifier.process(ack, serverPort);
-      
-      // Packet modifier will return null if we want to drop or delay the packet.
-      if (ackData == null) {
-        log("ACK has been cancelled. Not forwarding: " + ack.toString());
-      }
-      
-      DatagramPacket forwardAckDatagram = new DatagramPacket(ackData, ackData.length, ack.getRemoteHost(), serverPort);
-
-      printPacketInformation(forwardAckDatagram);
-      
-      try {
-        serverSocket.send(forwardAckDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      
-      // check if we're done
-      if (dataPacket.getFileData().length < 512) {
-        log("File transfer complete.");
-        transferEnded = true;
-      }
-    }
-
-    serverSocket.close();
+    log("All connections terminated");
   }
 
   public void serviceTftpWrite(WriteRequest request) {
-    try {
-      serverSocket = new DatagramSocket();
-      serverSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
-    } catch (SocketException e) {
-      e.printStackTrace();
-    }
-
-    // PacketModifier figures out if the packet needs to be modified, applies
-    // the modification if applicable, and returns the packet data as a byte[].
-    byte[] requestData = packetModifier.process(request, Configuration.SERVER_PORT);
-
-    log("Forwarding Write Request to server on port " + Configuration.SERVER_PORT);
     
-    // send WriteRequest
-    DatagramPacket requestDatagram = new DatagramPacket(requestData, requestData.length, request.getRemoteHost(),
-        Configuration.SERVER_PORT);
-
-    printPacketInformation(requestDatagram);
-    
-    try {
-      serverSocket.send(requestDatagram);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return;
-    }
-
-    int serverPort;
-    byte[] recvBuffer = new byte[1024];
-    boolean transferEnded = false;
-    boolean receivedLastDataPacket = false;
-
-    while (!transferEnded) {
-      /*****************************************************************************************
-       * Receive ACK from server and forward to client
-       */
-
-      // wait for ack packet
-      DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
-      Acknowledgement ack = null;
-      
-      do {
-    	boolean packetReceived = false;
-    	
-    	while (!packetReceived) {
-		  try {
-		    log("Waiting for ACK from server on port " + serverSocket.getLocalPort());
-	        serverSocket.receive(ackDatagram);
-	        packetReceived = true;
-		  } catch (SocketTimeoutException e) {
-    	    try {
-	          clientSocket.send(requestDatagram);
-    	    } catch (IOException e1) {
-      	      e1.printStackTrace();
-	    	  return;
-	    	}
-	      } catch (IOException e) {
-	        e.printStackTrace();
-	      }
-    	}
-        
-        log("Packet received.");
-        printPacketInformation(ackDatagram);
-        
-        // parse data packet
-        try {
-          ack = packetParser.parseAcknowledgement(ackDatagram);
-        } catch (InvalidPacketException e) {
-          log("Error parsing ACK");
-          // if this is not an error packet or it's an error packet != error
-          // code 5 we are done.
-          boolean isRecoverableError = handleParseError(ackDatagram, clientSocket, ackDatagram.getAddress(),
-              clientPort);
-          if (!isRecoverableError) {
-            log("Non-recoverable error. Terminating this connection");
-            transferEnded = true;
-            break;
-          }
-          log("Error is recoverable.");
-          ack = null;
-        }
-      } while (ack == null);
-
-      if (transferEnded) {
-        break;
-      }
-
-      serverPort = ackDatagram.getPort();
-
-      log("Server is receiving on port " + serverPort);
-      log("Received valid ACK:\n" + ack.toString() + "\n");
-      log("Forwarding ACK to client on port " + clientPort);
-      
-      // forward to client
-      byte[] ackPacketRaw = packetModifier.process(ack, clientPort);
-      
-      // Packet modifier will return null if we want to drop or delay the packet.
-      if (ackPacketRaw == null) {
-        log("ACK has been cancelled. Not forwarding: " + ack.toString());
-      }
-      
-      DatagramPacket forwardPacket = new DatagramPacket(ackPacketRaw, ackPacketRaw.length, ack.getRemoteHost(),
-          clientPort);
-
-      printPacketInformation(forwardPacket);
-      
-      try {
-        clientSocket.send(forwardPacket);
-      } catch (IOException e) {
-        e.printStackTrace();
-        return;
-      }
-      
-      
-      // figure out if we're done (i.e. we just sent the last ACK)
-      if (receivedLastDataPacket) {
-        log("");
-        log("File Transfer is complete.\n");
-        transferEnded = true;
-        break;
-      }
-
-      /*****************************************************************************************
-       * Receive DataPacket from client and forward to server
-       */
-
-      // wait for Data Packet from client
-      DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
-      DataPacket dataPacket = null;
-
-      do {
-    	boolean packetReceived = false;
-    	
-    	while (!packetReceived) {
-    		try {
-	          log("Waiting for Data Packet from client.");
-	          clientSocket.receive(dataPacketDatagram);
-	          packetReceived = true;
-    		} catch (SocketTimeoutException e) {
-    		  try {
-		        clientSocket.send(forwardPacket);
-	    	  } catch (IOException e1) {
-	      	    e1.printStackTrace();
-		    	return;
-		      }
-	        } catch (IOException e) {
-	          e.printStackTrace();
-	          return;
-	        }	
-    	}
-        
-        log("Received packet.");
-        printPacketInformation(dataPacketDatagram);
-
-        // parse ACK
-        try {
-          dataPacket = packetParser.parseDataPacket(dataPacketDatagram);
-        } catch (InvalidPacketException e) {
-          log("Error parsing data packet.");
-          // if this is not an error packet or it's an error packet != error
-          // code 5 we are done.
-          boolean isRecoverableError = handleParseError(dataPacketDatagram, serverSocket,
-              dataPacketDatagram.getAddress(), serverPort);
-          if (!isRecoverableError) {
-            log("Non-recoverable error. Terminating this connnection.");
-            transferEnded = true;
-            break;
-          }
-          log("Error is recoverable.");
-          dataPacket = null;
-        }
-      } while (dataPacket == null);
-
-      if (transferEnded) {
-        break;
-      }
-
-      log("Received valid data packet:\n" + dataPacket.toString() + "\n");
-      log("Forwarding Data Packet to server on port " + serverPort);
-
-      // forward data packet to server
-      byte[] dataPacketData = packetModifier.process(dataPacket, serverPort);
-      
-      // Packet modifier will return null if we want to drop or delay the packet.
-      if (dataPacketData == null) {
-        log("DataPacket has been cancelled. Not forwarding: " + dataPacket.toString());
-      }
-      
-      DatagramPacket forwardDataPacketDatagram = new DatagramPacket(dataPacketData, dataPacketData.length,
-          dataPacket.getRemoteHost(), serverPort);
-
-      printPacketInformation(forwardDataPacketDatagram);
-      
-      // figure out if this was the last data packet
-      receivedLastDataPacket = (dataPacket.getFileData().length < 512); 
-      
-      try {
-        serverSocket.send(forwardDataPacketDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    }
-
-    serverSocket.close();
   }
 
   private boolean handleParseError(DatagramPacket datagram, DatagramSocket socket, InetAddress recvHost, int recvPort) {
@@ -526,8 +134,8 @@ public class IntermediateHost {
       errPacket = packetParser.parseErrorPacket(datagram);
     } catch (InvalidErrorPacketException e) {
       // Nope, not an error packet, someone screwed up.
-      log("Invalid packet type received. Terminating connection.\n\n");
-      return false;
+      log("Not an error packet, but unexpected type. Forwarding anyhow.\n\n");
+      return true;
     }
 
     log("Received an error packet: " + errPacket.getErrorCode() + "\n" + errPacket.toString() + "\n");

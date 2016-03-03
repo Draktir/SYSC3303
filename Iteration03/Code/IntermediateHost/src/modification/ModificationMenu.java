@@ -66,7 +66,7 @@ public class ModificationMenu {
     
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 7) {
+      if (fieldSelection <= 0 || fieldSelection > 9) {
         continue;
       }
       
@@ -146,7 +146,7 @@ public class ModificationMenu {
     
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 7) {
+      if (fieldSelection <= 0 || fieldSelection > 9) {
         continue;
       }
       
@@ -227,7 +227,7 @@ public class ModificationMenu {
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 5) {
+      if (fieldSelection <= 0 || fieldSelection > 7) {
         continue;
       }
       
@@ -238,9 +238,9 @@ public class ModificationMenu {
       
       if (fieldSelection == 5) {
         tidMod = configureTidModification();
-      } else if (fieldSelection == 8) {
+      } else if (fieldSelection == 6) {
         delayMod = configureDelayPacketModification();
-      } else if (fieldSelection == 9) {
+      } else if (fieldSelection == 7) {
         dropMod = new DropPacketModification();
       } else {
         modValue = getModValueFromUser();
@@ -301,7 +301,7 @@ public class ModificationMenu {
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 4) {
+      if (fieldSelection <= 0 || fieldSelection > 6) {
         continue;
       }
       
@@ -312,9 +312,9 @@ public class ModificationMenu {
       
       if (fieldSelection == 4) {
         tidMod = configureTidModification();
-      } else if (fieldSelection == 8) {
+      } else if (fieldSelection == 5) {
         delayMod = configureDelayPacketModification();
-      } else if (fieldSelection == 9) {
+      } else if (fieldSelection == 6) {
         dropMod = new DropPacketModification();
       } else {
         modValue = getModValueFromUser();
@@ -376,8 +376,6 @@ public class ModificationMenu {
       System.out.println("  [ 2 ] Replace with int");
       System.out.println("  [ 3 ] Replace with string");
       System.out.println("  [ 4 ] Remove field");
-      System.out.println("  [ 5 ] Delay packet");
-      System.out.println("  [ 6 ] Drop packet");
       System.out.print(" > ");
        
       modType = scan.nextInt(); 

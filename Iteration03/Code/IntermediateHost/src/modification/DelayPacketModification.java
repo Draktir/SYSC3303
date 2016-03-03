@@ -17,6 +17,6 @@ public class DelayPacketModification {
 
   @Override
   public String toString() {
-    return "DelayPacketModification [\n    delay=" + delay + "\n]";
+    return "DelayPacketModification [delay=" + delay + "]";
   }
 }
