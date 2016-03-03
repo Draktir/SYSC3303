@@ -66,8 +66,6 @@ public class IntermediateHost {
 
     try {
       clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
-      // TODO: might need to move this somewhere to allow more time for initial client connection
-      clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME); 
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
@@ -168,7 +166,6 @@ public class IntermediateHost {
             serverSocket.receive(dataPacketDatagram);
             packetReceived = true;
 		  } catch (SocketTimeoutException e) {
-			log("Response timed out. Attempting to resend last packet.");
 			try {
 		      clientSocket.send(requestDatagram);
 		    } catch (IOException e1) {
@@ -248,7 +245,6 @@ public class IntermediateHost {
             packetReceived = true;
           } catch (SocketTimeoutException e) {
             try {
-          	  log("Response timed out. Attempting to resend last packet.");
 	          clientSocket.send(forwardPacket);
     	    } catch (IOException e1) {
       	      e1.printStackTrace();
@@ -368,7 +364,6 @@ public class IntermediateHost {
 	        packetReceived = true;
 		  } catch (SocketTimeoutException e) {
     	    try {
-          	  log("Response timed out. Attempting to resend last packet.");
 	          clientSocket.send(requestDatagram);
     	    } catch (IOException e1) {
       	      e1.printStackTrace();
@@ -458,7 +453,6 @@ public class IntermediateHost {
 	          packetReceived = true;
     		} catch (SocketTimeoutException e) {
     		  try {
-	            log("Response timed out. Attempting to resend last packet.");
 		        clientSocket.send(forwardPacket);
 	    	  } catch (IOException e1) {
 	      	    e1.printStackTrace();
