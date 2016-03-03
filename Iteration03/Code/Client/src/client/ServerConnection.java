@@ -5,12 +5,15 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 import packet.ErrorPacket;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
 import packet.ErrorPacket.ErrorCode;
+
+import Configuration.Configuration;
 
 public class ServerConnection {
   private DatagramSocket serverSocket;
@@ -19,6 +22,7 @@ public class ServerConnection {
 
   public ServerConnection() throws SocketException {
     this.serverSocket = new DatagramSocket();
+    this.serverSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
   }
 
   /**
@@ -31,7 +35,7 @@ public class ServerConnection {
       byte[] data = packet.getPacketData();
       DatagramPacket sendPacket = new DatagramPacket(data, data.length, packet.getRemoteHost(), packet.getRemotePort());
       
-      System.out.println("[SERVER-CONNECTINO] Sending packet to server on port " + packet.getRemotePort());
+      System.out.println("[SERVER-CONNECTION] Sending packet to server on port " + packet.getRemotePort());
       Client.printPacketInformation(sendPacket);
       
       serverSocket.send(sendPacket);
@@ -70,13 +74,25 @@ public class ServerConnection {
     do {
       buffer = new byte[517];
       responseDatagram = new DatagramPacket(buffer, 517);
-      System.out.println("[SERVER-CONNECTION] Waiting for response from server on port " + serverSocket.getLocalPort());
+      boolean packetReceived = false;
       
-      try {
-        serverSocket.receive(responseDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-        return null;
+      while (!packetReceived) {
+    	System.out.println("[SERVER-CONNECTION] Waiting for response from server on port " + serverSocket.getLocalPort());
+	    try {
+	      serverSocket.receive(responseDatagram);
+	      packetReceived = true;
+	    } catch (SocketTimeoutException e) {
+	      System.out.println("[SERVER-CONNECTION] Response timed out. Attempting to resend last packet.");
+	      try {
+	        serverSocket.send(sendPacket);
+	      } catch (IOException e1) {
+	        e1.printStackTrace();
+	        return null;
+	      }
+	    } catch (IOException e) {
+	      e.printStackTrace();
+	      return null;
+	    } 
       }
       
       // ensure the client TID is the same

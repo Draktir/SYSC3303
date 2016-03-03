@@ -16,6 +16,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.Scanner;
 
 import Configuration.Configuration;
@@ -66,6 +67,8 @@ public class IntermediateHost {
 
     try {
       clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
+      // TODO: might need to move this somewhere to allow more time for initial client connection
+      clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME); 
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
@@ -83,7 +86,7 @@ public class IntermediateHost {
         clientSocket.receive(requestDatagram);
       } catch (IOException e) {
         e.printStackTrace();
-      }
+      }  
 
       log("Received packet");
       printPacketInformation(requestDatagram);
@@ -151,17 +154,27 @@ public class IntermediateHost {
       
       // wait for data packet
       DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
-
-      log("Waiting for data packet from server on port " + serverSocket.getLocalPort());
-      
       // receive a data packet
       DataPacket dataPacket = null;
       do {
-        try {
-          serverSocket.receive(dataPacketDatagram);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+    	boolean packetReceived = false;
+    	while (!packetReceived) {
+		  try {
+		    log("Waiting for data packet from server on port " + serverSocket.getLocalPort());
+            serverSocket.receive(dataPacketDatagram);
+            packetReceived = true;
+		  } catch (SocketTimeoutException e) {
+			log("Response timed out. Attempting to resend last packet.");
+			try {
+		      clientSocket.send(requestDatagram);
+		    } catch (IOException e1) {
+		      e1.printStackTrace();
+		      return;
+		    }
+          } catch (IOException e) {
+            e.printStackTrace();
+          }	
+    	}
         
         log("Packet received");
         printPacketInformation(dataPacketDatagram);
@@ -213,18 +226,30 @@ public class IntermediateHost {
        * Receive ACK from client and forward to server
        */
 
-      log("Waiting for an ACK from the client on port " + clientSocket.getLocalPort());
       // wait for ACK from client
       DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       Acknowledgement ack = null;
       do {
-        try {
-          clientSocket.receive(ackDatagram);
-        } catch (IOException e) {
-          e.printStackTrace();
-          return;
-        }
-
+    	boolean packetReceived = false;
+    	while (!packetReceived) {
+		  try {
+            log("Waiting for an ACK from the client on port " + clientSocket.getLocalPort());
+            clientSocket.receive(ackDatagram);
+            packetReceived = true;
+          } catch (SocketTimeoutException e) {
+            try {
+          	  log("Response timed out. Attempting to resend last packet.");
+	          clientSocket.send(forwardPacket);
+    	    } catch (IOException e1) {
+      	      e1.printStackTrace();
+    	      return;
+    	    }
+          } catch (IOException e) {
+            e.printStackTrace();
+            return;
+          }	
+    	}
+        
         log("Packet received.");
         printPacketInformation(ackDatagram);
         
@@ -279,6 +304,7 @@ public class IntermediateHost {
   public void serviceTftpWrite(WriteRequest request) {
     try {
       serverSocket = new DatagramSocket();
+      serverSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
     } catch (SocketException e) {
       e.printStackTrace();
     }
@@ -315,16 +341,28 @@ public class IntermediateHost {
       // wait for ack packet
       DatagramPacket ackDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       Acknowledgement ack = null;
-
-      log("Waiting for ACK from server on port " + serverSocket.getLocalPort());
       
       do {
-        try {
-          serverSocket.receive(ackDatagram);
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-
+    	boolean packetReceived = false;
+    	
+    	while (!packetReceived) {
+		  try {
+		    log("Waiting for ACK from server on port " + serverSocket.getLocalPort());
+	        serverSocket.receive(ackDatagram);
+	        packetReceived = true;
+		  } catch (SocketTimeoutException e) {
+    	    try {
+          	  log("Response timed out. Attempting to resend last packet.");
+	          clientSocket.send(requestDatagram);
+    	    } catch (IOException e1) {
+      	      e1.printStackTrace();
+	    	  return;
+	    	}
+	      } catch (IOException e) {
+	        e.printStackTrace();
+	      }
+    	}
+        
         log("Packet received.");
         printPacketInformation(ackDatagram);
         
@@ -388,15 +426,27 @@ public class IntermediateHost {
       DatagramPacket dataPacketDatagram = new DatagramPacket(recvBuffer, recvBuffer.length);
       DataPacket dataPacket = null;
 
-      log("Waiting for Data Packet from client.");
-      
       do {
-        try {
-          clientSocket.receive(dataPacketDatagram);
-        } catch (IOException e) {
-          e.printStackTrace();
-          return;
-        }
+    	boolean packetReceived = false;
+    	
+    	while (!packetReceived) {
+    		try {
+	          log("Waiting for Data Packet from client.");
+	          clientSocket.receive(dataPacketDatagram);
+	          packetReceived = true;
+    		} catch (SocketTimeoutException e) {
+    		  try {
+	            log("Response timed out. Attempting to resend last packet.");
+		        clientSocket.send(forwardPacket);
+	    	  } catch (IOException e1) {
+	      	    e1.printStackTrace();
+		    	return;
+		      }
+	        } catch (IOException e) {
+	          e.printStackTrace();
+	          return;
+	        }	
+    	}
         
         log("Received packet.");
         printPacketInformation(dataPacketDatagram);

@@ -1,15 +1,19 @@
 package server;
 
 import java.io.IOException;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
+
+import Configuration.Configuration;
 
 public class ClientConnection {
   private DatagramSocket clientSocket;
@@ -20,6 +24,7 @@ public class ClientConnection {
     this.clientAddress = originalRequest.getAddress();
     this.clientPort = originalRequest.getPort();
     this.clientSocket = new DatagramSocket();
+    this.clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
   }
   
   /**
@@ -74,13 +79,25 @@ public class ClientConnection {
     do {
       buffer = new byte[517];
       responseDatagram = new DatagramPacket(buffer, 517);
-      System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
+      boolean packetReceived = false;
       
-      try {
-        clientSocket.receive(responseDatagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-        return null;
+      while (!packetReceived) {
+        try {
+	      System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
+	      clientSocket.receive(responseDatagram);
+	      packetReceived = true;
+	    } catch (SocketTimeoutException e) {
+	      System.out.println("[CLIENT-CONNECTION] Response timed out. Attempting to resend last packet.");
+	      try {
+	        clientSocket.send(sendDatagram);
+	      } catch (IOException e1) {
+	        e1.printStackTrace();
+	        return null;
+	      }
+        } catch (IOException e) {
+	      e.printStackTrace();
+    	  return null;
+        }  
       }
       
       // ensure the client TID is the same
