@@ -12,7 +12,6 @@ import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
-
 import Configuration.Configuration;
 
 public class ClientConnection {
@@ -100,6 +99,7 @@ public class ClientConnection {
         }  
       }
       
+      
       // ensure the client TID is the same
       if (!isClientTidValid(responseDatagram)) {
         System.err.println("[CLIENT-CONNECTION] Received packet with wrong TID");
@@ -139,5 +139,15 @@ public class ClientConnection {
   
   private boolean isClientTidValid(DatagramPacket packet) {
     return clientAddress.equals(packet.getAddress()) && packet.getPort() == clientPort;
+  }
+  
+  public void setTimeOut(long milSec){
+	  try {
+		this.clientSocket.setSoTimeout((int)milSec);
+	} catch (SocketException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	  
   }
 }
