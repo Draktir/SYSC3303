@@ -74,7 +74,6 @@ public class IntermediateHost {
     log("");
     log("Waiting for client requests on port " + Configuration.INTERMEDIATE_PORT);
 
-    // run forever
     do {
       byte[] buffer = new byte[1024];
       DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
@@ -119,36 +118,6 @@ public class IntermediateHost {
     } while (connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
     log("All connections terminated");
-  }
-
-  private boolean handleParseError(DatagramPacket datagram, DatagramSocket socket, InetAddress recvHost, int recvPort) {
-    // first figure out whether datagram is an Error packet
-    ErrorPacket errPacket = null;
-    try {
-      errPacket = packetParser.parseErrorPacket(datagram);
-    } catch (InvalidErrorPacketException e) {
-      // Nope, not an error packet, someone screwed up.
-      log("Not an error packet, but unexpected type. Forwarding anyhow.\n\n");
-      return true;
-    }
-
-    log("Received an error packet: " + errPacket.getErrorCode() + "\n" + errPacket.toString() + "\n");
-    log("Forwarding error packet.");
-    
-    byte[] packetData = errPacket.getPacketData();
-    DatagramPacket sendDatagram = new DatagramPacket(packetData, packetData.length, recvHost, recvPort);
-    
-    printPacketInformation(sendDatagram);
-    
-    try {
-      socket.send(sendDatagram);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return false;
-    }
-    
-    // return true if it's an error code 5 and we want to continue
-    return errPacket.getErrorCode() == ErrorPacket.ErrorCode.UNKNOWN_TRANSFER_ID;
   }
 
   /**
