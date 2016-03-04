@@ -19,9 +19,18 @@ public class WriteRequestModification extends PacketModification {
   }
 
   @Override
-  public byte[] apply(Packet packet, int recvPort) {
+  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort) {
     if (super.tidModification != null) {
-      super.performTidModification(packet, recvPort);
+      super.performTidModification(packet, remoteReceivePort);
+    }
+    
+    if (super.delayModification != null) {
+      super.performDelayPacketModification(packet, localReceivePort);
+      return null;
+    }
+    
+    if (super.dropModification != null) {
+      return null;
     }
     
     WriteRequest writeRequest = (WriteRequest) packet;
@@ -115,6 +124,7 @@ public class WriteRequestModification extends PacketModification {
         + Arrays.toString(filename) + ",\n    zeroByteAfterFilename=" + Arrays.toString(zeroByteAfterFilename)
         + ",\n    mode=" + Arrays.toString(mode) + ",\n    zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode)
         + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd=" + Arrays.toString(appendToEnd)
-        + ",\n    tidModification=" + tidModification + "\n]";
+        + ",\n    tidModification=" + tidModification + ",\n    delayModification=" + delayModification
+        + ",\n    dropModification=" + dropModification + "\n]";
   }
 }

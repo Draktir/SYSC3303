@@ -3,7 +3,9 @@ package modification;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -15,15 +17,17 @@ import packet.PacketParser;
 public abstract class PacketModification {
   protected int packetNumber;
   protected byte[] appendToEnd = null;
-  protected TidModification tidModification = null; 
+  protected TidModification tidModification = null;
+  protected DelayPacketModification delayModification = null;
+  protected DropPacketModification dropModification = null;
 
   public PacketModification(int packetNumber) {
     this.packetNumber = packetNumber;
   }
 
-  public abstract byte[] apply(Packet packet, int recvPort);
+  public abstract byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort);
   
-  public void performTidModification(Packet packet, int recvPort) {
+  public void performTidModification(Packet packet, int remoteReceivePort) {
     System.out.println("[Modification] Sending packet with wrong TID: port " + tidModification.getPort());
     DatagramSocket tempSock = null;
     try {
@@ -35,7 +39,7 @@ public abstract class PacketModification {
     
     byte[] data = packet.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(data, data.length,
-        packet.getRemoteHost(), recvPort);
+        packet.getRemoteHost(), remoteReceivePort);
     
     try {
       tempSock.send(sendDatagram);
@@ -71,6 +75,64 @@ public abstract class PacketModification {
     tempSock.close();
   }
   
+  public void performDelayPacketModification(Packet packet, int localReceivePort) {
+    /*
+     * Start a new thread that will hold on to the packet and sleep for a while.
+     * Then send the same packet again to the same port on the Intermediate host.
+     * 
+     * N.B. I'll have to test this on the lab computers. Java 8's Lambdas *may*
+     * not work with that version of Eclipse.
+     */
+    
+    int delay = this.delayModification.getDelay();
+    
+    Runnable delayTask = () -> {
+      System.out.println("[Modification] Delaying packet for " + delay + "s: " + packet.toString());
+      try {
+        Thread.sleep(delay * 1000);
+      } catch (Exception e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      System.out.println("[Modification] Re-sending delayed packet to Intermediate Host " + packet.toString());
+      
+      DatagramSocket tempSocket = null;
+      try {
+        tempSocket = new DatagramSocket();
+      } catch (Exception e) {
+        e.printStackTrace();
+        return;
+      }
+      
+      InetAddress localhost;
+      try {
+        localhost = InetAddress.getLocalHost();
+      } catch (UnknownHostException e) {
+        e.printStackTrace();
+        tempSocket.close();
+        return;
+      }
+      
+      byte[] data = packet.getPacketData();
+      DatagramPacket datagram = new DatagramPacket(data, data.length,
+          localhost, localReceivePort);
+      
+      try {
+        tempSocket.send(datagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+        tempSocket.close();
+        return;
+      }
+      
+      System.out.println("[Modification] Delayed packet sent: " + packet.toString());
+      tempSocket.close();
+    };
+    
+    new Thread(delayTask).start();
+  }
+  
   public int getPacketNumber() {
     return packetNumber;
   }
@@ -95,11 +157,29 @@ public abstract class PacketModification {
     this.tidModification = tidModification;
   }
 
+  public DelayPacketModification getDelayModification() {
+    return delayModification;
+  }
+
+  public void setDelayModification(DelayPacketModification delayModification) {
+    this.delayModification = delayModification;
+  }
+
+  public DropPacketModification getDropModification() {
+    return dropModification;
+  }
+
+  public void setDropModification(DropPacketModification dropModification) {
+    this.dropModification = dropModification;
+  }
+ 
   @Override
   public String toString() {
-    return "TidModification [packetNumber=" + packetNumber + "]";
+    return "PacketModification [\n    packetNumber=" + packetNumber + ",\n    appendToEnd="
+        + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + ",\n    delayModification="
+        + delayModification + ",\n    dropModification=" + dropModification + "\n]";
   }
-  
+
   public static List<Byte> byteArrayToList(byte[] arr) {
     Byte[] bytes = new Byte[arr.length];
     for (int i = 0; i < arr.length; i++) {

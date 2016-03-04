@@ -6,6 +6,7 @@ import modification.ReadRequestModification;
 import modification.WriteRequestModification;
 import packet.Acknowledgement;
 import packet.DataPacket;
+import packet.Packet;
 import packet.ReadRequest;
 import packet.WriteRequest;
 
@@ -19,25 +20,41 @@ public class PacketModifier {
   int dataCount = 0;
   int ackCount = 0;
   
-  public byte[] process(ReadRequest readRequest, int recvPort) {
+  public byte[] process(Packet packet, int localReceivePort, int remoteReceivePort) {
+    packetCount++;
+    // we don't make any modifications hede since this is an
+    // unexpected packet type and an error has already been
+    // introduced (either delay or dropped packet).
+    return packet.getPacketData();    
+  }
+  
+  public byte[] process(ReadRequest readRequest, int localReceivePort, int remoteReceivePort) {
     packetCount++;
     
     if (rrqModification == null) {
       return readRequest.getPacketData();
     }
-    return rrqModification.apply(readRequest, recvPort);
+    byte[] result = rrqModification.apply(readRequest, localReceivePort, remoteReceivePort);
+    // we only make a delay/drop modification once
+    rrqModification.setDelayModification(null);
+    rrqModification.setDropModification(null);
+    return result;
   }
   
-  public byte[] process(WriteRequest writeRequest, int recvPort) {
+  public byte[] process(WriteRequest writeRequest, int localReceivePort, int remoteReceivePort) {
     packetCount++;
     
     if (wrqModification == null) {
       return writeRequest.getPacketData();
     }
-    return wrqModification.apply(writeRequest, recvPort);
+    byte[] result = wrqModification.apply(writeRequest, localReceivePort, remoteReceivePort);
+    // we only make a delay/drop modification once
+    wrqModification.setDelayModification(null);
+    wrqModification.setDropModification(null);
+    return result;
   }
   
-  public byte[] process(DataPacket dataPacket, int recvPort) {
+  public byte[] process(DataPacket dataPacket, int localReceivePort, int remoteReceivePort) {
     packetCount++;
     dataCount++;
     
@@ -46,12 +63,16 @@ public class PacketModifier {
     }
     
     if (dataModification.getPacketNumber() == dataCount) {
-      return dataModification.apply(dataPacket, recvPort);
+      return dataModification.apply(dataPacket, localReceivePort, remoteReceivePort);
     }
-    return dataPacket.getPacketData();
+    byte[] result = dataPacket.getPacketData();
+    // we only make a delay/drop modification once
+    dataModification.setDelayModification(null);
+    dataModification.setDropModification(null);
+    return result;
   }
   
-  public byte[] process(Acknowledgement ackPacket, int recvPort) {
+  public byte[] process(Acknowledgement ackPacket, int localReceivePort, int remoteReceivePort) {
     packetCount++;
     ackCount++;
 
@@ -60,9 +81,13 @@ public class PacketModifier {
     }
     
     if (ackModification.getPacketNumber() == ackCount) {
-      return ackModification.apply(ackPacket, recvPort);
+      return ackModification.apply(ackPacket, localReceivePort, remoteReceivePort);
     }
-    return ackPacket.getPacketData();
+    byte[] result = ackPacket.getPacketData();
+    // we only make a delay/drop modification once
+    ackModification.setDelayModification(null);
+    ackModification.setDropModification(null);
+    return result;
   }
 
   public ReadRequestModification getRrqModification() {

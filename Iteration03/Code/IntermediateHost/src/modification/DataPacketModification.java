@@ -18,9 +18,18 @@ public class DataPacketModification extends PacketModification {
   }
 
   @Override
-  public byte[] apply(Packet packet, int recvPort) {
+  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort) {
     if (super.tidModification != null) {
-      super.performTidModification(packet, recvPort);
+      super.performTidModification(packet, remoteReceivePort);
+    }
+    
+    if (super.delayModification != null) {
+      super.performDelayPacketModification(packet, localReceivePort);
+      return null;
+    }
+    
+    if (super.dropModification != null) {
+      return null;
     }
     
     DataPacket dataPacket = (DataPacket) packet;
@@ -91,6 +100,7 @@ public class DataPacketModification extends PacketModification {
   public String toString() {
     return "DataPacketModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    blockNumber="
         + Arrays.toString(blockNumber) + ",\n    data=" + Arrays.toString(data) + ",\n    packetNumber=" + packetNumber
-        + ",\n    appendToEnd=" + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + "\n]";
+        + ",\n    appendToEnd=" + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification
+        + ",\n    delayModification=" + delayModification + ",\n    dropModification=" + dropModification + "\n]";
   }
 }
