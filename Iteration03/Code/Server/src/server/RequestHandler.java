@@ -118,12 +118,13 @@ class RequestHandler implements Runnable {
       log("The requested file is too big: " + f.length() + " bytes. Max is " + MAX_FILE_SIZE + " bytes.");
       return;
     }
-    
-    int blockNumber = 1;
+    int lastBlockNumber=0;
+    int blockNumber = 0;
     int bytesRead;
     byte[] fileBuffer = new byte[512];
         
     do {
+    	blockNumber++;
       // 1. read the next block from the file 
       log("reading block #" + blockNumber + " from file.");
       bytesRead = fileReader.readNextBlock(fileBuffer);
@@ -166,7 +167,11 @@ class RequestHandler implements Runnable {
         handleParseError(errMsg, responseDatagram);
         return;
       }
-       
+      //check for duplicate. If the ack is duplicate, Just ignore.
+      if(ack.getBlockNumber()==lastBlockNumber){
+    	  log("Duplicate ACK.");
+    	  continue;
+      }
       // make sure the block number is correct
       if (ack.getBlockNumber() != blockNumber) {
         String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
@@ -178,7 +183,7 @@ class RequestHandler implements Runnable {
       log("Received valid ACK packet\n" + ack.toString() + "\n");
       
       // 6. repeat
-      blockNumber++;
+      lastBlockNumber++;
     } while (bytesRead == 512);
     
     fileReader.close();
@@ -219,15 +224,6 @@ class RequestHandler implements Runnable {
       
       //2. send ACK and wait for a data packet
       DatagramPacket receivedDatagram = clientConnection.sendPacketAndReceive(ack);
-      
-      if (receivedDatagram == null) {
-        // TODO: handle timeouts
-        log("Did not receive a data packet from the client.");
-        return;
-      }
-      
-      // we are now expecting the next sequential block number
-      blockNumber++;
 
       log("Received packet from client, parsing...");
       printPacketInformation(receivedDatagram);
@@ -241,6 +237,17 @@ class RequestHandler implements Runnable {
         handleParseError(errMsg, receivedDatagram);
         return;
       }
+      
+      // check for duplicate.
+      // If it's a duplicate data, send ACK but don't write to disk.
+      if(dataPacket.getBlockNumber()== blockNumber){
+    	  String errMsg = "Data packet is duplicate";
+          log(errMsg);
+          continue;
+      }
+      
+      // we are now expecting the next sequential block number
+      blockNumber++;
       
       // make sure the block number is correct
       if (dataPacket.getBlockNumber() != blockNumber) {
