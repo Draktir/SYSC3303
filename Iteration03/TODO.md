@@ -4,7 +4,7 @@
 
 2. (L) Client needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
-3. Server needs to handle network errors.
+3. (R)Server needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
 4. (A)Intermediate Host
   1. Add menu options for testing timeouts/retransmits.
