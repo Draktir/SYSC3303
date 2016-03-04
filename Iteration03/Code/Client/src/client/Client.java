@@ -170,7 +170,6 @@ public class Client {
     int blockNumber = 0;
 
     do {
-      if (!isDuplicatePacket(recvdDatagram)) {
     	  Acknowledgement ack = null;
           try {
             ack = packetParser.parseAcknowledgement(recvdDatagram);
@@ -180,7 +179,8 @@ public class Client {
             handleParseError(errMsg, recvdDatagram);
             return;
           }
-
+          
+          if (!isDuplicatePacket(ack,blockNumber)) {
           if (ack.getBlockNumber() != blockNumber) {
             String errMsg = "ACK block #" + ack.getBlockNumber() + " is wrong, expected block #" + blockNumber;
             log(errMsg);
@@ -400,8 +400,8 @@ public class Client {
     log("received ERROR " + errPacket.getErrorCode() + ": Server says\n'" + errPacket.getMessage() + "'\n");
   }
   
-  private boolean isDuplicatePacket(DatagramPacket packet) {
-	if (serverLastSent == packet) return true;
+  private boolean isDuplicatePacket(Acknowledgement a, int blkNum) {
+	if (a.getBlockNumber() < blkNum) return true;
 	return false;
   }
   
