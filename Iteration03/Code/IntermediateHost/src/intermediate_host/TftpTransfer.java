@@ -52,15 +52,15 @@ public class TftpTransfer implements Runnable {
     ForwardRequest serverRequest = null;
 
     // to kick things off add the ReadRequest to the buffer
-    byte[] rrqRaw = packetModifier.process(request, Configuration.INTERMEDIATE_PORT, Configuration.SERVER_PORT);
-    if (rrqRaw == null) {
+    byte[] reqRaw = packetModifier.process(request, Configuration.INTERMEDIATE_PORT, Configuration.SERVER_PORT);
+    if (reqRaw == null) {
       // this request will be delayed/dropped. So we are done here.
       // another thread will be started if it's delayed
       return;
     }
 
-    ForwardRequest rrqForward = new ForwardRequest(rrqRaw, localhost, Configuration.INTERMEDIATE_PORT);
-    serverSendBuffer.putRequest(rrqForward);
+    ForwardRequest reqForward = new ForwardRequest(reqRaw, localhost, Configuration.INTERMEDIATE_PORT);
+    serverSendBuffer.putRequest(reqForward);
 
     while (!this.transferComplete) {
       // will return after 10ms if buffer is still empty
@@ -69,7 +69,7 @@ public class TftpTransfer implements Runnable {
         handleRequest(clientRequest, clientConnection.getRemotePort(), serverSendBuffer);
       }
 
-      // will return after 200ms if buffer is still empty
+      // will return after 10ms if buffer is still empty
       serverRequest = serverReceiveBuffer.takeRequest(10);
       if (serverRequest != null) {
         handleRequest(serverRequest, serverConnnection.getRemotePort(), clientSendBuffer);

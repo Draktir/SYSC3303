@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -51,6 +52,14 @@ public class IntermediateHost {
     scan.close();
   }
 
+  
+  /**
+   * TODO:
+   *   - Figure out why delayed packets are sent to the client, not the IntermediateHost.
+   */
+  
+  
+  
   public void go() {
     List<Thread> connectionThreads = new ArrayList<>();
     
@@ -61,6 +70,7 @@ public class IntermediateHost {
 
     try {
       clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
+      clientSocket.setSoTimeout(5000);
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
@@ -77,6 +87,8 @@ public class IntermediateHost {
       do {
         try {
           clientSocket.receive(requestDatagram);
+        } catch (SocketTimeoutException e) {
+          continue;
         } catch (IOException e) {
           e.printStackTrace();
         }  
