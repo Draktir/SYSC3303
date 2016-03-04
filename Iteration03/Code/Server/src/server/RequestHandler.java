@@ -25,6 +25,8 @@ import packet.Request;
 import packet.WriteRequest;
 import packet.ErrorPacket.ErrorCode;
 import packet.Request.RequestType;
+import java.sql.Timestamp;
+
 
 /**
  * The RequestHandler class handles requests received by Listener.
@@ -40,7 +42,7 @@ class RequestHandler implements Runnable {
   private DatagramPacket requestPacket;
   private ClientConnection clientConnection;
   private PacketParser packetParser = new PacketParser();
-  
+  Timestamp ts;
   /**
    * Default RequestHandler constructor instantiates requestPacekt to
    * the packet passed down from the Listener class.
@@ -118,7 +120,7 @@ class RequestHandler implements Runnable {
       log("The requested file is too big: " + f.length() + " bytes. Max is " + MAX_FILE_SIZE + " bytes.");
       return;
     }
-    int lastBlockNumber=0;
+    //int lastBlockNumber=0;
     int blockNumber = 0;
     int bytesRead;
     byte[] fileBuffer = new byte[512];
@@ -146,6 +148,8 @@ class RequestHandler implements Runnable {
       
       // 4. send data packet and wait for response
       DatagramPacket responseDatagram;
+      long ts1;
+      ts1 = ts.getTime();
       responseDatagram = clientConnection.sendPacketAndReceive(dataPacket);
       
       if (responseDatagram == null) {
@@ -153,7 +157,8 @@ class RequestHandler implements Runnable {
         log("Did not receive a response from the client.");
         return;
       }
-      
+      long ts2;
+      ts2 = ts.getTime();
       log("Received packet.");
       printPacketInformation(responseDatagram);
       
@@ -168,8 +173,9 @@ class RequestHandler implements Runnable {
         return;
       }
       //check for duplicate. If the ack is duplicate, Just ignore.
-      if(ack.getBlockNumber()==lastBlockNumber){
+      if(ack.getBlockNumber()<blockNumber){
     	  log("Duplicate ACK.");
+    	  clientConnection.setTimeOut(ts2-ts1);
     	  continue;
       }
       // make sure the block number is correct
@@ -183,7 +189,6 @@ class RequestHandler implements Runnable {
       log("Received valid ACK packet\n" + ack.toString() + "\n");
       
       // 6. repeat
-      lastBlockNumber++;
     } while (bytesRead == 512);
     
     fileReader.close();
@@ -223,11 +228,16 @@ class RequestHandler implements Runnable {
           .setBlockNumber(blockNumber)
           .buildAcknowledgement();
       
+      
+      long ts1;
+      ts1 = ts.getTime();
       //2. send ACK and wait for a data packet
       DatagramPacket receivedDatagram = clientConnection.sendPacketAndReceive(ack);
 
       log("Received packet from client, parsing...");
       printPacketInformation(receivedDatagram);
+      long ts2;
+      ts2 = ts.getTime();
       
       DataPacket dataPacket;
       try {
@@ -242,8 +252,9 @@ class RequestHandler implements Runnable {
       
       // check for duplicate.
       // If it's a duplicate data, send ACK but don't write to disk.
-      if(dataPacket.getBlockNumber()== blockNumber){
+      if(dataPacket.getBlockNumber()< blockNumber){
     	  String errMsg = "Data packet is duplicate";
+    	  clientConnection.setTimeOut(ts2-ts1);
           log(errMsg);
           continue;
       }
