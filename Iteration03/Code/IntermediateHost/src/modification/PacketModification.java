@@ -87,7 +87,7 @@ public abstract class PacketModification {
     int delay = this.delayModification.getDelay();
     
     Runnable delayTask = () -> {
-      System.out.println("[Modification] Delaying packet for " + delay + "s: " + packet.toString());
+      System.out.println("[Modification] Delaying packet for " + delay + "ms: " + packet.toString());
       try {
         Thread.sleep(delay);
       } catch (Exception e) {
@@ -110,7 +110,7 @@ public abstract class PacketModification {
     int delay = this.duplicatePacketModification.getDelay();
     int duplications = this.duplicatePacketModification.getDuplications();
     System.out.println("[Modification] Sending " + duplications + " duplicate packet(s) after " +
-        delay + " seconds each: " + packet.toString());
+        delay + " milliseconds each: " + packet.toString());
     
     ExecutorService executor = Executors.newSingleThreadExecutor();
     // add the same number as duplications requested of delay Threads to the executor
