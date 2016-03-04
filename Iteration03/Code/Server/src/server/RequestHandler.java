@@ -42,7 +42,7 @@ class RequestHandler implements Runnable {
   private DatagramPacket requestPacket;
   private ClientConnection clientConnection;
   private PacketParser packetParser = new PacketParser();
-  Timestamp ts;
+  Timestamp ts = new Timestamp(0);
   /**
    * Default RequestHandler constructor instantiates requestPacekt to
    * the packet passed down from the Listener class.
@@ -173,17 +173,19 @@ class RequestHandler implements Runnable {
         return;
       }
       //check for duplicate. If the ack is duplicate, Just ignore.
-      if(ack.getBlockNumber()<blockNumber){
-    	  log("Duplicate ACK.");
-    	  clientConnection.setTimeOut(ts2-ts1);
-    	  continue;
-      }
+      
       // make sure the block number is correct
       if (ack.getBlockNumber() != blockNumber) {
-        String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
-        log(errMsg);
-        sendErrorPacket(errMsg, responseDatagram);
-        return;
+    	 if(ack.getBlockNumber()<blockNumber){
+    		 log("Duplicate ACK.");
+    		 clientConnection.setTimeOut(ts2-ts1);
+    		 continue;
+    	}else{ 
+	        String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
+	        log(errMsg);
+	        sendErrorPacket(errMsg, responseDatagram);
+	        return;
+    	}
       }
       
       log("Received valid ACK packet\n" + ack.toString() + "\n");
