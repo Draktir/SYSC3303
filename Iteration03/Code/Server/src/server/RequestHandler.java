@@ -194,6 +194,7 @@ class RequestHandler implements Runnable {
   private void receiveFileFromClient(WriteRequest request) {
     log("Opening " + request.getFilename() + " for writing.");
     FileWriter fileWriter = null;
+    boolean errorOccured = false;
   
     try {
       fileWriter = new FileWriter(request.getFilename());
@@ -202,17 +203,17 @@ class RequestHandler implements Runnable {
       // TODO Send error FILE_ALREADY_EXISTS
       log("opening " + request.getFilename() + " for writing failed." + " File already exists!");
       e.printStackTrace();
-      return;
+      errorOccured = true;
     } catch (IOException e) {
       // TODO Send error DISK_FULL_OR_ALLOCATION_EXCEEDED
       log("opening " + request.getFilename() + " for writing failed." + " Disk is full!");
       e.printStackTrace();
-      return;
+      errorOccured = true;
     }
 
     int blockNumber = 0;
     
-    while (true) {
+    while (!errorOccured) {
       //1. build an ACK
       log("Sending ACK with block#" + blockNumber);
       
@@ -235,7 +236,8 @@ class RequestHandler implements Runnable {
         String errMsg = "Not a valid Data Packet: " + e.getMessage();
         log(errMsg);
         handleParseError(errMsg, receivedDatagram);
-        return;
+        errorOccured = true;
+        break;
       }
       
       // check for duplicate.
@@ -254,7 +256,8 @@ class RequestHandler implements Runnable {
         String errMsg = "Data packet has the wrong block#, got #" + dataPacket.getBlockNumber() + "expected #" + blockNumber;
         log(errMsg);
         sendErrorPacket(errMsg, receivedDatagram);
-        return;
+        errorOccured = true;
+        break;
       }
       
       log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
@@ -267,7 +270,8 @@ class RequestHandler implements Runnable {
     	System.err.println("Disk is full or allocation exceeded");  
         // TODO send an DISK_FULL_OR_ALLOCATION_EXCEEDED error
         e.printStackTrace();
-        return;
+        errorOccured = true;
+        break;
       }
       
       // was this the last data packet?
@@ -291,8 +295,13 @@ class RequestHandler implements Runnable {
     
     fileWriter.close();
     
-    log("File " + request.getFilename() + " successfully received from client in " 
+    if (errorOccured) {
+      System.out.println("Error occured. Deleting file.");
+      new File(request.getFilename()).delete();
+    } else {
+      log("File " + request.getFilename() + " successfully received from client in " 
           + blockNumber + " blocks.");
+    }
   }
   
   private void handleParseError(String message, DatagramPacket datagram) {
