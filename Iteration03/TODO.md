@@ -4,9 +4,9 @@
 
 2. (L) Client needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
-3. Server needs to handle network errors.
+3. (R)Server needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
-4. Intermediate Host
+4. (A)Intermediate Host
   1. Add menu options for testing timeouts/retransmits.
 5. Duplicate ACK packets should not be acknowledged.
   1. Only the TID sending DATA packets retransmits after timeout.
