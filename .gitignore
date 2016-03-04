@@ -1,8 +1,12 @@
 
+### Project specific ###
+Server/testWriteFile.txt
+Client/testReadFile.txt
+
+
 # Created by https://www.gitignore.io/api/eclipse,java
 
-
-### IntelliJ IDEA
+### IntelliJ IDEA ###
 *.iml
 .idea/
 

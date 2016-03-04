@@ -133,6 +133,11 @@ public class ServerConnection {
     return serverAddress.equals(packet.getAddress()) && packet.getPort() == serverPort;
   }
 
+  public void resetTid() {
+    this.serverAddress = null;
+    this.serverPort = -1;
+  }
+  
   public InetAddress getServerAddress() {
     return serverAddress;
   }

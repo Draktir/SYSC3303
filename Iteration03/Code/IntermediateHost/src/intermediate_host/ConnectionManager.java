@@ -23,52 +23,58 @@ public class ConnectionManager implements Runnable {
   public void run() {
     try {
       this.socket = new DatagramSocket();
-      this.socket.setSoTimeout(10); // deliberately very short timeout
     } catch (SocketException e) {
       e.printStackTrace();
       return;
     }
 
-    byte[] recvData = new byte[1024];
-    DatagramPacket recvDatagram = null;
+    // start a receiveHandler Thread for incoming requests
+    String name = Thread.currentThread().getName();
+    Thread recvThread = new Thread(this.packetReceiver, name + " recv");
+    recvThread.start();   
 
+    // send any requests from the sendBuffer
     while (!Thread.currentThread().isInterrupted() || sendBuffer.hasRequest()) {
       // Check if we have anything to send
       ForwardRequest forwardRequest = sendBuffer.takeRequest();
-      if (forwardRequest != null) {
-        sendRequest(forwardRequest);
-      }
+      sendRequest(forwardRequest);
+    }
 
-      // try to receive something
-      recvDatagram = new DatagramPacket(recvData, recvData.length);
+    this.socket.close(); // will cause the receive handler to shut down as well
+    log("Connection terminated.");
+    
+  }
+  
+  private Runnable packetReceiver = () -> {
+    while (!Thread.currentThread().isInterrupted()) {
+      byte[] recvData = new byte[1024];
+      DatagramPacket recvDatagram = new DatagramPacket(recvData, recvData.length);
+      log("Waiting to receive on port " + socket.getLocalPort());
       try {
         socket.receive(recvDatagram);
-      } catch (SocketTimeoutException e) {
-        continue; // nothing received, back to the top
       } catch (IOException e) {
-        e.printStackTrace();
+        log("ReceiveHandler shutting down");
+        return;
       }
 
       log("");
       log("Received packet");
       IntermediateHost.printPacketInformation(recvDatagram);
 
-      // we received something
       ForwardRequest receivedRequest = new ForwardRequest(recvDatagram, socket.getLocalAddress(), socket.getLocalPort());
 
-      this.remoteHost = recvDatagram.getAddress();
-      this.remotePort = recvDatagram.getPort();
-      receiveBuffer.putRequest(receivedRequest);
+      this.setRemoteHost(recvDatagram.getAddress());
+      this.setRemotePort(recvDatagram.getPort());
+      this.receiveBuffer.putRequest(receivedRequest); 
     }
-
-    log("Connection terminated.");
-  }
+  };
+  
 
   private void sendRequest(ForwardRequest forwardRequest) {
     byte[] forwardData = forwardRequest.getData();
     DatagramPacket datagram = new DatagramPacket(forwardData, forwardData.length,
-        this.remoteHost, this.remotePort);
-
+        this.getRemoteHost(), this.getRemotePort());
+    
     log("Forwarding Packet:");
     IntermediateHost.printPacketInformation(datagram);
 
@@ -84,19 +90,19 @@ public class ConnectionManager implements Runnable {
     System.out.println("[" + name + "] " + msg);
   }
 
-  public int getRemotePort() {
+  public synchronized int getRemotePort() {
     return remotePort;
   }
 
-  public void setRemotePort(int remotePort) {
+  public synchronized void setRemotePort(int remotePort) {
     this.remotePort = remotePort;
   }
 
-  public InetAddress getRemoteHost() {
+  public synchronized InetAddress getRemoteHost() {
     return remoteHost;
   }
 
-  public void setRemoteHost(InetAddress remoteHost) {
+  public synchronized void setRemoteHost(InetAddress remoteHost) {
     this.remoteHost = remoteHost;
   }
 }

@@ -158,6 +158,6 @@ public class TftpTransfer implements Runnable {
 
   private void log(String msg) {
     String name = Thread.currentThread().getName();
-    System.out.println("[TFTP-READ: " + name + "] " + msg);
+    System.out.println("[TFTP: " + name + "] " + msg);
   }
 }

@@ -58,8 +58,11 @@ public class Client {
    * @param args
    */
   public static void main(String[] args) {
+    new Client().start();
+  }
+
+  public void start() {
     Scanner scan = new Scanner(System.in);
-    Client client = new Client();
     int command;
     String fileName = "";
 
@@ -77,8 +80,9 @@ public class Client {
         do {
           System.out.print("Please enter a file name: ");
           fileName = scan.next();
-        } while (!client.validateFilename(fileName));
-        client.sendFileToServer(fileName, "netAsCiI");
+        } while (!this.validateFilename(fileName));
+        this.sendFileToServer(fileName, "netAsCiI");
+        serverConnection.resetTid(); // reset for next connection
         break;
 
       case 2:
@@ -86,14 +90,15 @@ public class Client {
           System.out.print("Please enter a file name: ");
           fileName = scan.next();
         } while (fileName == null || fileName.length() == 0);
-        client.downloadFileFromServer(fileName, "ocTeT");
+        this.downloadFileFromServer(fileName, "ocTeT");
+        serverConnection.resetTid(); // reset for next connection
         break;
       }
     } while (command != 0);
 
-    scan.close();
+    scan.close();    
   }
-
+  
   public boolean validateFilename(String filename) {
     File f = new File(filename);
 

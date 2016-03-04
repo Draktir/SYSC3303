@@ -5,10 +5,8 @@ import java.util.LinkedList;
 
 /**
  * Simple Unbounded Buffer class  for incoming requests.
- * Requests are stored in a queue (FIFO). Some operations
- * are non-blocking, since threads are meant to do other
- * tasks as well. takeRequestTimeout will wait for a
- * specified duration
+ * Requests are stored in a queue (FIFO). Operations
+ * are blocking or have a timeout.
  */
 
 public class RequestBuffer {
@@ -20,10 +18,18 @@ public class RequestBuffer {
 
   public synchronized void putRequest(ForwardRequest request) {
     requests.addLast(request);
+    notifyAll();
   }
 
   public synchronized ForwardRequest takeRequest() {
-    return requests.isEmpty() ? null : requests.removeFirst();
+    while (requests.isEmpty()) {
+      try {
+        wait();
+      } catch (InterruptedException e) {
+        System.out.println("[RequestBuffer] takeRequest cancelled");
+      }
+    }
+    return requests.removeFirst();
   }
 
   /*
@@ -35,7 +41,7 @@ public class RequestBuffer {
       try {
         wait(timeout);
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        System.out.println("[RequestBuffer] takeRequest cancelled");
       }
       if (requests.isEmpty()) {
         return null;
