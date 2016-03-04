@@ -352,8 +352,12 @@ public class ModificationMenu {
   }
   
   private TidModification configureTidModification() {
-    System.out.println("\nEnter the new sending port: ");
-    int port = scan.nextInt();
+    System.out.print("\nEnter the new sending port: ");
+    int port = 0;
+    
+    while (port <= 0) {
+      port = scan.nextInt();
+    }
     return new TidModification(port);
   }
   
