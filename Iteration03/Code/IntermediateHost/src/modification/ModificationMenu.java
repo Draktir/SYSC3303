@@ -79,6 +79,7 @@ public class ModificationMenu {
       TidModification tidMod = null;
       DelayPacketModification delayMod = null;
       DropPacketModification dropMod = null;
+      DuplicatePacketModification duplicateMod = null;
       
       if (fieldSelection == 7) {
         tidMod = configureTidModification();
@@ -86,6 +87,8 @@ public class ModificationMenu {
         delayMod = configureDelayPacketModification();
       } else if (fieldSelection == 9) {
         dropMod = new DropPacketModification();
+      } else if (fieldSelection == 10) {
+        duplicateMod = configureDuplicatePacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -117,6 +120,9 @@ public class ModificationMenu {
           break;
         case 9:
           readReqMod.setDropModification(dropMod);
+          break;
+        case 10:
+          readReqMod.setDuplicatePacketModification(duplicateMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -160,6 +166,7 @@ public class ModificationMenu {
       TidModification tidMod = null;
       DelayPacketModification delayMod = null;
       DropPacketModification dropMod = null;
+      DuplicatePacketModification duplicateMod = null;
       
       if (fieldSelection == 7) {
         tidMod = configureTidModification();
@@ -167,6 +174,8 @@ public class ModificationMenu {
         delayMod = configureDelayPacketModification();
       } else if (fieldSelection == 9) {
         dropMod = new DropPacketModification();
+      } else if (fieldSelection == 10) {
+        duplicateMod = configureDuplicatePacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -198,6 +207,9 @@ public class ModificationMenu {
           break;
         case 9:
           writeReqMod.setDropModification(dropMod);
+          break;
+        case 10:
+          writeReqMod.setDuplicatePacketModification(duplicateMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -242,6 +254,7 @@ public class ModificationMenu {
       TidModification tidMod = null;
       DelayPacketModification delayMod = null;
       DropPacketModification dropMod = null;
+      DuplicatePacketModification duplicateMod = null;
       
       if (fieldSelection == 5) {
         tidMod = configureTidModification();
@@ -249,6 +262,8 @@ public class ModificationMenu {
         delayMod = configureDelayPacketModification();
       } else if (fieldSelection == 7) {
         dropMod = new DropPacketModification();
+      } else if (fieldSelection == 8) {
+        duplicateMod = configureDuplicatePacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -274,6 +289,9 @@ public class ModificationMenu {
           break;
         case 7:
           dataMod.setDropModification(dropMod);
+          break;
+        case 8:
+          dataMod.setDuplicatePacketModification(duplicateMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -317,6 +335,7 @@ public class ModificationMenu {
       TidModification tidMod = null;
       DelayPacketModification delayMod = null;
       DropPacketModification dropMod = null;
+      DuplicatePacketModification duplicateMod = null;
       
       if (fieldSelection == 4) {
         tidMod = configureTidModification();
@@ -324,6 +343,8 @@ public class ModificationMenu {
         delayMod = configureDelayPacketModification();
       } else if (fieldSelection == 6) {
         dropMod = new DropPacketModification();
+      } else if (fieldSelection == 7) {
+        duplicateMod = configureDuplicatePacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -346,6 +367,9 @@ public class ModificationMenu {
           break;
         case 6:
           ackMod.setDropModification(dropMod);
+          break;
+        case 7:
+          ackMod.setDuplicatePacketModification(duplicateMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -385,11 +409,12 @@ public class ModificationMenu {
       if (fieldSelection <= 0 || fieldSelection > 8) {
         continue;
       }
-      
+
       byte[] modValue = null;
       TidModification tidMod = null;
       DelayPacketModification delayMod = null;
       DropPacketModification dropMod = null;
+      DuplicatePacketModification duplicateMod = null;
       
       if (fieldSelection == 5) {
         tidMod = configureTidModification();
@@ -397,6 +422,8 @@ public class ModificationMenu {
         delayMod = configureDelayPacketModification();
       } else if (fieldSelection == 7) {
         dropMod = new DropPacketModification();
+      } else if (fieldSelection == 7) {
+        duplicateMod = configureDuplicatePacketModification();
       } else {
         modValue = getModValueFromUser();
       }
@@ -422,6 +449,9 @@ public class ModificationMenu {
           break;
         case 7:
           errorMod.setDropModification(dropMod);
+          break;
+        case 8:
+          errorMod.setDuplicatePacketModification(duplicateMod);
           break;
         default:
           System.err.println("Invalid field selection");
@@ -451,6 +481,23 @@ public class ModificationMenu {
       delay = scan.nextInt();
     }
     return new DelayPacketModification(delay);
+  }
+  
+  private DuplicatePacketModification configureDuplicatePacketModification() {
+    int delay = -1;
+    int duplications = -1;
+    
+    while (delay < 0) {
+      System.out.print("\nEnter the delay in seconds: ");
+      delay = scan.nextInt();
+    }
+    
+    while (duplications < 0) {
+      System.out.print("\nEnter the number of duplications: ");
+      duplications = scan.nextInt();
+    }
+    
+    return new DuplicatePacketModification(delay, duplications);
   }
   
   private byte[] getModValueFromUser() {

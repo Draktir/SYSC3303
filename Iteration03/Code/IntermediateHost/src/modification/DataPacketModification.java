@@ -33,6 +33,10 @@ public class DataPacketModification extends PacketModification {
       return null;
     }
     
+    if (super.duplicatePacketModification != null) {
+      super.performDuplicatePacketModification(packet, localReceivePort, delayedPacketConsumer);
+    }
+    
     DataPacket dataPacket = (DataPacket) packet;
     List<Byte> modified = new ArrayList<>();
     
@@ -102,6 +106,7 @@ public class DataPacketModification extends PacketModification {
     return "DataPacketModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    blockNumber="
         + Arrays.toString(blockNumber) + ",\n    data=" + Arrays.toString(data) + ",\n    packetNumber=" + packetNumber
         + ",\n    appendToEnd=" + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification
-        + ",\n    delayModification=" + delayModification + ",\n    dropModification=" + dropModification + "\n]";
+        + ",\n    delayModification=" + delayModification + ",\n    dropModification=" + dropModification
+        + ",\n    duplicatePacketModification=" + duplicatePacketModification + "\n]";
   }
 }

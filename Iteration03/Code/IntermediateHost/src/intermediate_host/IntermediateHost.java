@@ -45,14 +45,6 @@ public class IntermediateHost {
     scan.close();
   }
 
-  
-  /**
-   * TODO:
-   *   - Figure out why delayed packets are sent to the client, not the IntermediateHost.
-   */
-  
-  
-  
   public void go() {
     List<Thread> connectionThreads = new ArrayList<>();
     

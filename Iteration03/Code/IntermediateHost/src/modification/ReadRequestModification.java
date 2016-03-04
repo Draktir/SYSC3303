@@ -33,6 +33,10 @@ public class ReadRequestModification extends PacketModification {
       return null;
     }
     
+    if (super.duplicatePacketModification != null) {
+      super.performDuplicatePacketModification(packet, localReceivePort, delayedPacketConsumer);
+    }
+    
     ReadRequest readRequest = (ReadRequest) packet;
 
     System.out.println("\n[RRQ-Modification] Applying modification: ");
@@ -125,6 +129,7 @@ public class ReadRequestModification extends PacketModification {
         + ",\n    mode=" + Arrays.toString(mode) + ",\n    zeroByteAfterMode=" + Arrays.toString(zeroByteAfterMode)
         + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd=" + Arrays.toString(appendToEnd)
         + ",\n    tidModification=" + tidModification + ",\n    delayModification=" + delayModification
-        + ",\n    dropModification=" + dropModification + "\n]";
-  }   
+        + ",\n    dropModification=" + dropModification + ",\n    duplicatePacketModification="
+        + duplicatePacketModification + "\n]";
+  }
 }

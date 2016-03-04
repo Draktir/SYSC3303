@@ -6,7 +6,10 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 import packet.ErrorPacket;
 import packet.InvalidErrorPacketException;
@@ -19,6 +22,7 @@ public abstract class PacketModification {
   protected TidModification tidModification = null;
   protected DelayPacketModification delayModification = null;
   protected DropPacketModification dropModification = null;
+  protected DuplicatePacketModification duplicatePacketModification = null;
 
   public PacketModification(int packetNumber) {
     this.packetNumber = packetNumber;
@@ -78,9 +82,6 @@ public abstract class PacketModification {
     /*
      * Start a new thread that will hold on to the packet and sleep for a while.
      * Then call the delayed packet consumer.
-     * 
-     * N.B. I'll have to test this on the lab computers. Java 8's Lambdas may
-     * not work with that version of Eclipse.
      */
     
     int delay = this.delayModification.getDelay();
@@ -99,6 +100,32 @@ public abstract class PacketModification {
     };
     
     new Thread(delayTask).start();
+  }
+  
+  public void performDuplicatePacketModification(Packet packet, int localReceivePort, Consumer<Packet> delayedPacketConsumer) {
+    /*
+     * Start a new thread that will hold on to the packet and sleep for a while.
+     * Then call the delayed packet consumer.
+     */
+    int delay = this.duplicatePacketModification.getDelay();
+    System.out.println("[Modification] Delaying duplicate packets for " + delay + "s: " + packet.toString());
+    
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    // add the same number as duplications requested of delay Threads to the executor
+    // These will be executed one at a time.
+    IntStream.rangeClosed(1, this.duplicatePacketModification.getDuplications()).forEach((i) -> {
+      executor.submit(() -> {
+        try {
+          Thread.sleep(delay * 1000);
+        } catch (Exception e) {
+          e.printStackTrace();
+          return;
+        }
+        
+        System.out.println("[Modification] Sending duplicate packet: " + packet.toString());
+        delayedPacketConsumer.accept(packet);
+      });
+    });
   }
   
   public int getPacketNumber() {
@@ -141,11 +168,20 @@ public abstract class PacketModification {
     this.dropModification = dropModification;
   }
  
+  public DuplicatePacketModification getDuplicatePacketModification() {
+    return duplicatePacketModification;
+  }
+
+  public void setDuplicatePacketModification(DuplicatePacketModification duplicatePacketModification) {
+    this.duplicatePacketModification = duplicatePacketModification;
+  }
+
   @Override
   public String toString() {
     return "PacketModification [\n    packetNumber=" + packetNumber + ",\n    appendToEnd="
         + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + ",\n    delayModification="
-        + delayModification + ",\n    dropModification=" + dropModification + "\n]";
+        + delayModification + ",\n    dropModification=" + dropModification + ",\n    duplicatePacketModification="
+        + duplicatePacketModification + "\n]";
   }
 
   public static List<Byte> byteArrayToList(byte[] arr) {

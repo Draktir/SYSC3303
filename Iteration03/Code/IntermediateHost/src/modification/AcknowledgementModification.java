@@ -32,6 +32,10 @@ public class AcknowledgementModification extends PacketModification {
       return null;
     }
     
+    if (super.duplicatePacketModification != null) {
+      super.performDuplicatePacketModification(packet, localReceivePort, delayedPacketConsumer);
+    }
+    
     Acknowledgement ackPacket = (Acknowledgement) packet;
     List<Byte> modified = new ArrayList<>();
     
@@ -87,6 +91,7 @@ public class AcknowledgementModification extends PacketModification {
     return "AcknowledgementModification [\n    opcode=" + Arrays.toString(opcode) + ",\n    blockNumber="
         + Arrays.toString(blockNumber) + ",\n    packetNumber=" + packetNumber + ",\n    appendToEnd="
         + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification + ",\n    delayModification="
-        + delayModification + ",\n    dropModification=" + dropModification + "\n]";
+        + delayModification + ",\n    dropModification=" + dropModification + ",\n    duplicatePacketModification="
+        + duplicatePacketModification + "\n]";
   }
 }

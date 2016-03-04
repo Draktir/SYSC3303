@@ -32,6 +32,10 @@ public class ErrorPacketModification extends PacketModification {
       return null;
     }
     
+    if (super.duplicatePacketModification != null) {
+      super.performDuplicatePacketModification(packet, localReceivePort, delayedPacketConsumer);
+    }
+    
     ErrorPacket errorPacket = (ErrorPacket) packet;
     
     System.out.println("\n[ERROR-Modification] Applying modification: ");
@@ -112,6 +116,7 @@ public class ErrorPacketModification extends PacketModification {
         + Arrays.toString(errorCode) + ",\n    errorMessge=" + Arrays.toString(errorMessge)
         + ",\n    zeroByteAfterMessage=" + Arrays.toString(zeroByteAfterMessage) + ",\n    packetNumber=" + packetNumber
         + ",\n    appendToEnd=" + Arrays.toString(appendToEnd) + ",\n    tidModification=" + tidModification
-        + ",\n    delayModification=" + delayModification + ",\n    dropModification=" + dropModification + "\n]";
+        + ",\n    delayModification=" + delayModification + ",\n    dropModification=" + dropModification
+        + ",\n    duplicatePacketModification=" + duplicatePacketModification + "\n]";
   }
 }
