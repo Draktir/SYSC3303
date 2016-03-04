@@ -477,7 +477,7 @@ public class ModificationMenu {
   private DelayPacketModification configureDelayPacketModification() {
     int delay = -1;
     while (delay < 0) {
-      System.out.println("\nEnter the delay in seconds: ");
+      System.out.println("\nEnter the delay in milliseconds: ");
       delay = scan.nextInt();
     }
     return new DelayPacketModification(delay);
@@ -488,7 +488,7 @@ public class ModificationMenu {
     int duplications = -1;
     
     while (delay < 0) {
-      System.out.print("\nEnter the delay in seconds: ");
+      System.out.print("\nEnter the delay in milliseconds: ");
       delay = scan.nextInt();
     }
     
