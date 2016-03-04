@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 
 import modification.AcknowledgementModification;
 import modification.DataPacketModification;
+import modification.ErrorPacketModification;
 import modification.ReadRequestModification;
 import modification.WriteRequestModification;
 import packet.Acknowledgement;
@@ -17,6 +18,7 @@ public class PacketModifier {
   WriteRequestModification wrqModification = null;
   DataPacketModification dataModification = null;
   AcknowledgementModification ackModification = null;
+  ErrorPacketModification errorModification = null;
   
   int packetCount = 0;
   int dataCount = 0;
@@ -110,6 +112,14 @@ public class PacketModifier {
 
   public void setAckModification(AcknowledgementModification ackModification) {
     this.ackModification = ackModification;
+  }
+
+  public ErrorPacketModification getErrorModification() {
+    return errorModification;
+  }
+
+  public void setErrorModification(ErrorPacketModification errorModification) {
+    this.errorModification = errorModification;
   }
 
   public int getPacketCount() {

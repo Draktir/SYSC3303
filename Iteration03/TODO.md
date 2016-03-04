@@ -4,15 +4,15 @@
 
 2. (L) Client needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
-3. (R)Server needs to handle network errors.
+3. (R/A)Server needs to handle network errors.
   1. Packets may be lost, delayed, or duplicated.
-4. (A)Intermediate Host
+4. (A/P)Intermediate Host
   1. Add menu options for testing timeouts/retransmits.
-5. Duplicate ACK packets should not be acknowledged.
+5. (R)Duplicate ACK packets should not be acknowledged.
   1. Only the TID sending DATA packets retransmits after timeout.
 6. ReadMe.txt needs to be updated to reflect new changes.
 7. ClassDiagrams needs to be updated to reflect new changes.
-8. TimingDiagrams needs to be updated to reflect new changes.
+8. (F)TimingDiagrams needs to be updated to reflect new changes.
 
 ## DONE - needs testing
 
