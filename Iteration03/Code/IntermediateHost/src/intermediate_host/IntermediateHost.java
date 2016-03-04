@@ -15,23 +15,16 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 import Configuration.Configuration;
 import modification.*;
-import packet.InvalidPacketException;
-import packet.PacketParser;
-import packet.Request;
-import packet.Request.RequestType;
 
 public class IntermediateHost {
   private DatagramSocket clientSocket;
   private PacketModifier packetModifier;
-  private int clientPort;
-  private PacketParser packetParser = new PacketParser();
 
   /**
    * Main method which creates an instance of IntermediateHost to forward and
@@ -70,51 +63,27 @@ public class IntermediateHost {
 
     try {
       clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
-      clientSocket.setSoTimeout(5000);
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
     }
 
-    log("");
     log("Waiting for client requests on port " + Configuration.INTERMEDIATE_PORT);
 
     do {
       byte[] buffer = new byte[1024];
       DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
   
-      Request request = null;
-      do {
-        try {
-          clientSocket.receive(requestDatagram);
-        } catch (SocketTimeoutException e) {
-          continue;
-        } catch (IOException e) {
-          e.printStackTrace();
-        }  
+      try {
+        clientSocket.receive(requestDatagram);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }  
+
+      log("Received packet");
+      printPacketInformation(requestDatagram);
   
-        log("Received packet");
-        printPacketInformation(requestDatagram);
-  
-        try {
-          request = packetParser.parseRequest(requestDatagram);
-        } catch (InvalidPacketException e1) {
-          request = null;
-          log("Not a valid request. Expecting RRQ or WRQ.\n");
-        }
-      } while (request == null);
-  
-      clientPort = requestDatagram.getPort();
-      log("Client is receiving on port " + clientPort);
-  
-      // determine the type of request and then service the file transfer
-      if (request.type() == RequestType.READ) {
-        log("Received valid Read Request: " + request.toString());
-      } else if (request.type() == RequestType.WRITE) {
-        log("Received valid Write Request: " + request.toString());
-      }
-      
-      Runnable tftpTransfer = new TftpTransfer((Request) request, packetModifier);
+      Runnable tftpTransfer = new TftpTransfer(requestDatagram, packetModifier);
       Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
       connectionThreads.add(t);
       t.start();

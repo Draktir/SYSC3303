@@ -3,6 +3,7 @@ package modification;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import packet.Packet;
 import packet.ReadRequest;
@@ -18,13 +19,13 @@ public class ReadRequestModification extends PacketModification {
     super(1);
   }
   
-  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort) {
+  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
     if (super.tidModification != null) {
       super.performTidModification(packet, remoteReceivePort);
     }
     
     if (super.delayModification != null) {
-      super.performDelayPacketModification(packet, localReceivePort);
+      super.performDelayPacketModification(packet, localReceivePort, delayedPacketConsumer);
       return null;
     }
     

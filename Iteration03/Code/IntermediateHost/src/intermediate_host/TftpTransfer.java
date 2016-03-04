@@ -1,9 +1,11 @@
 package intermediate_host;
 
 import java.net.*;
+import java.util.function.Consumer;
 
 import Configuration.Configuration;
 import packet.*;
+import packet.Request.RequestType;
 
 public class TftpTransfer implements Runnable {
   private boolean transferComplete = false;
@@ -32,7 +34,7 @@ public class TftpTransfer implements Runnable {
   public void run() {
     // figure out if we got a valid request
     PacketParser packetParser = new PacketParser();
-    Request recvdRequest;
+    Request recvdRequest = null;
     try {
       recvdRequest = packetParser.parseRequest(requestDatagram);
     } catch (InvalidRequestException e1) {
@@ -41,7 +43,13 @@ public class TftpTransfer implements Runnable {
       return;
     }
     
-    
+    if (recvdRequest.type() == RequestType.READ) {
+      log("Received valid ReadRequest:");
+      log(recvdRequest.toString());
+    } else if (recvdRequest.type() == RequestType.WRITE) {
+      log("Received valid WriteRequest:");
+      log(recvdRequest.toString());
+    }
     
     log("Initiating new TFTP transfer");
     
@@ -73,7 +81,7 @@ public class TftpTransfer implements Runnable {
       
     // to kick things off add the original request to the client receive buffer
     ForwardRequest reqForward = 
-        new ForwardRequest(recvdRequest.getPacketData(), recvdRequest.getRemoteHost(), Configuration.INTERMEDIATE_PORT);
+        new ForwardRequest(this.requestDatagram, recvdRequest.getRemoteHost(), this.clientConnection.getLocalPort());
     clientReceiveBuffer.putRequest(reqForward);
     
     // wait for the transfer to complete
@@ -121,7 +129,7 @@ public class TftpTransfer implements Runnable {
     byte[] rawData = null;
     if (packet instanceof ReadRequest) {
       ReadRequest rrq = (ReadRequest) packet;
-      rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort);
+      rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
       if (rawData != null) {
         log("Forwarding ReadRequest:");
         log(rrq.toString());
@@ -129,7 +137,7 @@ public class TftpTransfer implements Runnable {
       
     } else if (packet instanceof WriteRequest) {
       WriteRequest wrq = (WriteRequest) packet;
-      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort);
+      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
       if (rawData != null) {
         log("Forwarding WriteRequest:");
         log(wrq.toString());
@@ -137,7 +145,7 @@ public class TftpTransfer implements Runnable {
 
     } else if (packet instanceof Acknowledgement) {
       Acknowledgement ack = (Acknowledgement) packet;
-      rawData = packetModifier.process(ack, fwdRequest.getReceivingPort(), remotePort);
+      rawData = packetModifier.process(ack, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
       // if we are sending the last ACK we are done after this
       if (rawData != null && this.getLastBlockNumber() == ack.getBlockNumber()) {
         this.setTransferComplete(true);
@@ -149,7 +157,7 @@ public class TftpTransfer implements Runnable {
 
     } else if (packet instanceof DataPacket) {
       DataPacket dp = (DataPacket) packet;
-      rawData = packetModifier.process(dp, fwdRequest.getReceivingPort(), remotePort);
+      rawData = packetModifier.process(dp, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
       // if this is the last block, remember the block number
       if (dp.getFileData().length < 512) {
         this.setLastBlockNumber(dp.getBlockNumber());
@@ -161,7 +169,7 @@ public class TftpTransfer implements Runnable {
 
     } else if (packet instanceof ErrorPacket) {
       ErrorPacket errPacket = (ErrorPacket) packet;
-      rawData = packetModifier.process(errPacket, fwdRequest.getReceivingPort(), remotePort);
+      rawData = packetModifier.process(errPacket, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
       // if this is an error with code != 5, we are done after this
       if (rawData != null && errPacket.getErrorCode() != ErrorPacket.ErrorCode.UNKNOWN_TRANSFER_ID) {
         this.setTransferComplete(true);
@@ -185,6 +193,34 @@ public class TftpTransfer implements Runnable {
     sendBuffer.putRequest(fwdRequest);
   }
 
+  /**
+   * Called from the Packet Modification after a packet has been
+   * delayed. It will add the delayed packet to the appropriate
+   * send buffer so it can be forwarded.
+   */
+  private Consumer<Packet> delayedPacketConsumer = (packet) -> {
+    boolean sendToServer;
+    int remotePort;
+    if (packet.getRemotePort() == this.clientConnection.getRemotePort()) {
+      sendToServer = true;
+      remotePort = this.serverConnnection.getRemotePort();
+    } else {
+      sendToServer = false;
+      remotePort = this.clientConnection.getRemotePort();
+    }
+    
+    ForwardRequest fwRequest = 
+        new ForwardRequest(packet.getPacketData(), packet.getRemoteHost(), remotePort);
+    
+    if (sendToServer) {
+      log("Adding delayed packet to Server send buffer");
+      this.serverSendBuffer.putRequest(fwRequest);
+    } else {
+      log("Adding delayed packet to Client send buffer");
+      this.clientSendBuffer.putRequest(fwRequest);
+    }
+  };
+  
   private synchronized void setTransferComplete(boolean transferComplete) {
     this.transferComplete = transferComplete;
   }

@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import packet.DataPacket;
 import packet.Packet;
@@ -18,13 +19,13 @@ public class DataPacketModification extends PacketModification {
   }
 
   @Override
-  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort) {
+  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
     if (super.tidModification != null) {
       super.performTidModification(packet, remoteReceivePort);
     }
     
     if (super.delayModification != null) {
-      super.performDelayPacketModification(packet, localReceivePort);
+      super.performDelayPacketModification(packet, localReceivePort, delayedPacketConsumer);
       return null;
     }
     

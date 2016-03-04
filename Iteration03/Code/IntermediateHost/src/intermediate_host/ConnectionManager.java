@@ -62,7 +62,7 @@ public class ConnectionManager implements Runnable {
       IntermediateHost.printPacketInformation(recvDatagram);
 
       ForwardRequest receivedRequest = new ForwardRequest(recvDatagram, socket.getLocalAddress(), socket.getLocalPort());
-
+      
       this.setRemoteHost(recvDatagram.getAddress());
       this.setRemotePort(recvDatagram.getPort());
       this.receiveBuffer.putRequest(receivedRequest); 
@@ -104,5 +104,9 @@ public class ConnectionManager implements Runnable {
 
   public synchronized void setRemoteHost(InetAddress remoteHost) {
     this.remoteHost = remoteHost;
+  }
+  
+  public synchronized int getLocalPort() {
+    return this.socket.getLocalPort();
   }
 }

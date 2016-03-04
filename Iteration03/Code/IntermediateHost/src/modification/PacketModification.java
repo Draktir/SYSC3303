@@ -3,11 +3,10 @@ package modification;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import packet.ErrorPacket;
 import packet.InvalidErrorPacketException;
@@ -25,7 +24,7 @@ public abstract class PacketModification {
     this.packetNumber = packetNumber;
   }
 
-  public abstract byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort);
+  public abstract byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer);
   
   public void performTidModification(Packet packet, int remoteReceivePort) {
     System.out.println("[Modification] Sending packet with wrong TID: port " + tidModification.getPort());
@@ -75,12 +74,12 @@ public abstract class PacketModification {
     tempSock.close();
   }
   
-  public void performDelayPacketModification(Packet packet, int localReceivePort) {
+  public void performDelayPacketModification(Packet packet, int localReceivePort, Consumer<Packet> delayedPacketConsumer) {
     /*
      * Start a new thread that will hold on to the packet and sleep for a while.
-     * Then send the same packet again to the same port on the Intermediate host.
+     * Then call the delayed packet consumer.
      * 
-     * N.B. I'll have to test this on the lab computers. Java 8's Lambdas *may*
+     * N.B. I'll have to test this on the lab computers. Java 8's Lambdas may
      * not work with that version of Eclipse.
      */
     
@@ -95,39 +94,8 @@ public abstract class PacketModification {
         return;
       }
       
-      System.out.println("[Modification] Re-sending delayed packet to Intermediate Host " + packet.toString());
-      
-      DatagramSocket tempSocket = null;
-      try {
-        tempSocket = new DatagramSocket();
-      } catch (Exception e) {
-        e.printStackTrace();
-        return;
-      }
-      
-      InetAddress localhost;
-      try {
-        localhost = InetAddress.getLocalHost();
-      } catch (UnknownHostException e) {
-        e.printStackTrace();
-        tempSocket.close();
-        return;
-      }
-      
-      byte[] data = packet.getPacketData();
-      DatagramPacket datagram = new DatagramPacket(data, data.length,
-          localhost, localReceivePort);
-      
-      try {
-        tempSocket.send(datagram);
-      } catch (IOException e) {
-        e.printStackTrace();
-        tempSocket.close();
-        return;
-      }
-      
-      System.out.println("[Modification] Delayed packet sent: " + packet.toString());
-      tempSocket.close();
+      System.out.println("[Modification] Re-sending delayed packet: " + packet.toString());
+      delayedPacketConsumer.accept(packet);
     };
     
     new Thread(delayTask).start();
