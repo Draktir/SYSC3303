@@ -49,13 +49,16 @@ public class IntermediateHost {
   public static void main(String[] args) {
     IntermediateHost h = new IntermediateHost();
     boolean exit;
+    
     Scanner scan = new Scanner(System.in);
+    
     do {
       h.go();
       System.out.println("\nSimulation complete!\n");
       System.out.print("Do you want to simulate another error scenario? (y/n) ");
       exit = !scan.next().equalsIgnoreCase("y");
     } while (!exit);
+    
     scan.close();
   }
 
@@ -67,8 +70,7 @@ public class IntermediateHost {
 
     try {
       clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
-      // TODO: might need to move this somewhere to allow more time for initial client connection
-      clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME); 
+      clientSocket.setSoTimeout(0); 
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
@@ -104,7 +106,7 @@ public class IntermediateHost {
 
     // determine the type of request and then service the file transfer
     if (request.type() == RequestType.READ) {
-      log("Received valid Read Request: " + request.toString());
+      log("Received valid Read Request: " + request.toString()); 
       serviceTftpRead((ReadRequest) request);
     } else if (request.type() == RequestType.WRITE) {
       log("Received valid Write Request: " + request.toString());
@@ -119,6 +121,7 @@ public class IntermediateHost {
   public void serviceTftpRead(ReadRequest request) {
     try {
       serverSocket = new DatagramSocket();
+      serverSocket.setSoTimeout(Configuration.TIMEOUT_TIME); 
     } catch (SocketException e) {
       e.printStackTrace();
     }
@@ -234,6 +237,7 @@ public class IntermediateHost {
     	while (!packetReceived) {
 		  try {
             log("Waiting for an ACK from the client on port " + clientSocket.getLocalPort());
+            clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME); 
             clientSocket.receive(ackDatagram);
             packetReceived = true;
           } catch (SocketTimeoutException e) {
@@ -353,7 +357,7 @@ public class IntermediateHost {
 		  } catch (SocketTimeoutException e) {
     	    try {
           	  log("Response timed out. Attempting to resend last packet.");
-	          clientSocket.send(requestDatagram);
+	          serverSocket.send(requestDatagram);
     	    } catch (IOException e1) {
       	      e1.printStackTrace();
 	    	  return;
@@ -409,7 +413,6 @@ public class IntermediateHost {
         return;
       }
       
-      
       // figure out if we're done (i.e. we just sent the last ACK)
       if (receivedLastDataPacket) {
         log("");
@@ -432,6 +435,7 @@ public class IntermediateHost {
     	while (!packetReceived) {
     		try {
 	          log("Waiting for Data Packet from client.");
+	          clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME); 
 	          clientSocket.receive(dataPacketDatagram);
 	          packetReceived = true;
     		} catch (SocketTimeoutException e) {
