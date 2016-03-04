@@ -12,7 +12,7 @@ public class ModificationMenu {
     PacketModifier modifier = new PacketModifier();
     int menuSelection = -1;
 
-    while (menuSelection < 0 || menuSelection > 4) {
+    while (menuSelection < 0 || menuSelection > 5) {
       // main menu
       System.out.println("TFTP Error Simulator");
       System.out.println("\nWhich type of packet do you want to modify.");
@@ -20,6 +20,7 @@ public class ModificationMenu {
       System.out.println("  [ 2 ] Write Request (WRQ)");
       System.out.println("  [ 3 ] Data Packet (DATA)");
       System.out.println("  [ 4 ] Acknowledgement (ACK)");
+      System.out.println("  [ 5 ] Error Packet (ERROR)");
       System.out.println("  [ 0 ] Make no modification");
       System.out.print(" > ");
   
@@ -38,8 +39,11 @@ public class ModificationMenu {
     } else if (menuSelection == 4) {
       AcknowledgementModification ackMod = configureAcknowledgementModification();
       modifier.setAckModification(ackMod);
+    } else if (menuSelection == 5) {
+      ErrorPacketModification errMod = configureErrorPacketModification();
+      modifier.setErrorModification(errMod);
     } else {
-      System.out.println("No modifications will be made.");
+      System.out.println("\nNo modifications will be made.");
     }
     
     return modifier;
@@ -351,11 +355,85 @@ public class ModificationMenu {
     return ackMod;
   }
   
-  private TidModification configureTidModification() {
-    System.out.print("\nEnter the new sending port: ");
-    int port = 0;
+  private ErrorPacketModification configureErrorPacketModification() {
+    int packetNumber;
+    System.out.print("\nWhich one of the Error Packets do you want to modify? #");
+    packetNumber = scan.nextInt();
     
+    ErrorPacketModification errorMod = new ErrorPacketModification(packetNumber);
+    
+    int fieldSelection = -1;
+    while (fieldSelection != 0) {
+      System.out.println("\nWhich field do you want to modify?");
+      System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
+      System.out.println("  [ 2 ] Error Code (bytes 3 & 4)");
+      System.out.println("  [ 3 ] Error Message");
+      System.out.println("  [ 4 ] Zero Byte after Message");
+      System.out.println("  [ 5 ] Modify TID (sending port number)");
+      System.out.println("  [ 6 ] Delay packet");
+      System.out.println("  [ 7 ] Drop packet");
+      System.out.println("  [ 0 ] Done");
+      System.out.print(" > ");
+      
+      fieldSelection = scan.nextInt();
+      
+      if (fieldSelection <= 0 || fieldSelection > 7) {
+        continue;
+      }
+      
+      byte[] modValue = null;
+      TidModification tidMod = null;
+      DelayPacketModification delayMod = null;
+      DropPacketModification dropMod = null;
+      
+      if (fieldSelection == 5) {
+        tidMod = configureTidModification();
+      } else if (fieldSelection == 6) {
+        delayMod = configureDelayPacketModification();
+      } else if (fieldSelection == 7) {
+        dropMod = new DropPacketModification();
+      } else {
+        modValue = getModValueFromUser();
+      }
+
+      switch (fieldSelection) {
+        case 1:
+          errorMod.setOpcode(modValue);
+          break;
+        case 2:
+          errorMod.setErrorCode(modValue);
+          break;
+        case 3:
+          errorMod.setErrorMessge(modValue);
+          break;
+        case 4:
+          errorMod.setZeroByteAfterMessage(modValue);
+          break;
+        case 5:
+          errorMod.setTidModification(tidMod);
+          break;
+        case 6:
+          errorMod.setDelayModification(delayMod);
+          break;
+        case 7:
+          errorMod.setDropModification(dropMod);
+          break;
+        default:
+          System.err.println("Invalid field selection");
+          break;
+      }
+    }
+    
+    System.out.println("\n" + errorMod.toString());
+    System.out.println("\n");
+    
+    return errorMod;
+  }
+  
+  private TidModification configureTidModification() {
+    int port = 0;
     while (port <= 0) {
+      System.out.print("\nEnter the new sending port: ");
       port = scan.nextInt();
     }
     return new TidModification(port);
