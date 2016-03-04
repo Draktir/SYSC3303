@@ -289,7 +289,8 @@ public class Client {
     serverConnection.setServerPort(recvdDatagram.getPort());
     
     int blockNumber = 1;
-
+    boolean errorOccured = false;
+    
     do {
       DataPacket dataPacket = null;
       try {
@@ -305,6 +306,7 @@ public class Client {
         String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
         log(errMsg);
         sendErrorPacket(errMsg, recvdDatagram);
+        errorOccured = true;
         break;
       }
       
@@ -320,14 +322,17 @@ public class Client {
         } catch (FileNotFoundException e1) {
           e1.printStackTrace();
           log("ERROR: Could not create new file for downloading.");
+          errorOccured = true;
           break;
         } catch (FileAlreadyExistsException e) {
           log("ERROR: " + filename + " already exists on this machine.");
           e.printStackTrace();
+          errorOccured = true;
           break;
         } catch (IOException e) {
           log("ERROR: " + e.getMessage());
           e.printStackTrace();
+          errorOccured = true;
           break;
         }
       }
@@ -339,6 +344,7 @@ public class Client {
       } catch (IOException e) {
         log(e.getMessage());
         e.printStackTrace();
+        errorOccured = true;
         break;
       }
 
@@ -361,11 +367,18 @@ public class Client {
 
       recvdDatagram = serverConnection.sendPacketAndReceive(ack);
       blockNumber++;      
-    } while (!transferComplete);
+    } while (!transferComplete && !errorOccured);
 
-    log("File transfer ended.");
+
     if (fileWriter != null) {
       fileWriter.close();
+    }
+    
+    if (errorOccured) {
+      log("Error occured, deleting file");
+      new File(request.getFilename()).delete();
+    } else {
+      log("File transfer successful.");
     }
   }
 
