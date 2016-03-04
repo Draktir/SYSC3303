@@ -22,7 +22,7 @@ public class PacketModifier {
   
   public byte[] process(Packet packet, int localReceivePort, int remoteReceivePort) {
     packetCount++;
-    // we don't make any modifications hede since this is an
+    // we don't make any modifications here since this is an
     // unexpected packet type and an error has already been
     // introduced (either delay or dropped packet).
     return packet.getPacketData();    

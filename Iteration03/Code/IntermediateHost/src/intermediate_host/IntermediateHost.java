@@ -16,16 +16,12 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
 import Configuration.Configuration;
 import modification.*;
-import packet.Acknowledgement;
-import packet.DataPacket;
 import packet.ErrorPacket;
 import packet.InvalidErrorPacketException;
 import packet.InvalidPacketException;
@@ -37,7 +33,6 @@ import packet.WriteRequest;
 
 public class IntermediateHost {
   private DatagramSocket clientSocket;
-  private DatagramSocket serverSocket;
   private PacketModifier packetModifier;
   private int clientPort;
   private PacketParser packetParser = new PacketParser();
@@ -113,18 +108,17 @@ public class IntermediateHost {
         Thread t = new Thread(tftpReadTransfer, "#" + (connectionThreads.size() + 1));
         connectionThreads.add(t);
         t.start();
-        
+
       } else if (request.type() == RequestType.WRITE) {
         log("Received valid Write Request: " + request.toString());
-        serviceTftpWrite((WriteRequest) request);
+        Runnable tftpWriteTransfer = new TftpWriteTransfer((WriteRequest) request, packetModifier);
+        Thread t = new Thread(tftpWriteTransfer, "#" + (connectionThreads.size() + 1));
+        connectionThreads.add(t);
+        t.start();
       }
     } while (connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
     log("All connections terminated");
-  }
-
-  public void serviceTftpWrite(WriteRequest request) {
-    
   }
 
   private boolean handleParseError(DatagramPacket datagram, DatagramSocket socket, InetAddress recvHost, int recvPort) {
