@@ -262,26 +262,8 @@ public class Client {
    */
   public void downloadFileFromServer(String filename, String mode) {
     transferComplete = false;
-
-    log("Creating file " + filename + " for writing.");
+    fileWriter = null;
     
-    // create file for reading
-    try {
-      fileWriter = new FileWriter(filename);
-    } catch (FileNotFoundException e1) {
-      e1.printStackTrace();
-      log("ERROR: Could not create new file for downloading.");
-      return;
-    } catch (FileAlreadyExistsException e) {
-      log("ERROR: " + filename + " already exists on this machine.");
-      e.printStackTrace();
-      return;
-    } catch (IOException e) {
-      log("ERROR: " + e.getMessage());
-      e.printStackTrace();
-      return;
-    }
-
     InetAddress remoteHost;
     try {
       remoteHost = InetAddress.getLocalHost();
@@ -316,18 +298,40 @@ public class Client {
         String errMsg = "Not a valid Data Packet: " + e.getMessage();
         log(errMsg);
         handleParseError(errMsg, recvdDatagram);
-        return;
+        break;
       }
 
       if (dataPacket.getBlockNumber() != blockNumber) {
         String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
         log(errMsg);
         sendErrorPacket(errMsg, recvdDatagram);
-        return;
+        break;
       }
       
       log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
       log("\tWriting file block# " + blockNumber);
+      
+      // creating file if not yet exists
+      if (fileWriter == null) {
+        log("Creating file " + filename + " for writing.");
+        // create file for reading
+        try {
+          fileWriter = new FileWriter(filename);
+        } catch (FileNotFoundException e1) {
+          e1.printStackTrace();
+          log("ERROR: Could not create new file for downloading.");
+          break;
+        } catch (FileAlreadyExistsException e) {
+          log("ERROR: " + filename + " already exists on this machine.");
+          e.printStackTrace();
+          break;
+        } catch (IOException e) {
+          log("ERROR: " + e.getMessage());
+          e.printStackTrace();
+          break;
+        }
+      }
+
       
       byte[] fileData = dataPacket.getFileData();
       try {
@@ -335,7 +339,7 @@ public class Client {
       } catch (IOException e) {
         log(e.getMessage());
         e.printStackTrace();
-        return;
+        break;
       }
 
       Acknowledgement ack = new AcknowledgementBuilder()
@@ -360,7 +364,10 @@ public class Client {
       blockNumber++;      
     } while (!transferComplete);
 
-    log("File transfer successful.");
+    log("File transfer ended.");
+    if (fileWriter != null) {
+      fileWriter.close();
+    }
   }
 
   private void handleParseError(String message, DatagramPacket packet) {

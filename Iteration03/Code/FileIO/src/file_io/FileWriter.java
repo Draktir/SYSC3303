@@ -57,6 +57,10 @@ public class FileWriter {
    * 
    */
   public void close() {
+    if (this.fileOut == null) {
+      return; 
+    }
+    
     try {
       this.fileOut.flush();
       this.fileOut.close();
