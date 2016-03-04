@@ -63,14 +63,14 @@ public class TftpTransfer implements Runnable {
     serverSendBuffer.putRequest(rrqForward);
 
     while (!this.transferComplete) {
-      // will return after 200ms if buffer is still empty
-      clientRequest = clientReceiveBuffer.takeRequest(200);
+      // will return after 10ms if buffer is still empty
+      clientRequest = clientReceiveBuffer.takeRequest(10);
       if (clientRequest != null) {
         handleRequest(clientRequest, clientConnection.getRemotePort(), serverSendBuffer);
       }
 
       // will return after 200ms if buffer is still empty
-      serverRequest = serverReceiveBuffer.takeRequest(200);
+      serverRequest = serverReceiveBuffer.takeRequest(10);
       if (serverRequest != null) {
         handleRequest(serverRequest, serverConnnection.getRemotePort(), clientSendBuffer);
       }

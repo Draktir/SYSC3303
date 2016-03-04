@@ -23,7 +23,7 @@ public class ConnectionManager implements Runnable {
   public void run() {
     try {
       this.socket = new DatagramSocket();
-      this.socket.setSoTimeout(200); // deliberately very short timeout
+      this.socket.setSoTimeout(10); // deliberately very short timeout
     } catch (SocketException e) {
       e.printStackTrace();
       return;
