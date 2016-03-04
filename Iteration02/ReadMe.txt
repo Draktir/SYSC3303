@@ -65,6 +65,8 @@ Testing
   Starting the Intermediate Host brings up a menu that allows to configure packet modifications
   for the next session. Once the session is terminated (i.e. the file has been transferred or
   an error occured) the intermediate host again allows to configure a different error scenario.
+  It is possible to modify a single packet per session. But one can modify more than one field
+  in that packet.
 
 Testing Error Code 5 (Invalid TID)
   The Intermediate host will open a new Socket on a new port  to send the Datagram Packet. Once 
