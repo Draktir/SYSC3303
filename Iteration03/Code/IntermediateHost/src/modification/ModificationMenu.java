@@ -218,7 +218,7 @@ public class ModificationMenu {
       System.out.println("  [ 1 ] Opcode (bytes 1 & 2)");
       System.out.println("  [ 2 ] Block Number (bytes 3 & 4)");
       System.out.println("  [ 3 ] Data");
-      System.out.println("  [ 4 ] Append data at the end");
+      System.out.println("  [ 4 ] Append to data field");
       System.out.println("  [ 5 ] Modify TID (sending port number)");
       System.out.println("  [ 6 ] Delay packet");
       System.out.println("  [ 7 ] Drop packet");
