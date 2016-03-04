@@ -17,17 +17,17 @@ public class ConnectionManager implements Runnable {
     this.sendBuffer = sendBuffer;
     this.remoteHost = remoteHost;
     this.remotePort = remotePort;
-  }
-
-  @Override
-  public void run() {
+    
     try {
       this.socket = new DatagramSocket();
     } catch (SocketException e) {
       e.printStackTrace();
       return;
     }
+  }
 
+  @Override
+  public void run() {
     // start a receiveHandler Thread for incoming requests
     String name = Thread.currentThread().getName();
     Thread recvThread = new Thread(this.packetReceiver, name + " recv");

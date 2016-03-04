@@ -65,12 +65,13 @@ public class ModificationMenu {
       System.out.println("  [ 7 ] Modify TID (sending port number)");
       System.out.println("  [ 8 ] Delay packet");
       System.out.println("  [ 9 ] Drop packet");
+      System.out.println("  [ 10] Duplicate packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
     
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 9) {
+      if (fieldSelection <= 0 || fieldSelection > 10) {
         continue;
       }
       
@@ -145,12 +146,13 @@ public class ModificationMenu {
       System.out.println("  [ 7 ] Modify TID (sending port number)");
       System.out.println("  [ 8 ] Delay packet");
       System.out.println("  [ 9 ] Drop packet");
+      System.out.println("  [ 10] Duplicate packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
     
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 9) {
+      if (fieldSelection <= 0 || fieldSelection > 10) {
         continue;
       }
       
@@ -226,12 +228,13 @@ public class ModificationMenu {
       System.out.println("  [ 5 ] Modify TID (sending port number)");
       System.out.println("  [ 6 ] Delay packet");
       System.out.println("  [ 7 ] Drop packet");
+      System.out.println("  [ 8 ] Duplicate packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 7) {
+      if (fieldSelection <= 0 || fieldSelection > 8) {
         continue;
       }
       
@@ -300,12 +303,13 @@ public class ModificationMenu {
       System.out.println("  [ 4 ] Modify TID (sending port number)");
       System.out.println("  [ 5 ] Delay packet");
       System.out.println("  [ 6 ] Drop packet");
+      System.out.println("  [ 7 ] Duplicate packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 6) {
+      if (fieldSelection <= 0 || fieldSelection > 7) {
         continue;
       }
       
@@ -372,12 +376,13 @@ public class ModificationMenu {
       System.out.println("  [ 5 ] Modify TID (sending port number)");
       System.out.println("  [ 6 ] Delay packet");
       System.out.println("  [ 7 ] Drop packet");
+      System.out.println("  [ 8 ] Duplicate packet");
       System.out.println("  [ 0 ] Done");
       System.out.print(" > ");
       
       fieldSelection = scan.nextInt();
       
-      if (fieldSelection <= 0 || fieldSelection > 7) {
+      if (fieldSelection <= 0 || fieldSelection > 8) {
         continue;
       }
       
