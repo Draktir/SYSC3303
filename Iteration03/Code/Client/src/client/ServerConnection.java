@@ -125,6 +125,8 @@ public class ServerConnection {
         System.err.println("[SERVER-CONNECTION] Waiting for another packet.");
       }
     } while (responseDatagram == null);
+    
+    Client.printPacketInformation(responseDatagram);
     return responseDatagram;
   }
   
