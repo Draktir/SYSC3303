@@ -4,8 +4,6 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.Arrays;
 
-import packet.Packet;
-
 public class ForwardRequest {
   private DatagramPacket datagramPacket;
   private InetAddress localAddress;

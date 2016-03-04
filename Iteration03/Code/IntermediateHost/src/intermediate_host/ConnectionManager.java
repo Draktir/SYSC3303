@@ -1,7 +1,5 @@
 package intermediate_host;
 
-import packet.*;
-
 import java.io.IOException;
 import java.net.*;
 
@@ -67,11 +65,11 @@ public class ConnectionManager implements Runnable {
   }
 
   private void sendRequest(ForwardRequest forwardRequest) {
-    log("Forwarding a packet");
     byte[] forwardData = forwardRequest.getData();
     DatagramPacket datagram = new DatagramPacket(forwardData, forwardData.length,
         this.remoteHost, this.remotePort);
 
+    log("Forwarding Packet:");
     IntermediateHost.printPacketInformation(datagram);
 
     try {

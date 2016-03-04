@@ -13,7 +13,6 @@ package intermediate_host;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -22,14 +21,10 @@ import java.util.Scanner;
 
 import Configuration.Configuration;
 import modification.*;
-import packet.ErrorPacket;
-import packet.InvalidErrorPacketException;
 import packet.InvalidPacketException;
 import packet.PacketParser;
-import packet.ReadRequest;
 import packet.Request;
 import packet.Request.RequestType;
-import packet.WriteRequest;
 
 public class IntermediateHost {
   private DatagramSocket clientSocket;
@@ -103,18 +98,15 @@ public class IntermediateHost {
       // determine the type of request and then service the file transfer
       if (request.type() == RequestType.READ) {
         log("Received valid Read Request: " + request.toString());
-        Runnable tftpReadTransfer = new TftpReadTransfer((ReadRequest) request, packetModifier);
-        Thread t = new Thread(tftpReadTransfer, "#" + (connectionThreads.size() + 1));
-        connectionThreads.add(t);
-        t.start();
-
       } else if (request.type() == RequestType.WRITE) {
         log("Received valid Write Request: " + request.toString());
-        Runnable tftpWriteTransfer = new TftpWriteTransfer((WriteRequest) request, packetModifier);
-        Thread t = new Thread(tftpWriteTransfer, "#" + (connectionThreads.size() + 1));
-        connectionThreads.add(t);
-        t.start();
       }
+      
+      Runnable tftpTransfer = new TftpTransfer((Request) request, packetModifier);
+      Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
+      connectionThreads.add(t);
+      t.start();
+      
     } while (connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
     log("All connections terminated");

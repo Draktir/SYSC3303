@@ -5,7 +5,7 @@ import java.net.*;
 import Configuration.Configuration;
 import packet.*;
 
-public class TftpReadTransfer implements Runnable {
+public class TftpTransfer implements Runnable {
   private PacketParser packetParser = new PacketParser();
   private boolean transferComplete = false;
   private int lastBlockNumber = -1;
@@ -18,10 +18,10 @@ public class TftpReadTransfer implements Runnable {
   private RequestBuffer serverReceiveBuffer = new RequestBuffer();
   private RequestBuffer serverSendBuffer = new RequestBuffer();
 
-  private ReadRequest request;
+  private Request request;
   private PacketModifier packetModifier;
 
-  public TftpReadTransfer(ReadRequest request, PacketModifier packetModifier) {
+  public TftpTransfer(Request request, PacketModifier packetModifier) {
     this.packetModifier = packetModifier;
     this.request = request;
   }
@@ -42,13 +42,12 @@ public class TftpReadTransfer implements Runnable {
     serverConnnection =
         new ConnectionManager(serverReceiveBuffer, serverSendBuffer, localhost, Configuration.SERVER_PORT);
 
-    Thread clientThread = new Thread(clientConnection, "TFTP-READ CLIENT");
-    Thread serverThread = new Thread(serverConnnection, "TFTP-READ SERVER");
+    Thread clientThread = new Thread(clientConnection, "CLIENT-CONNECTION");
+    Thread serverThread = new Thread(serverConnnection, "SERVER-CONNECTION");
 
     clientThread.start();
     serverThread.start();
 
-    boolean transferComplete = false;
     ForwardRequest clientRequest = null;
     ForwardRequest serverRequest = null;
 
@@ -63,7 +62,7 @@ public class TftpReadTransfer implements Runnable {
     ForwardRequest rrqForward = new ForwardRequest(rrqRaw, localhost, Configuration.INTERMEDIATE_PORT);
     serverSendBuffer.putRequest(rrqForward);
 
-    while (!transferComplete) {
+    while (!this.transferComplete) {
       // will return after 200ms if buffer is still empty
       clientRequest = clientReceiveBuffer.takeRequest(200);
       if (clientRequest != null) {
@@ -79,6 +78,8 @@ public class TftpReadTransfer implements Runnable {
 
     clientThread.interrupt();
     serverThread.interrupt();
+    
+    log("Transfer has ended");
   }
 
   private void handleRequest(ForwardRequest fwdRequest, int remotePort, RequestBuffer sendBuffer) {
