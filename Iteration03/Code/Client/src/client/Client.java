@@ -354,7 +354,6 @@ public class Client {
       if (fileData.length < 512) {
         log("\tAcknowledging last data packet.");
         transferComplete = true;
-        fileWriter.close();
         // send the last ACK
         serverConnection.sendPacket(ack);
         break;
