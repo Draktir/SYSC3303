@@ -6,93 +6,115 @@ import Configuration.Configuration;
 import packet.*;
 
 public class TftpTransfer implements Runnable {
-  private PacketParser packetParser = new PacketParser();
   private boolean transferComplete = false;
   private int lastBlockNumber = -1;
 
-  private ConnectionManager clientConnection;
-  private ConnectionManager serverConnnection;
+  // make these references immutable so it's safe to use them from other Threads 
+  private final ConnectionManager clientConnection; // initialized in Constructor
+  private final ConnectionManager serverConnnection; // initialized in Constructor
+  private final RequestBuffer clientReceiveBuffer = new RequestBuffer();
+  private final RequestBuffer clientSendBuffer = new RequestBuffer();
+  private final RequestBuffer serverReceiveBuffer = new RequestBuffer();
+  private final RequestBuffer serverSendBuffer = new RequestBuffer();
+  private final DatagramPacket requestDatagram;
+  private final PacketModifier packetModifier;
 
-  private RequestBuffer clientReceiveBuffer = new RequestBuffer();
-  private RequestBuffer clientSendBuffer = new RequestBuffer();
-  private RequestBuffer serverReceiveBuffer = new RequestBuffer();
-  private RequestBuffer serverSendBuffer = new RequestBuffer();
-
-  private Request request;
-  private PacketModifier packetModifier;
-
-  public TftpTransfer(Request request, PacketModifier packetModifier) {
+  public TftpTransfer(DatagramPacket requestDatagram, PacketModifier packetModifier) {
     this.packetModifier = packetModifier;
-    this.request = request;
+    this.requestDatagram = requestDatagram;
+    this.clientConnection =
+        new ConnectionManager(clientReceiveBuffer, clientSendBuffer, requestDatagram.getAddress(), requestDatagram.getPort());
+    this.serverConnnection =
+        new ConnectionManager(serverReceiveBuffer, serverSendBuffer, requestDatagram.getAddress(), Configuration.SERVER_PORT);
   }
 
   @Override
   public void run() {
-    InetAddress localhost = null;
+    // figure out if we got a valid request
+    PacketParser packetParser = new PacketParser();
+    Request recvdRequest;
     try {
-      localhost = InetAddress.getLocalHost();
-    } catch (UnknownHostException e) {
-      e.printStackTrace();
+      recvdRequest = packetParser.parseRequest(requestDatagram);
+    } catch (InvalidRequestException e1) {
+      e1.printStackTrace();
+      System.err.println("Received packet is not a valid RRQ or WRQ. Ignore it.");
       return;
     }
-
+    
+    
+    
+    log("Initiating new TFTP transfer");
+    
     // start the connection managers
-    clientConnection =
-        new ConnectionManager(clientReceiveBuffer, clientSendBuffer, request.getRemoteHost(), request.getRemotePort());
-    serverConnnection =
-        new ConnectionManager(serverReceiveBuffer, serverSendBuffer, localhost, Configuration.SERVER_PORT);
+    Thread clientConnectionThread = new Thread(clientConnection, "CLIENT-CONNECTION");
+    Thread serverConnectionThread = new Thread(serverConnnection, "SERVER-CONNECTION");
 
-    Thread clientThread = new Thread(clientConnection, "CLIENT-CONNECTION");
-    Thread serverThread = new Thread(serverConnnection, "SERVER-CONNECTION");
-
-    clientThread.start();
-    serverThread.start();
-
-    ForwardRequest clientRequest = null;
-    ForwardRequest serverRequest = null;
-
-    // to kick things off add the ReadRequest to the buffer
-    byte[] reqRaw = packetModifier.process(request, Configuration.INTERMEDIATE_PORT, Configuration.SERVER_PORT);
-    if (reqRaw == null) {
-      // this request will be delayed/dropped. So we are done here.
-      // another thread will be started if it's delayed
-      return;
-    }
-
-    ForwardRequest reqForward = new ForwardRequest(reqRaw, localhost, Configuration.INTERMEDIATE_PORT);
-    serverSendBuffer.putRequest(reqForward);
-
-    while (!this.transferComplete) {
-      // will return after 10ms if buffer is still empty
-      clientRequest = clientReceiveBuffer.takeRequest(10);
-      if (clientRequest != null) {
+    clientConnectionThread.start();
+    serverConnectionThread.start();
+    
+    // start the request handlers. These wait for a request to be put
+    // into their respective buffer and then process it.
+    Thread clientHandler = new Thread(() -> {
+      while (!Thread.currentThread().isInterrupted()) {
+        ForwardRequest clientRequest = clientReceiveBuffer.takeRequest();
         handleRequest(clientRequest, clientConnection.getRemotePort(), serverSendBuffer);
       }
-
-      // will return after 10ms if buffer is still empty
-      serverRequest = serverReceiveBuffer.takeRequest(10);
-      if (serverRequest != null) {
+    }, "CLIENT-HANDLER");
+        
+    Thread serverHandler = new Thread(() -> {
+      while (!Thread.currentThread().isInterrupted()) {
+        ForwardRequest serverRequest = serverReceiveBuffer.takeRequest();
         handleRequest(serverRequest, serverConnnection.getRemotePort(), clientSendBuffer);
+      }
+    }, "SERVER-HANDLER");
+    
+    clientHandler.start();
+    serverHandler.start();
+      
+    // to kick things off add the original request to the client receive buffer
+    ForwardRequest reqForward = 
+        new ForwardRequest(recvdRequest.getPacketData(), recvdRequest.getRemoteHost(), Configuration.INTERMEDIATE_PORT);
+    clientReceiveBuffer.putRequest(reqForward);
+    
+    // wait for the transfer to complete
+    while (!this.getTransferComplete()) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
       }
     }
 
-    clientThread.interrupt();
-    serverThread.interrupt();
+    clientConnectionThread.interrupt();
+    serverConnectionThread.interrupt();
+    clientHandler.interrupt();
+    serverHandler.interrupt();
     
     log("Transfer has ended");
   }
-
+ 
+  /**
+   * This method is called from other threads. However, it does not need to be
+   * synchronized. Whenever we need to access local state we call synchronized
+   * local methods (set/getTransferComplete or set/getLastBlockNumber).
+   * Any other data sources are themselves synchronized.
+   * 
+   * @param fwdRequest
+   * @param remotePort
+   * @param sendBuffer
+   */
   private void handleRequest(ForwardRequest fwdRequest, int remotePort, RequestBuffer sendBuffer) {
     log("Request received. Forwarding...");
-
-    DatagramPacket datagramPacket = fwdRequest.getDatagramPacket();
+    final PacketParser packetParser = new PacketParser();
+    final DatagramPacket datagramPacket = fwdRequest.getDatagramPacket();
+    
     Packet packet = null;
     try {
       packet = packetParser.parse(datagramPacket);
     } catch (InvalidPacketException e) {
       e.printStackTrace();
       System.err.println("This shouldn't happen. So let's get outta here!");
-      this.transferComplete = true;
+      this.setTransferComplete(true);
       return;
     }
 
@@ -104,9 +126,10 @@ public class TftpTransfer implements Runnable {
         log("Forwarding ReadRequest:");
         log(rrq.toString());
       }
+      
     } else if (packet instanceof WriteRequest) {
       WriteRequest wrq = (WriteRequest) packet;
-      rawData = packetModifier.process((WriteRequest) packet, fwdRequest.getReceivingPort(), remotePort);
+      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort);
       if (rawData != null) {
         log("Forwarding WriteRequest:");
         log(wrq.toString());
@@ -116,7 +139,9 @@ public class TftpTransfer implements Runnable {
       Acknowledgement ack = (Acknowledgement) packet;
       rawData = packetModifier.process(ack, fwdRequest.getReceivingPort(), remotePort);
       // if we are sending the last ACK we are done after this
-      this.transferComplete = (rawData != null && this.lastBlockNumber == ack.getBlockNumber());
+      if (rawData != null && this.getLastBlockNumber() == ack.getBlockNumber()) {
+        this.setTransferComplete(true);
+      }
       if (rawData != null) {
         log("Forwarding ACK:");
         log(ack.toString());
@@ -125,8 +150,10 @@ public class TftpTransfer implements Runnable {
     } else if (packet instanceof DataPacket) {
       DataPacket dp = (DataPacket) packet;
       rawData = packetModifier.process(dp, fwdRequest.getReceivingPort(), remotePort);
-      // if this is the last block remember the block number
-      this.lastBlockNumber = dp.getFileData().length < 512 ? dp.getBlockNumber() : -1;
+      // if this is the last block, remember the block number
+      if (dp.getFileData().length < 512) {
+        this.setLastBlockNumber(dp.getBlockNumber());
+      }
       if (rawData != null) {
         log("Forwarding DataPacket");
         log(dp.toString());
@@ -136,7 +163,9 @@ public class TftpTransfer implements Runnable {
       ErrorPacket errPacket = (ErrorPacket) packet;
       rawData = packetModifier.process(errPacket, fwdRequest.getReceivingPort(), remotePort);
       // if this is an error with code != 5, we are done after this
-      this.transferComplete = (rawData != null && errPacket.getErrorCode() != ErrorPacket.ErrorCode.UNKNOWN_TRANSFER_ID);
+      if (rawData != null && errPacket.getErrorCode() != ErrorPacket.ErrorCode.UNKNOWN_TRANSFER_ID) {
+        this.setTransferComplete(true);
+      }
       if (rawData != null) {
         log("Forwarding ErrorPacket");
         log(errPacket.toString());
@@ -156,6 +185,22 @@ public class TftpTransfer implements Runnable {
     sendBuffer.putRequest(fwdRequest);
   }
 
+  private synchronized void setTransferComplete(boolean transferComplete) {
+    this.transferComplete = transferComplete;
+  }
+  
+  private synchronized boolean getTransferComplete() {
+    return this.transferComplete;
+  }
+  
+  private synchronized void setLastBlockNumber(int blockNumber) {
+    this.lastBlockNumber = blockNumber;
+  }
+  
+  private synchronized int getLastBlockNumber() {
+    return this.lastBlockNumber;
+  }
+  
   private void log(String msg) {
     String name = Thread.currentThread().getName();
     System.out.println("[TFTP: " + name + "] " + msg);
