@@ -252,6 +252,10 @@ class RequestHandler implements Runnable {
         break;
       }
       
+      
+      // we are now expecting the next sequential block number
+      blockNumber++;
+      
       // check for duplicate.
       // If it's a duplicate data, send ACK but don't write to disk.
       if(dataPacket.getBlockNumber()< blockNumber){
@@ -260,9 +264,6 @@ class RequestHandler implements Runnable {
           log(errMsg);
           continue;
       }
-      
-      // we are now expecting the next sequential block number
-      blockNumber++;
       
       // make sure the block number is correct
       if (dataPacket.getBlockNumber() != blockNumber) {
