@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.sql.Timestamp;
 
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
@@ -46,59 +47,28 @@ public class ClientConnection {
       e.printStackTrace();
     }
   }
+
   
-  /**
-   * Sends a packet and blocks until a response is received on the same socket
-   * 
-   * @param packet
-   * @return GenericPacket containing data and connection information
-   * @throws InvalidClientTidException 
-   */
-  public DatagramPacket sendPacketAndReceive(Packet packet) {
-    // 1. form datagram packet
-    byte[] data = packet.getPacketData();
-    DatagramPacket sendDatagram = new DatagramPacket(
-        data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-    
-    System.out.println("[CLIENT-CONNECTION] sending packet");
-    RequestHandler.printPacketInformation(sendDatagram);
-    
-    // 2. send datagram packet
-    try {
-      clientSocket.send(sendDatagram);
-    } catch (IOException e) {
-      e.printStackTrace();
-      return null;
-    }
-    
-    // 3. wait to receive a response
+  public DatagramPacket receive() {
     byte[] buffer;
     DatagramPacket responseDatagram = null;
     
     do {
       buffer = new byte[517];
       responseDatagram = new DatagramPacket(buffer, 517);
-      boolean packetReceived = false;
       
-      while (!packetReceived) {
-        try {
-	      System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
-	      clientSocket.receive(responseDatagram);
-	      packetReceived = true;
-	    } catch (SocketTimeoutException e) {
-	      System.out.println("[CLIENT-CONNECTION] Response timed out. Attempting to resend last packet.");
-	      try {
-	        clientSocket.send(sendDatagram);
-	      } catch (IOException e1) {
-	        e1.printStackTrace();
-	        return null;
-	      }
-        } catch (IOException e) {
-	      e.printStackTrace();
-    	  return null;
-        }  
+      long tsStart = RequestHandler.currentTime();
+      try {
+        System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
+        clientSocket.receive(responseDatagram);
+      } catch (SocketTimeoutException e) {
+        System.out.println("[CLIENT-CONNECTION] Response timed out.");
+        return null;  
+      } catch (IOException e) {
+        e.printStackTrace();
+        return null;
       }
-      
+      long tsStop = RequestHandler.currentTime();
       
       // ensure the client TID is the same
       if (!isClientTidValid(responseDatagram)) {
@@ -128,12 +98,24 @@ public class ClientConnection {
         responseDatagram = null;
         
         System.err.println("[CLIENT-CONNECTION] Waiting for another packet.");
+        
+        // reduce timeout
+        try {
+          clientSocket.setSoTimeout((int)(tsStop - tsStart));
+        } catch (SocketException e) {
+          e.printStackTrace();
+        }
       }
-      
     } while (responseDatagram == null);
     
+    // reset timeout to original value
+    try {
+      clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
+    } catch (SocketException e) {
+      e.printStackTrace();
+    }
     
-    System.out.println("[CLIENT-CONNECTION] Received packet from client, length: " + responseDatagram.getLength());
+    System.out.println("[CLIENT-CONNECTION] Received packet from server, length " + responseDatagram.getLength());
     return responseDatagram;
   }
   
@@ -141,13 +123,12 @@ public class ClientConnection {
     return clientAddress.equals(packet.getAddress()) && packet.getPort() == clientPort;
   }
   
-  public void setTimeOut(long milSec){
+  public void setTimeOut(long milSec) {
 	  try {
-		this.clientSocket.setSoTimeout((int)milSec);
-	} catch (SocketException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-	  
+  		this.clientSocket.setSoTimeout((int)milSec);
+  	} catch (SocketException e) {
+  		// TODO Auto-generated catch block
+  		e.printStackTrace();
+  	}
   }
 }
