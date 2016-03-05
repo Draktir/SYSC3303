@@ -115,7 +115,7 @@ public class ClientConnection {
       e.printStackTrace();
     }
     
-    System.out.println("[CLIENT-CONNECTION] Received packet from server, length " + responseDatagram.getLength());
+    System.out.println("[CLIENT-CONNECTION] Received packet from client, length " + responseDatagram.getLength());
     return responseDatagram;
   }
   

@@ -163,6 +163,8 @@ class RequestHandler implements Runnable {
       
       do {
         log("sending data packet, block #" + dataPacket.getBlockNumber());
+        log(dataPacket.toString());
+        
         // 4. send data packet and wait for response
         clientConnection.sendPacket(dataPacket);
         
@@ -196,6 +198,7 @@ class RequestHandler implements Runnable {
         if (ack.getBlockNumber() < blockNumber) {
           log("Received duplicate ACK with block #" + ack.getBlockNumber());
           clientConnection.setTimeOut(tsStop - tsStart);
+          ack = null;
           continue;
         } else if (ack.getBlockNumber() > blockNumber) { 
           // if it's not a duplicate, send an error and terminate
@@ -208,7 +211,7 @@ class RequestHandler implements Runnable {
 
         // reset socket timeout for retries
         clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
-      } while(sendAttempts++ < Configuration.MAX_RETRIES);
+      } while(sendAttempts++ < Configuration.MAX_RETRIES && ack == null);
       
       // did we exceed max retries?
       if (sendAttempts >= Configuration.MAX_RETRIES) {
@@ -307,10 +310,11 @@ class RequestHandler implements Runnable {
               dataPacket.getBlockNumber());
           clientConnection.sendPacket(ackForWrongData);
           clientConnection.setTimeOut(tsStop - tsStart);
+          dataPacket = null;
           continue;
-        } else if (ack.getBlockNumber() > blockNumber) { 
+        } else if (dataPacket.getBlockNumber() > blockNumber) { 
           // if it's not a duplicate, send an error and terminate
-          String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
+          String errMsg = "DataPacket has the wrong block#, got #" + dataPacket.getBlockNumber() + "expected #" + blockNumber;
           log(errMsg);
           sendErrorPacket(errMsg, responseDatagram);
           errorOccured = true;
@@ -319,7 +323,7 @@ class RequestHandler implements Runnable {
 
         // reset socket timeout for retries
         clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
-      } while(sendAttempts++ < Configuration.MAX_RETRIES);
+      } while(sendAttempts++ < Configuration.MAX_RETRIES && dataPacket == null);
       
       // did we exceed max retries?
       if (sendAttempts >= Configuration.MAX_RETRIES) {
@@ -404,7 +408,6 @@ class RequestHandler implements Runnable {
         .buildErrorPacket();
     
     log("Sending error to client:\n" + errPacket.toString());
-    
     clientConnection.sendPacket(errPacket);
   }
    
