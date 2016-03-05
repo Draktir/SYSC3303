@@ -369,6 +369,7 @@ class RequestHandler implements Runnable {
         log("Sending final ACK with block #" + blockNumber);
         clientConnection.sendPacket(lastAck);
         // we're done
+        fileWriter.close();
         break;
       }
       

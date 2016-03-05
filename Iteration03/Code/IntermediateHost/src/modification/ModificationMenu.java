@@ -120,6 +120,7 @@ public class ModificationMenu {
           break;
         case 9:
           readReqMod.setDropModification(dropMod);
+          System.out.println("Packet will be dropped");
           break;
         case 10:
           readReqMod.setDuplicatePacketModification(duplicateMod);
@@ -207,6 +208,7 @@ public class ModificationMenu {
           break;
         case 9:
           writeReqMod.setDropModification(dropMod);
+          System.out.println("Packet will be dropped");
           break;
         case 10:
           writeReqMod.setDuplicatePacketModification(duplicateMod);
@@ -289,6 +291,7 @@ public class ModificationMenu {
           break;
         case 7:
           dataMod.setDropModification(dropMod);
+          System.out.println("Packet will be dropped");
           break;
         case 8:
           dataMod.setDuplicatePacketModification(duplicateMod);
@@ -367,6 +370,7 @@ public class ModificationMenu {
           break;
         case 6:
           ackMod.setDropModification(dropMod);
+          System.out.println("Packet will be dropped");
           break;
         case 7:
           ackMod.setDuplicatePacketModification(duplicateMod);
@@ -449,6 +453,7 @@ public class ModificationMenu {
           break;
         case 7:
           errorMod.setDropModification(dropMod);
+          System.out.println("Packet will be dropped");
           break;
         case 8:
           errorMod.setDuplicatePacketModification(duplicateMod);
@@ -488,7 +493,7 @@ public class ModificationMenu {
     int duplications = -1;
     
     while (delay < 0) {
-      System.out.print("\nEnter the delay in milliseconds: ");
+      System.out.print("\nEnter the delay between sending duplicate(s) in milliseconds: ");
       delay = scan.nextInt();
     }
     

@@ -184,6 +184,7 @@ public class TftpTransfer implements Runnable {
     if (rawData == null) {
       // we are not sending this packet
       // (it's either delayed or dropped)
+      log("Not sending " + packet.toString());
       return;
     }
 

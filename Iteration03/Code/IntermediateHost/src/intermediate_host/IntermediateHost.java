@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -47,6 +48,7 @@ public class IntermediateHost {
 
   public void go() {
     List<Thread> connectionThreads = new ArrayList<>();
+    boolean hasRun = false;
     
     // Show the Modification configuration menu
     ModificationMenu modMenu = new ModificationMenu();
@@ -55,6 +57,7 @@ public class IntermediateHost {
 
     try {
       clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
+      clientSocket.setSoTimeout(1000);
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
@@ -68,10 +71,12 @@ public class IntermediateHost {
   
       try {
         clientSocket.receive(requestDatagram);
+      } catch (SocketTimeoutException e) {
+        continue;
       } catch (IOException e) {
         e.printStackTrace();
       }  
-
+      
       log("Received packet");
       printPacketInformation(requestDatagram);
   
@@ -79,8 +84,8 @@ public class IntermediateHost {
       Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
       connectionThreads.add(t);
       t.start();
-      
-    } while (connectionThreads.stream().anyMatch((t) -> t.isAlive()));
+      hasRun = true;
+    } while (!hasRun || connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
     log("All connections terminated");
   }

@@ -29,6 +29,7 @@ public class ErrorPacketModification extends PacketModification {
     }
     
     if (super.dropModification != null) {
+      System.out.println("Dropping packet: " + packet.toString());
       return null;
     }
     
