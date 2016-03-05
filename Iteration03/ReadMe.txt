@@ -61,4 +61,13 @@ Run the program
     2.1) configure the desired error scenario (see below)
   3) Right click on the "Client" Project and select "Run As" -> "Java Application"
 
-### Need to add additional stuff here ###
+
+Configure the Intermediate Host
+-------------------------------
+The intermediate host has an extensive menu that allows for modifications.
+To delay / duplicate / drop a packet, first select the packet type and then the number
+of the packet you want to modify (RRQ and WRQ it's always the first packet).
+Then select one of the options (e.g. delay packet)
+There are a number of test files in both the Server and Client folder.
+These test files are named according to their size.
+
