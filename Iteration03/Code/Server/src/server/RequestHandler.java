@@ -145,6 +145,7 @@ class RequestHandler implements Runnable {
       // 1. read the next block from the file 
       log("reading block #" + blockNumber + " from file.");
       bytesRead = fileReader.readNextBlock(fileBuffer);
+      bytesRead = bytesRead >= 0 ? bytesRead : 0;
       
       // 2. copy file data out of the buffer
       byte[] fileData = new byte[bytesRead];
@@ -168,50 +169,52 @@ class RequestHandler implements Runnable {
         // 4. send data packet and wait for response
         clientConnection.sendPacket(dataPacket);
         
-        // 5. wait for a response
-        log("expecting ACK, block #" + blockNumber);
-        long tsStart = currentTime();
-        DatagramPacket responseDatagram = clientConnection.receive();
-        long tsStop = currentTime();
-        
-        // will receive null if socket timed out
-        if (responseDatagram == null) {
-          log("Did not receive a response from the client.");
-          continue;
-        }
-        
-        log("Received packet.");
-        printPacketInformation(responseDatagram);
-        
-        // 6. parse client response
-        try {
-          ack = packetParser.parseAcknowledgement(responseDatagram);
-        } catch (InvalidAcknowledgementException e) {
-          String errMsg = "Not a valid ACK: " + e.getMessage();
-          log(errMsg);
-          handleParseError(errMsg, responseDatagram);
-          errorOccured = true;
-          break;
-        }
-
-        // check for duplicate. If the ack is duplicate, just ignore.
-        if (ack.getBlockNumber() < blockNumber) {
-          log("Received duplicate ACK with block #" + ack.getBlockNumber());
-          clientConnection.setTimeOut(tsStop - tsStart);
-          ack = null;
-          continue;
-        } else if (ack.getBlockNumber() > blockNumber) { 
-          // if it's not a duplicate, send an error and terminate
-          String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
-          log(errMsg);
-          sendErrorPacket(errMsg, responseDatagram);
-          errorOccured = true;
-          break;
+        while (ack == null) {
+          // 5. wait for a response
+          log("expecting ACK, block #" + blockNumber);
+          long tsStart = currentTime();
+          DatagramPacket responseDatagram = clientConnection.receive();
+          long tsStop = currentTime();
+          
+          // will receive null if socket timed out
+          if (responseDatagram == null) {
+            log("Did not receive a response from the client.");
+            break;
+          }
+          
+          log("Received packet.");
+          printPacketInformation(responseDatagram);
+          
+          // 6. parse client response
+          try {
+            ack = packetParser.parseAcknowledgement(responseDatagram);
+          } catch (InvalidAcknowledgementException e) {
+            String errMsg = "Not a valid ACK: " + e.getMessage();
+            log(errMsg);
+            handleParseError(errMsg, responseDatagram);
+            errorOccured = true;
+            break;
+          }
+  
+          // check for duplicate. If the ack is duplicate, just ignore.
+          if (ack.getBlockNumber() < blockNumber) {
+            log("Received duplicate ACK with block #" + ack.getBlockNumber());
+            clientConnection.setTimeOut(tsStop - tsStart);
+            ack = null;
+            continue;
+          } else if (ack.getBlockNumber() > blockNumber) { 
+            // if it's not a duplicate, send an error and terminate
+            String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
+            log(errMsg);
+            sendErrorPacket(errMsg, responseDatagram);
+            errorOccured = true;
+            break;
+          }
         }
 
         // reset socket timeout for retries
         clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
-      } while(sendAttempts++ < Configuration.MAX_RETRIES && ack == null);
+      } while(sendAttempts++ < Configuration.MAX_RETRIES && ack == null && !errorOccured);
       
       // did we exceed max retries?
       if (sendAttempts >= Configuration.MAX_RETRIES) {
@@ -230,7 +233,7 @@ class RequestHandler implements Runnable {
     if (errorOccured) {
       log("Error occured. No file was transferred");
     } else {
-      log("File " + request.getFilename() +" successfully sent to client in " + (blockNumber - 1) + " blocks.");
+      log("File " + request.getFilename() +" successfully sent to client in " + blockNumber + " blocks.");
     }
   }
   
@@ -276,54 +279,56 @@ class RequestHandler implements Runnable {
         // 2. send ack
         clientConnection.sendPacket(ack);
         
-        // 3. wait for a response
-        log("expecting Data, block #" + blockNumber);
-        long tsStart = currentTime();
-        DatagramPacket responseDatagram = clientConnection.receive();
-        long tsStop = currentTime();
-        
-        // will receive null if socket timed out
-        if (responseDatagram == null) {
-          log("Did not receive a response from the client.");
-          continue;
-        }
-        
-        log("Received packet.");
-        printPacketInformation(responseDatagram);
-        
-        // 4. parse client response
-        try {
-          dataPacket = packetParser.parseDataPacket(responseDatagram);
-        } catch (InvalidDataPacketException e) {
-          String errMsg = "Not a valid DataPacket: " + e.getMessage();
-          log(errMsg);
-          handleParseError(errMsg, responseDatagram);
-          errorOccured = true;
-          break;
-        }
-
-        // check for duplicate. If the data is duplicate, send ACK and ignore data.
-        if (dataPacket.getBlockNumber() < blockNumber) {
-          log("Received duplicate DataPacket with block #" + dataPacket.getBlockNumber());
+        while (dataPacket == null) {
+          // 3. wait for a response
+          log("expecting Data, block #" + blockNumber);
+          long tsStart = currentTime();
+          DatagramPacket responseDatagram = clientConnection.receive();
+          long tsStop = currentTime();
           
-          Acknowledgement ackForWrongData = new Acknowledgement(dataPacket.getRemoteHost(), dataPacket.getRemotePort(), 
-              dataPacket.getBlockNumber());
-          clientConnection.sendPacket(ackForWrongData);
-          clientConnection.setTimeOut(tsStop - tsStart);
-          dataPacket = null;
-          continue;
-        } else if (dataPacket.getBlockNumber() > blockNumber) { 
-          // if it's not a duplicate, send an error and terminate
-          String errMsg = "DataPacket has the wrong block#, got #" + dataPacket.getBlockNumber() + "expected #" + blockNumber;
-          log(errMsg);
-          sendErrorPacket(errMsg, responseDatagram);
-          errorOccured = true;
-          break;
+          // will receive null if socket timed out
+          if (responseDatagram == null) {
+            log("Did not receive a response from the client.");
+            break;
+          }
+          
+          log("Received packet.");
+          printPacketInformation(responseDatagram);
+          
+          // 4. parse client response
+          try {
+            dataPacket = packetParser.parseDataPacket(responseDatagram);
+          } catch (InvalidDataPacketException e) {
+            String errMsg = "Not a valid DataPacket: " + e.getMessage();
+            log(errMsg);
+            handleParseError(errMsg, responseDatagram);
+            errorOccured = true;
+            break;
+          }
+  
+          // check for duplicate. If the data is duplicate, send ACK and ignore data.
+          if (dataPacket.getBlockNumber() < blockNumber) {
+            log("Received duplicate DataPacket with block #" + dataPacket.getBlockNumber());
+            
+            Acknowledgement ackForWrongData = new Acknowledgement(dataPacket.getRemoteHost(), dataPacket.getRemotePort(), 
+                dataPacket.getBlockNumber());
+            clientConnection.sendPacket(ackForWrongData);
+            clientConnection.setTimeOut(tsStop - tsStart);
+            dataPacket = null;
+            continue;
+          } else if (dataPacket.getBlockNumber() > blockNumber) { 
+            // if it's not a duplicate, send an error and terminate
+            String errMsg = "DataPacket has the wrong block#, got #" + dataPacket.getBlockNumber() + "expected #" + blockNumber;
+            log(errMsg);
+            sendErrorPacket(errMsg, responseDatagram);
+            errorOccured = true;
+            break;
+          }
         }
-
+        
         // reset socket timeout for retries
         clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
-      } while(sendAttempts++ < Configuration.MAX_RETRIES && dataPacket == null);
+      } while(sendAttempts++ < Configuration.MAX_RETRIES && dataPacket == null && !errorOccured);
       
       // did we exceed max retries?
       if (sendAttempts >= Configuration.MAX_RETRIES) {
