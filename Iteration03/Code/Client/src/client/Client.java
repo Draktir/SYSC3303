@@ -128,131 +128,123 @@ public class Client {
    * @param filename
    * @param mode
    */
-  private void sendFileToServer(String filename, String mode) {
-    transferComplete = false;
+	private void sendFileToServer(String filename, String mode) {
+		transferComplete = false;
 
-    log("opening " + filename + " for reading");
-    // open file for reading
-    try {
-      fileReader = new FileReader(filename);
-    } catch (FileNotFoundException e1) {
-      log("ERROR: The file you're trying to send could not be found.");
-      return;
-    }
+		log("opening " + filename + " for reading");
+		// open file for reading
+		try {
+			fileReader = new FileReader(filename);
+		} catch (FileNotFoundException e1) {
+			log("ERROR: The file you're trying to send could not be found.");
+			return;
+		}
 
-    InetAddress remoteHost;
-    try {
-      remoteHost = InetAddress.getLocalHost();
-    } catch (UnknownHostException e) {
-      e.printStackTrace();
-      return;
-    }
+		InetAddress remoteHost;
+		try {
+			remoteHost = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			return;
+		}
 
-    WriteRequest request = new RequestBuilder()
-        .setRemoteHost(remoteHost)
-        .setRemotePort(Configuration.INTERMEDIATE_PORT)
-        .setFilename(filename)
-        .setMode(mode)
-        .buildWriteRequest();
+		WriteRequest request = new RequestBuilder().setRemoteHost(remoteHost)
+				.setRemotePort(Configuration.INTERMEDIATE_PORT).setFilename(filename).setMode(mode).buildWriteRequest();
 
-    log("Sending Write Request to server on port " + Configuration.INTERMEDIATE_PORT);
-    log("Expecting ACK with block #0");
-    
-    DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
-    
-    // remember the server's TID
-    serverConnection.setServerAddress(recvdDatagram.getAddress());
-    serverConnection.setServerPort(recvdDatagram.getPort());
+		log("Sending Write Request to server on port " + Configuration.INTERMEDIATE_PORT);
+		log("Expecting ACK with block #0");
 
-    log("Packet received.");
-    printPacketInformation(recvdDatagram);
-    
-    int blockNumber = 0;
+		DatagramPacket recvdDatagram = serverConnection.sendPacketAndReceive(request);
 
-    do {
-    	  Acknowledgement ack = null;
-          try {
-            ack = packetParser.parseAcknowledgement(recvdDatagram);
-          } catch (InvalidAcknowledgementException e) {
-            String errMsg = "Not a valid ACK: " + e.getMessage();
-            log(errMsg);
-            handleParseError(errMsg, recvdDatagram);
-            return;
-          }
-          
-          if (!isDuplicatePacket(ack,blockNumber)) {
-          if (ack.getBlockNumber() != blockNumber) {
-            String errMsg = "ACK block #" + ack.getBlockNumber() + " is wrong, expected block #" + blockNumber;
-            log(errMsg);
-            sendErrorPacket(errMsg, recvdDatagram);
-            return;
-          }
+		// remember the server's TID
+		serverConnection.setServerAddress(recvdDatagram.getAddress());
+		serverConnection.setServerPort(recvdDatagram.getPort());
 
-          log("Received a valid ACK:\n" + ack.toString() + "\n");
-          
-          // store last received datagram to test for duplication
-          serverLastSent = recvdDatagram;
-          
-          // now sending next block
-          blockNumber++;
-          
-          log("Reading block #" + blockNumber + " from file");
-          
-          byte[] buffer = new byte[512];
-          int bytesRead = fileReader.readNextBlock(buffer);
+		log("Packet received.");
+		printPacketInformation(recvdDatagram);
 
-          if (bytesRead < 0) {
-            log("ERROR: Could not read from the file: " + fileReader.getFilename());
-            return;
-          }
-          
-          byte[] fileData = new byte[bytesRead];
-          System.arraycopy(buffer, 0, fileData, 0, bytesRead);
+		int blockNumber = 0;
 
-          DataPacket dataPacket = new DataPacketBuilder()
-              .setRemoteHost(ack.getRemoteHost())
-              .setRemotePort(ack.getRemotePort())
-              .setBlockNumber(ack.getBlockNumber() + 1)
-              .setFileData(fileData)
-              .buildDataPacket();
-          
-          log("Sending Data Packet to server: \n" + dataPacket.toString() + "\n");
+		do {
+			Acknowledgement ack = null;
+			try {
+				ack = packetParser.parseAcknowledgement(recvdDatagram);
+			} catch (InvalidAcknowledgementException e) {
+				String errMsg = "Not a valid ACK: " + e.getMessage();
+				log(errMsg);
+				handleParseError(errMsg, recvdDatagram);
+				return;
+			}
 
-          // Check if we have read the whole file
-          if (fileData.length < 512) {
-            log("Sending last data packet.");
-            fileReader.close();
+			
+				if (ack.getBlockNumber() != blockNumber) {
+					if (isDuplicatePacket(ack, blockNumber)){
+						log("duplicate ACK");
+						continue;
+					}else{
+						String errMsg = "ACK block #" + ack.getBlockNumber() + " is wrong, expected block #" + blockNumber;
+						log(errMsg);
+						sendErrorPacket(errMsg, recvdDatagram);
+						return;
+					}
+				}
 
-            // send the last data packet
-            DatagramPacket responseDatagram = serverConnection.sendPacketAndReceive(dataPacket);
-            
-            try {
-              packetParser.parse(responseDatagram);
-            } catch (InvalidPacketException e) {
-              String errMsg = "Invalid ACK: " + e.getMessage();
-              log(errMsg);
-              handleParseError(errMsg, responseDatagram);
-              return;
-            }
-            
-            // we're gonna terminate the connection either way in this iteration
-            transferComplete = true;
-            break;
-          }
+				log("Received a valid ACK:\n" + ack.toString() + "\n");
 
-          // send the data packet
-          recvdDatagram = serverConnection.sendPacketAndReceive(dataPacket);
-      }
-      else {
-    	  // TODO: handle duplicate ACK received
-    	  log("Duplicate ACK received from the server.");
-    	  
-      }
-      
-    } while (!transferComplete);
+				// store last received datagram to test for duplication
+				serverLastSent = recvdDatagram;
 
-    log("File transfer successful.");
-  }
+				// now sending next block
+				blockNumber++;
+
+				log("Reading block #" + blockNumber + " from file");
+
+				byte[] buffer = new byte[512];
+				int bytesRead = fileReader.readNextBlock(buffer);
+
+				if (bytesRead < 0) {
+					log("ERROR: Could not read from the file: " + fileReader.getFilename());
+					return;
+				}
+
+				byte[] fileData = new byte[bytesRead];
+				System.arraycopy(buffer, 0, fileData, 0, bytesRead);
+
+				DataPacket dataPacket = new DataPacketBuilder().setRemoteHost(ack.getRemoteHost())
+						.setRemotePort(ack.getRemotePort()).setBlockNumber(ack.getBlockNumber() + 1)
+						.setFileData(fileData).buildDataPacket();
+
+				log("Sending Data Packet to server: \n" + dataPacket.toString() + "\n");
+
+				// Check if we have read the whole file
+				if (fileData.length < 512) {
+					log("Sending last data packet.");
+					fileReader.close();
+
+					// send the last data packet
+					DatagramPacket responseDatagram = serverConnection.sendPacketAndReceive(dataPacket);
+
+					try {
+						packetParser.parse(responseDatagram);
+					} catch (InvalidPacketException e) {
+						String errMsg = "Invalid ACK: " + e.getMessage();
+						log(errMsg);
+						handleParseError(errMsg, responseDatagram);
+						return;
+					}
+
+					// we're gonna terminate the connection either way in this
+					// iteration
+					transferComplete = true;
+					break;
+				}
+				// send the data packet
+				recvdDatagram = serverConnection.sendPacketAndReceive(dataPacket);
+
+		} while (!transferComplete);
+
+		log("File transfer successful.");
+	}
 
   /**
    * Initiates downloading a file from the server (Read Request)
@@ -301,7 +293,7 @@ public class Client {
         handleParseError(errMsg, recvdDatagram);
         break;
       }
-
+      
       if (dataPacket.getBlockNumber() != blockNumber) {
         String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
         log(errMsg);
