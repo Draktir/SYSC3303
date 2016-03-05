@@ -25,6 +25,11 @@ import packet.Request;
 import packet.WriteRequest;
 import packet.ErrorPacket.ErrorCode;
 import packet.Request.RequestType;
+
+import java.util.Date;
+
+import Configuration.Configuration;
+
 import java.sql.Timestamp;
 
 
@@ -42,7 +47,6 @@ class RequestHandler implements Runnable {
   private DatagramPacket requestPacket;
   private ClientConnection clientConnection;
   private PacketParser packetParser = new PacketParser();
-  Timestamp ts = new Timestamp(0);
   /**
    * Default RequestHandler constructor instantiates requestPacekt to
    * the packet passed down from the Listener class.
@@ -66,8 +70,7 @@ class RequestHandler implements Runnable {
     }
     
     Request request = null;
-    
-    System.out.println("---------------------------------------------------------");
+
     log("Incoming request");
     printPacketInformation(requestPacket);
     
@@ -101,6 +104,7 @@ class RequestHandler implements Runnable {
   }
   
   private void sendFileToClient(ReadRequest request) {
+    boolean errorOccured = false;
     log("opening " + request.getFilename() + " for reading.");
     
     FileReader fileReader = null;
@@ -110,7 +114,7 @@ class RequestHandler implements Runnable {
       log("opening " + request.getFilename() + " for reading failed. File not found!");
       // TODO Send an Error (FILE_NOT_FOUND)
       e.printStackTrace();
-      return;
+      errorOccured = true;
     }
     
     // check file size before sending
@@ -118,15 +122,26 @@ class RequestHandler implements Runnable {
     final long MAX_FILE_SIZE = (long) ((Math.pow(2, 16) - 1) * 512);
     if (f.length() > MAX_FILE_SIZE) {
       log("The requested file is too big: " + f.length() + " bytes. Max is " + MAX_FILE_SIZE + " bytes.");
+      errorOccured = true;
+    }
+
+    if (errorOccured) {
+      log("Internal Server Error. Stopping.");
+      if (fileReader != null) {
+        fileReader.close();
+      }
       return;
     }
-    //int lastBlockNumber=0;
+    
     int blockNumber = 0;
     int bytesRead;
     byte[] fileBuffer = new byte[512];
-        
+    
     do {
-    	blockNumber++;
+      // reset socket timeout
+      clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
+      
+      blockNumber++;
       // 1. read the next block from the file 
       log("reading block #" + blockNumber + " from file.");
       bytesRead = fileReader.readNextBlock(fileBuffer);
@@ -142,60 +157,78 @@ class RequestHandler implements Runnable {
           .setBlockNumber(blockNumber)
           .setFileData(fileData)
           .buildDataPacket();
-      
-      log("sending data packet, block #" + dataPacket.getBlockNumber());
-      log("expecting ACK, block #" + blockNumber);
-      
-      // 4. send data packet and wait for response
-      DatagramPacket responseDatagram;
-      long ts1;
-      ts1 = ts.getTime();
-      responseDatagram = clientConnection.sendPacketAndReceive(dataPacket);
-      
-      if (responseDatagram == null) {
-        // TODO: handle timeouts
-        log("Did not receive a response from the client.");
-        return;
-      }
-      long ts2;
-      ts2 = ts.getTime();
-      log("Received packet.");
-      printPacketInformation(responseDatagram);
-      
-      // 5. parse client response
+            
+      int sendAttempts = 0;
       Acknowledgement ack = null;
-      try {
-       ack = packetParser.parseAcknowledgement(responseDatagram);
-      } catch (InvalidAcknowledgementException e) {
-        String errMsg = "Not a valid ACK: " + e.getMessage();
-        log(errMsg);
-        handleParseError(errMsg, responseDatagram);
-        return;
-      }
-      //check for duplicate. If the ack is duplicate, Just ignore.
       
-      // make sure the block number is correct
-      if (ack.getBlockNumber() != blockNumber) {
-    	 if(ack.getBlockNumber()<blockNumber){
-    		 log("Duplicate ACK.");
-    		 clientConnection.setTimeOut(ts2-ts1);
-    		 continue;
-    	}else{ 
-	        String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
-	        log(errMsg);
-	        sendErrorPacket(errMsg, responseDatagram);
-	        return;
-    	}
+      do {
+        log("sending data packet, block #" + dataPacket.getBlockNumber());
+        // 4. send data packet and wait for response
+        clientConnection.sendPacket(dataPacket);
+        
+        // 5. wait for a response
+        log("expecting ACK, block #" + blockNumber);
+        long tsStart = currentTime();
+        DatagramPacket responseDatagram = clientConnection.receive();
+        long tsStop = currentTime();
+        
+        // will receive null if socket timed out
+        if (responseDatagram == null) {
+          log("Did not receive a response from the client.");
+          continue;
+        }
+        
+        log("Received packet.");
+        printPacketInformation(responseDatagram);
+        
+        // 6. parse client response
+        try {
+          ack = packetParser.parseAcknowledgement(responseDatagram);
+        } catch (InvalidAcknowledgementException e) {
+          String errMsg = "Not a valid ACK: " + e.getMessage();
+          log(errMsg);
+          handleParseError(errMsg, responseDatagram);
+          errorOccured = true;
+          break;
+        }
+
+        // check for duplicate. If the ack is duplicate, just ignore.
+        if (ack.getBlockNumber() < blockNumber) {
+          log("Received duplicate ACK with block #" + ack.getBlockNumber());
+          clientConnection.setTimeOut(tsStop - tsStart);
+          continue;
+        } else if (ack.getBlockNumber() > blockNumber) { 
+          // if it's not a duplicate, send an error and terminate
+          String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
+          log(errMsg);
+          sendErrorPacket(errMsg, responseDatagram);
+          errorOccured = true;
+          break;
+        }
+
+        // reset socket timeout for retries
+        clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
+      } while(sendAttempts++ < Configuration.MAX_RETRIES);
+      
+      // did we exceed max retries?
+      if (sendAttempts >= Configuration.MAX_RETRIES) {
+        log("Retried sending DataPacket " + Configuration.MAX_RETRIES + " times. Giving up.");
+        errorOccured = true;
+        break;
       }
       
       log("Received valid ACK packet\n" + ack.toString() + "\n");
-      
-      // 6. repeat
-    } while (bytesRead == 512);
+    } while (bytesRead == 512 && !errorOccured);
+
+    if (fileReader != null) {
+      fileReader.close();
+    }
     
-    fileReader.close();
-    
-    log("File " + request.getFilename() +" successfully sent to client in " + (blockNumber - 1) + " blocks.");
+    if (errorOccured) {
+      log("Error occured. No file was transferred");
+    } else {
+      log("File " + request.getFilename() +" successfully sent to client in " + (blockNumber - 1) + " blocks.");
+    }
   }
   
   private void receiveFileFromClient(WriteRequest request) {
@@ -208,7 +241,7 @@ class RequestHandler implements Runnable {
     } catch (FileAlreadyExistsException e) {
       // TODO this exception is not thrown in this iteration. The file is simply overwritten
       // TODO Send error FILE_ALREADY_EXISTS
-      log("opening " + request.getFilename() + " for writing failed." + " File already exists!");
+      log("opening " + request.getFilename() + " for writing failed. File already exists!");
       e.printStackTrace();
       errorOccured = true;
     } catch (IOException e) {
@@ -222,65 +255,92 @@ class RequestHandler implements Runnable {
     
     while (!errorOccured) {
       //1. build an ACK
-      log("Sending ACK with block#" + blockNumber);
-      
       Acknowledgement ack = new AcknowledgementBuilder()
           .setRemoteHost(request.getRemoteHost())
           .setRemotePort(request.getRemotePort())
           .setBlockNumber(blockNumber)
           .buildAcknowledgement();
       
+      int sendAttempts = 0;
+      DataPacket dataPacket = null;
       
-      long ts1;
-      ts1 = ts.getTime();
-      //2. send ACK and wait for a data packet
-      DatagramPacket receivedDatagram = clientConnection.sendPacketAndReceive(ack);
-
-      log("Received packet from client, parsing...");
-      printPacketInformation(receivedDatagram);
-      long ts2;
-      ts2 = ts.getTime();
-      
-      DataPacket dataPacket;
-      try {
-        dataPacket = packetParser.parseDataPacket(receivedDatagram);
-      } catch (InvalidDataPacketException e) {
-        String errMsg = "Not a valid Data Packet: " + e.getMessage();
-        log(errMsg);
-        handleParseError(errMsg, receivedDatagram);
-        errorOccured = true;
-        break;
-      }
-      
-      // check for duplicate.
-      // If it's a duplicate data, send ACK but don't write to disk.
-      if(dataPacket.getBlockNumber()< blockNumber){
-    	  String errMsg = "Data packet is duplicate";
-    	  clientConnection.setTimeOut(ts2-ts1);
-          log(errMsg);
-          continue;
-      }
-      
-      // we are now expecting the next sequential block number
+      // now expecting data packet with next block number
       blockNumber++;
       
-      // make sure the block number is correct
-      if (dataPacket.getBlockNumber() != blockNumber) {
-        String errMsg = "Data packet has the wrong block#, got #" + dataPacket.getBlockNumber() + "expected #" + blockNumber;
-        log(errMsg);
-        sendErrorPacket(errMsg, receivedDatagram);
+      do {
+        log("Sending ACK");
+        log(ack.toString());
+        // 2. send ack
+        clientConnection.sendPacket(ack);
+        
+        // 3. wait for a response
+        log("expecting Data, block #" + blockNumber);
+        long tsStart = currentTime();
+        DatagramPacket responseDatagram = clientConnection.receive();
+        long tsStop = currentTime();
+        
+        // will receive null if socket timed out
+        if (responseDatagram == null) {
+          log("Did not receive a response from the client.");
+          continue;
+        }
+        
+        log("Received packet.");
+        printPacketInformation(responseDatagram);
+        
+        // 4. parse client response
+        try {
+          dataPacket = packetParser.parseDataPacket(responseDatagram);
+        } catch (InvalidDataPacketException e) {
+          String errMsg = "Not a valid DataPacket: " + e.getMessage();
+          log(errMsg);
+          handleParseError(errMsg, responseDatagram);
+          errorOccured = true;
+          break;
+        }
+
+        // check for duplicate. If the data is duplicate, send ACK and ignore data.
+        if (dataPacket.getBlockNumber() < blockNumber) {
+          log("Received duplicate DataPacket with block #" + dataPacket.getBlockNumber());
+          
+          Acknowledgement ackForWrongData = new Acknowledgement(dataPacket.getRemoteHost(), dataPacket.getRemotePort(), 
+              dataPacket.getBlockNumber());
+          clientConnection.sendPacket(ackForWrongData);
+          clientConnection.setTimeOut(tsStop - tsStart);
+          continue;
+        } else if (ack.getBlockNumber() > blockNumber) { 
+          // if it's not a duplicate, send an error and terminate
+          String errMsg = "ACK has the wrong block#, got #" + ack.getBlockNumber() + "expected #" + blockNumber;
+          log(errMsg);
+          sendErrorPacket(errMsg, responseDatagram);
+          errorOccured = true;
+          break;
+        }
+
+        // reset socket timeout for retries
+        clientConnection.setTimeOut(Configuration.TIMEOUT_TIME);
+      } while(sendAttempts++ < Configuration.MAX_RETRIES);
+      
+      // did we exceed max retries?
+      if (sendAttempts >= Configuration.MAX_RETRIES) {
+        log("Retried sending DataPacket " + Configuration.MAX_RETRIES + " times. Giving up.");
         errorOccured = true;
         break;
       }
       
-      log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
+      // was there an error?
+      if (errorOccured) {
+        break;
+      }
+      
+      log("Received valid DataPacket\n" + dataPacket.toString() + "\n");
       log("Writing data to disk");
       
       //3. write file data to disk
       try {
         fileWriter.writeBlock(dataPacket.getFileData());
       } catch (IOException e) {
-    	System.err.println("Disk is full or allocation exceeded");  
+        System.err.println("Disk is full or allocation exceeded");  
         // TODO send an DISK_FULL_OR_ALLOCATION_EXCEEDED error
         e.printStackTrace();
         errorOccured = true;
@@ -347,7 +407,12 @@ class RequestHandler implements Runnable {
     
     clientConnection.sendPacket(errPacket);
   }
-    
+   
+  public static long currentTime() {
+    Date d = new Date();
+    return new Timestamp(d.getTime()).getTime();
+  }
+  
   /**
    * Prints out request contents as a String and in bytes.
    * 
