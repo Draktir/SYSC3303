@@ -23,6 +23,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Scanner;
+import java.sql.Timestamp;
 
 import Configuration.Configuration;
 
@@ -38,7 +39,7 @@ public class Client {
   private FileReader fileReader;
   private FileWriter fileWriter;
   private boolean transferComplete = false;
-  private DatagramPacket serverLastSent = null;
+  Timestamp ts = new Timestamp(0);
 
   /**
    * Default Client constructor, instantiates the server Connection
@@ -164,9 +165,9 @@ public class Client {
 		printPacketInformation(recvdDatagram);
 
 		int blockNumber = 0;
-
 		do {
 			Acknowledgement ack = null;
+			boolean duplicated=false;
 			try {
 				ack = packetParser.parseAcknowledgement(recvdDatagram);
 			} catch (InvalidAcknowledgementException e) {
@@ -178,8 +179,9 @@ public class Client {
 
 			
 				if (ack.getBlockNumber() != blockNumber) {
-					if (isDuplicatePacket(ack, blockNumber)){
+					if (ack.getBlockNumber()<blockNumber){
 						log("duplicate ACK");
+						duplicated=true;
 						continue;
 					}else{
 						String errMsg = "ACK block #" + ack.getBlockNumber() + " is wrong, expected block #" + blockNumber;
@@ -188,11 +190,8 @@ public class Client {
 						return;
 					}
 				}
-
+				
 				log("Received a valid ACK:\n" + ack.toString() + "\n");
-
-				// store last received datagram to test for duplication
-				serverLastSent = recvdDatagram;
 
 				// now sending next block
 				blockNumber++;
@@ -239,8 +238,14 @@ public class Client {
 					break;
 				}
 				// send the data packet
+				long ts1;
+			    ts1 = ts.getTime();
 				recvdDatagram = serverConnection.sendPacketAndReceive(dataPacket);
-
+				long ts2;
+			    ts2 = ts.getTime();
+			    if(duplicated==true){
+			    	serverConnection.setTimeOut(ts2-ts1);
+			    }
 		} while (!transferComplete);
 
 		log("File transfer successful.");
@@ -283,83 +288,98 @@ public class Client {
     int blockNumber = 1;
     boolean errorOccured = false;
     
-    do {
-      DataPacket dataPacket = null;
-      try {
-        dataPacket = packetParser.parseDataPacket(recvdDatagram);
-      } catch (InvalidDataPacketException e) {
-        String errMsg = "Not a valid Data Packet: " + e.getMessage();
-        log(errMsg);
-        handleParseError(errMsg, recvdDatagram);
-        break;
-      }
-      
-      if (dataPacket.getBlockNumber() != blockNumber) {
-        String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
-        log(errMsg);
-        sendErrorPacket(errMsg, recvdDatagram);
-        errorOccured = true;
-        break;
-      }
-      
-      log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
-      log("\tWriting file block# " + blockNumber);
-      
-      // creating file if not yet exists
-      if (fileWriter == null) {
-        log("Creating file " + filename + " for writing.");
-        // create file for reading
-        try {
-          fileWriter = new FileWriter(filename);
-        } catch (FileNotFoundException e1) {
-          e1.printStackTrace();
-          log("ERROR: Could not create new file for downloading.");
-          errorOccured = true;
-          break;
-        } catch (FileAlreadyExistsException e) {
-          log("ERROR: " + filename + " already exists on this machine.");
-          e.printStackTrace();
-          errorOccured = true;
-          break;
-        } catch (IOException e) {
-          log("ERROR: " + e.getMessage());
-          e.printStackTrace();
-          errorOccured = true;
-          break;
-        }
-      }
+		do {
+			DataPacket dataPacket = null;
+			boolean duplicated=false;
+			try {
+				dataPacket = packetParser.parseDataPacket(recvdDatagram);
+			} catch (InvalidDataPacketException e) {
+				String errMsg = "Not a valid Data Packet: " + e.getMessage();
+				log(errMsg);
+				handleParseError(errMsg, recvdDatagram);
+				break;
+			}
 
-      
-      byte[] fileData = dataPacket.getFileData();
-      try {
-        fileWriter.writeBlock(fileData);
-      } catch (IOException e) {
-        log(e.getMessage());
-        e.printStackTrace();
-        errorOccured = true;
-        break;
-      }
+			if (dataPacket.getBlockNumber() != blockNumber) {
+				if (dataPacket.getBlockNumber() < blockNumber) {
+					log("duplicate dataPacket.");
+					Acknowledgement ack = new AcknowledgementBuilder().setRemoteHost(dataPacket.getRemoteHost())
+							.setRemotePort(dataPacket.getRemotePort()).setBlockNumber(dataPacket.getBlockNumber())
+							.buildAcknowledgement();
+					serverConnection.sendPacket(ack);
+					duplicated=true;
+					continue;
+				} else {
+					String errMsg = "Data packet has the wrong block#, expected block #" + blockNumber;
+					log(errMsg);
+					sendErrorPacket(errMsg, recvdDatagram);
+					errorOccured = true;
+					break;
+				}
+			}
 
-      Acknowledgement ack = new AcknowledgementBuilder()
-          .setRemoteHost(dataPacket.getRemoteHost())
-          .setRemotePort(dataPacket.getRemotePort())
-          .setBlockNumber(dataPacket.getBlockNumber())
-          .buildAcknowledgement();
-      
-      log("Sending ACK:\n" + ack.toString() + "\n");
+			log("Received valid Data packet:\n" + dataPacket.toString() + "\n");
+			log("\tWriting file block# " + blockNumber);
 
-      // Check for the last data packet
-      if (fileData.length < 512) {
-        log("\tAcknowledging last data packet.");
-        transferComplete = true;
-        // send the last ACK
-        serverConnection.sendPacket(ack);
-        break;
-      }
+			// creating file if not yet exists
+			if (fileWriter == null) {
+				log("Creating file " + filename + " for writing.");
+				// create file for reading
+				try {
+					fileWriter = new FileWriter(filename);
+				} catch (FileNotFoundException e1) {
+					e1.printStackTrace();
+					log("ERROR: Could not create new file for downloading.");
+					errorOccured = true;
+					break;
+				} catch (FileAlreadyExistsException e) {
+					log("ERROR: " + filename + " already exists on this machine.");
+					e.printStackTrace();
+					errorOccured = true;
+					break;
+				} catch (IOException e) {
+					log("ERROR: " + e.getMessage());
+					e.printStackTrace();
+					errorOccured = true;
+					break;
+				}
+			}
 
-      recvdDatagram = serverConnection.sendPacketAndReceive(ack);
-      blockNumber++;      
-    } while (!transferComplete && !errorOccured);
+			byte[] fileData = dataPacket.getFileData();
+			try {
+				fileWriter.writeBlock(fileData);
+			} catch (IOException e) {
+				log(e.getMessage());
+				e.printStackTrace();
+				errorOccured = true;
+				break;
+			}
+
+			Acknowledgement ack = new AcknowledgementBuilder().setRemoteHost(dataPacket.getRemoteHost())
+					.setRemotePort(dataPacket.getRemotePort()).setBlockNumber(dataPacket.getBlockNumber())
+					.buildAcknowledgement();
+
+			log("Sending ACK:\n" + ack.toString() + "\n");
+
+			// Check for the last data packet
+			if (fileData.length < 512) {
+				log("\tAcknowledging last data packet.");
+				transferComplete = true;
+				// send the last ACK
+				serverConnection.sendPacket(ack);
+				break;
+			}
+			
+			long ts1;
+		    ts1 = ts.getTime();
+			recvdDatagram = serverConnection.sendPacketAndReceive(ack);
+			long ts2;
+		    ts2 = ts.getTime();
+		    if(duplicated==true){
+		    	serverConnection.setTimeOut(ts2-ts1);
+		    }
+			blockNumber++;
+		} while (!transferComplete && !errorOccured);
 
 
     if (fileWriter != null) {
@@ -390,11 +410,6 @@ public class Client {
     log("Received an error packet: " + errPacket.getErrorCode() + "\n" + errPacket.toString() + "\n");
     log("");
     log("received ERROR " + errPacket.getErrorCode() + ": Server says\n'" + errPacket.getMessage() + "'\n");
-  }
-  
-  private boolean isDuplicatePacket(Acknowledgement a, int blkNum) {
-	if (a.getBlockNumber() < blkNum) return true;
-	return false;
   }
   
   private void sendErrorPacket(String message, DatagramPacket packet) {
