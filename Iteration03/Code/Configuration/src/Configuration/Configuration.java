@@ -2,7 +2,7 @@ package Configuration;
 
 public class Configuration {
   // Timeout time for all sockets in milliseconds.
-  public static final int TIMEOUT_TIME = 5000;
+  public static final int TIMEOUT_TIME = 500;
   // Max retries before we give up
   public static final int MAX_RETRIES = 3;
   // Port the intermediate host is listening on for requests

@@ -44,7 +44,7 @@ public class PacketModifier {
       return readRequest.getPacketData();
     }
     
-    if (wrqModification.getPacketNumber() == wrqCount) {
+    if (rrqModification.getPacketNumber() == rrqCount) {
       return rrqModification.apply(readRequest, localReceivePort, remoteReceivePort, delayedPacketConsumer);
     }
     return readRequest.getPacketData();
