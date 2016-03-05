@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.sql.Timestamp;
+import java.util.Date;
 
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
@@ -59,7 +60,7 @@ public class ClientConnection {
       
       long tsStart = RequestHandler.currentTime();
       try {
-        System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
+        System.out.println("[SERVER-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
         clientSocket.receive(responseDatagram);
       } catch (SocketTimeoutException e) {
         System.out.println("[CLIENT-CONNECTION] Response timed out.");
