@@ -27,6 +27,7 @@ import packet.ErrorPacket.ErrorCode;
 import packet.Request.RequestType;
 
 import java.util.Date;
+import java.util.function.Function;
 
 import Configuration.Configuration;
 
@@ -61,47 +62,89 @@ class RequestHandler implements Runnable {
    * Processes the received request and initiates file transfer.
    */
   public void run() {
+    ClientConnection connection = null;
     try {
-      this.clientConnection = new ClientConnection(requestPacket);
-    } catch (SocketException e) {
-      e.printStackTrace();
-      System.err.println("Could not create client socket.");
+      connection = new ClientConnection(requestPacket);
+    } catch (SocketException e1) {
+      e1.printStackTrace();
       return;
     }
     
-    Request request = null;
-
     log("Incoming request");
     printPacketInformation(requestPacket);
     
-    // 1. parse the original client request
+    TransferState transferState = new TransferStateBuilder()
+        .connection(connection)
+        .build();
+    
+    parseRequest.andThen((request) -> {
+        TransferState state = new TransferStateBuilder()
+            .
+          
+          
+        if (request.type() == RequestType.READ) {
+          // initiate ReadRequest
+          log("Received ReadRequest, initiating file transfer.");
+          TftpReadTransfer readTransfer = new TftpReadTransfer();
+          readTransfer.start(new TransferStateBuilder()
+              .request(request)
+              .build);
+        } else if (request.type() == RequestType.WRITE) {
+          // initiate WriteRequest
+          log("Received WriteRequest, initiating file transfer.");
+          receiveFileFromClient((WriteRequest) request);
+        } else {
+          // should never really get here
+          log("Could not identify request type, but it was parsed.");
+          handleParseError("Invalid request. Expected RRQ or WRQ.", requestPacket);
+        }    
+      })
+        .apply(requestPacket);
+    
     try {
       request = packetParser.parseRequest(requestPacket);
     } catch (InvalidRequestException e) {
-      String errMsg = "Invalid request: " + e.getMessage();
-      log(errMsg);
-      handleParseError(errMsg, requestPacket);
-      log("Terminating this connection thread");
-      return;
+      log("Parsing request failed.");
+      log(e.getMessage());
+      
+    }
+    
+    if (result.FAILURE) {
+      sendError(transferState, result.failure);
     }
     
     // 2. determine the type of transfer
-    if (request.type() == RequestType.READ) {
-      // initiate ReadRequest
-      log("Received ReadRequest, initiating file transfer.");
-      sendFileToClient((ReadRequest) request);
-    } else if (request.type() == RequestType.WRITE) {
-      // initiate WriteRequest
-      log("Received WriteRequest, initiating file transfer.");
-      receiveFileFromClient((WriteRequest) request);
-    } else {
-      // should never really get here
-      log("Could not identify request type, but it was parsed.");
-      handleParseError("Invalid request. Expected RRQ or WRQ.", requestPacket);
-    }
+    
     
     log("Terminating thread.");
   }
+  
+  private Function<DatagramPacket, Result<Request, IrrecoverableError>> parseRequest = (datagram) -> {
+    PacketParser parser = new PacketParser();
+    Request req = null;
+    try {
+      req = parser.parseRequest(datagram);
+    } catch (InvalidRequestException e) {
+      return Result.failure(new IrrecoverableError(ErrorCode.ILLEGAL_TFTP_OPERATION, e.getMessage()));
+    }
+    return Result.success(req);
+  };
+  
+  private static void sendError(TransferState state, IrrecoverableError error) {
+    log("Sending error to client " + error.errorCode + ": " + error.message);
+    ErrorPacket err = new ErrorPacketBuilder()
+        .setErrorCode(error.errorCode)
+        .setMessage(error.message)
+        .buildErrorPacket();
+
+    try {
+      state.connection.sendPacket(err);
+    } catch (IOException e) {
+      e.printStackTrace();
+      log("Error occured while sending error packet. We're done!");
+    }
+  };
+  
   
   private void sendFileToClient(ReadRequest request) {
     boolean errorOccured = false;

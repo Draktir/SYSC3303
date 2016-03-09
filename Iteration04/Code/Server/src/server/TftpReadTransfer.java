@@ -26,50 +26,9 @@ import rop.Result;
 import utils.Recursive;
 import packet.Request;
 
-public class TftpReadTransfer implements Runnable {
-  private DatagramPacket requestDatagram;
-  public TftpReadTransfer(DatagramPacket requestDatagram) {
-    this.requestDatagram = requestDatagram;
-  }
-
-  public void run() {
-    final ClientConnection connection;
-    try {
-      connection = new ClientConnection(requestDatagram);
-    } catch (SocketException e) {
-      e.printStackTrace();
-      return;
-    }
-
-    // create initial transfer state
-    TransferState transferState = new TransferStateBuilder()
-        .connection(connection)
-        .build();
-
-    Result<Request, IrrecoverableError> parseResult = TftpReadTransfer.parseRequest(requestDatagram);
-        
-    if (parseResult.FAILURE) {
-      log("Error encountered. Not a valid request: " + parseResult.failure.message);
-      sendError(transferState, parseResult.failure);
-      return;
-    }
-    
-    Request req = parseResult.success;
-    transferState = new TransferStateBuilder()
-        .clone(transferState)
-        .request(req)
-        .build();
-
-    if (req.type() == Request.RequestType.READ) {
-      serviceReadRequest(transferState);
-    } else if (req.type() == Request.RequestType.WRITE) {
-      serviceWriteRequest(transferState);
-    } else {
-      throw new RuntimeException("Something strange happened. It should be impossible to get here.");
-    }
-  }
-
-  private void serviceReadRequest(TransferState transferState) {
+public class TftpReadTransfer {
+  
+  public void start(TransferState transferState) {
     // open the requested file as a Stream
     final Result<Stream<byte[]>, IrrecoverableError> streamResult = createFileStream(transferState.request.getFilename());
 
@@ -134,21 +93,6 @@ public class TftpReadTransfer implements Runnable {
 
     log("Transfer complete. Terminating thread");
     fileBlockStream.close();
-  }
-
-  private void serviceWriteRequest(TransferState transferState) {
-
-  }
-
-  private static Result<Request, IrrecoverableError> parseRequest (DatagramPacket datagram) {
-    PacketParser parser = new PacketParser();
-    Request rrq = null;
-    try {
-      rrq = parser.parseRequest(datagram);
-    } catch (InvalidRequestException e) {
-      return Result.failure(new IrrecoverableError(ErrorCode.ILLEGAL_TFTP_OPERATION, e.getMessage()));
-    }
-    return Result.success(rrq);
   }
 
   private static Result<Stream<byte[]>, IrrecoverableError> createFileStream(String filename) {

@@ -35,14 +35,12 @@ public class IntermediateHost {
    */
   public static void main(String[] args) {
     IntermediateHost h = new IntermediateHost();
-    boolean exit;
     Scanner scan = new Scanner(System.in);
     do {
       h.go();
       System.out.println("\nSimulation complete!\n");
       System.out.print("Do you want to simulate another error scenario? (y/n) ");
-      exit = !scan.next().equalsIgnoreCase("y");
-    } while (!exit);
+    } while (scan.next().equalsIgnoreCase("y"));
     scan.close();
   }
 
@@ -87,6 +85,7 @@ public class IntermediateHost {
       hasRun = true;
     } while (!hasRun || connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
+    clientSocket.close();
     log("All connections terminated");
   }
 
