@@ -61,8 +61,11 @@ class Listener implements Runnable {
       
       System.out.println("[SYSTEM] New Connection request received, creating new Thread.");
       
-      Thread userConnection = new Thread(new RequestHandler(receivePacket), "Connection #" + ++connections);
-      userConnection.start();
+      //Thread userConnection = new Thread(new RequestHandler(receivePacket), "Connection #" + ++connections);
+      //userConnection.start();
+
+      Thread transfer = new Thread(new TftpReadTransfer(receivePacket), "Connection #" + ++connections);
+      transfer.start();
     }
   }
   

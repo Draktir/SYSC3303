@@ -2,133 +2,133 @@ package server;
 
 import java.io.IOException;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-//import java.sql.Timestamp;
-//import java.util.Date;
+import java.net.*;
+import java.util.Date;
 
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
-import Configuration.Configuration;
 
 public class ClientConnection {
-  private DatagramSocket clientSocket;
-  private InetAddress clientAddress;
-  private int clientPort;
-  
+  public final TransferId clientTid;
+  private final DatagramSocket socket;
+
   public ClientConnection(DatagramPacket originalRequest) throws SocketException {
-    this.clientAddress = originalRequest.getAddress();
-    this.clientPort = originalRequest.getPort();
-    this.clientSocket = new DatagramSocket();
-    this.clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
-  }
-  
-  /**
-   * Sends a packet, but does not wait for a response.
-   * 
-   * @param packet
-   * @throws InvalidClientTidException 
-   */
-  public void sendPacket(Packet packet) {
-    byte[] data = packet.getPacketData();
-    DatagramPacket sendDatagram = new DatagramPacket(
-        data, data.length, packet.getRemoteHost(), packet.getRemotePort());
-    
-    System.out.println("[CLIENT-CONNECTION] sending packet");
-    RequestHandler.printPacketInformation(sendDatagram);
-    
-    try {
-      clientSocket.send(sendDatagram);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    clientTid = new TransferId(originalRequest);
+    this.socket = new DatagramSocket();
   }
 
-  
-  public DatagramPacket receive() {
+  public void sendPacket(Packet packet) throws IOException {
+    byte[] data = packet.getPacketData();
+    InetAddress remoteHost = packet.getRemoteHost() == null ? clientTid.address : packet.getRemoteHost();
+    int remotePort = packet.getRemotePort() < 1 ? clientTid.port : packet.getRemotePort();
+
+    DatagramPacket sendDatagram = new DatagramPacket(
+        data, data.length, remoteHost, remotePort);
+
+    System.out.println("[CLIENT-CONNECTION] sending packet");
+    printDatagramPacket(sendDatagram);
+
+    socket.send(sendDatagram);
+  }
+
+  public DatagramPacket receive(int timeout) throws SocketTimeoutException {
     byte[] buffer;
-    DatagramPacket responseDatagram = null;
-    
+    DatagramPacket receiveDatagram = null;
+
+    // set the timeout
+    try {
+      socket.setSoTimeout(timeout);
+    } catch (SocketException e) {
+      e.printStackTrace();
+      return null;
+    }
+
+    // receive packets until we receive a packet from the correct host
     do {
       buffer = new byte[517];
-      responseDatagram = new DatagramPacket(buffer, 517);
-      
-      long tsStart = RequestHandler.currentTime();
+      receiveDatagram = new DatagramPacket(buffer, 517);
+
+      System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + socket.getLocalPort());
+
+      long tsStart = new Date().getTime();
       try {
-        System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + clientSocket.getLocalPort());
-        clientSocket.receive(responseDatagram);
+        socket.receive(receiveDatagram);
       } catch (SocketTimeoutException e) {
         System.out.println("[CLIENT-CONNECTION] Response timed out.");
-        return null;  
+        throw e;
       } catch (IOException e) {
         e.printStackTrace();
-        return null;
+        receiveDatagram = null;
+        break;
       }
-      long tsStop = RequestHandler.currentTime();
-      
-      // ensure the client TID is the same
-      if (!isClientTidValid(responseDatagram)) {
-        System.err.println("[CLIENT-CONNECTION] Received packet with wrong TID");
-        System.err.println("  > Client:   " + responseDatagram.getAddress() + " " + responseDatagram.getPort());
-        System.err.println("  > Expected: " + clientAddress + " " + clientPort);
-        // respond to the rogue client with an appropriate error packet
-        ErrorPacket errPacket = new ErrorPacketBuilder()
-            .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
-            .setMessage("Your request had an invalid TID.")
-            .setRemoteHost(responseDatagram.getAddress())
-            .setRemotePort(responseDatagram.getPort())
-            .buildErrorPacket();
-        
-        System.err.println("[CLIENT-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
-        
-        byte[] errData = errPacket.getPacketData();
-        DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
-            errPacket.getRemoteHost(), errPacket.getRemotePort());
-        
+      long tsStop = new Date().getTime();
+
+      System.out.println("[CLIENT-CONNECTION] Packet received.");
+      printDatagramPacket(receiveDatagram);
+
+      // ensure the client TID is correct
+      if (!clientTid.equals(new TransferId(receiveDatagram))) {
+        handleInvalidTid(receiveDatagram);
+        // recalculate the timeout
         try {
-          clientSocket.send(errDatagram);
-        } catch (IOException e) {
-          e.printStackTrace();
-          System.err.println("[CLIENT-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
-        }
-        responseDatagram = null;
-        
-        System.err.println("[CLIENT-CONNECTION] Waiting for another packet.");
-        
-        // reduce timeout
-        try {
-          clientSocket.setSoTimeout((int)(tsStop - tsStart));
+          int newTimeout = socket.getSoTimeout() - (int)(tsStop - tsStart);
+          socket.setSoTimeout(newTimeout);
         } catch (SocketException e) {
           e.printStackTrace();
         }
+
+        System.err.println("[CLIENT-CONNECTION] Waiting for another packet.");
+        receiveDatagram = null;
       }
-    } while (responseDatagram == null);
-    
-    // reset timeout to original value
+    } while (receiveDatagram == null);
+
+    return receiveDatagram;
+  }
+
+  private void handleInvalidTid(DatagramPacket receiveDatagram) {
+    System.err.println("[CLIENT-CONNECTION] Received packet with wrong TID");
+    System.err.println("  > Received:   " + receiveDatagram.getAddress() + " " + receiveDatagram.getPort());
+    System.err.println("  > Expected:   " + clientTid.address + " " + clientTid.port);
+    // respond to the rogue client with an appropriate error packet
+    ErrorPacket errPacket = new ErrorPacketBuilder()
+        .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
+        .setMessage("Your request had an invalid TID.")
+        .setRemoteHost(receiveDatagram.getAddress())
+        .setRemotePort(receiveDatagram.getPort())
+        .buildErrorPacket();
+
+    System.err.println("[CLIENT-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
+
+    byte[] errData = errPacket.getPacketData();
+    DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
+        errPacket.getRemoteHost(), errPacket.getRemotePort());
+
     try {
-      clientSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
-    } catch (SocketException e) {
+      socket.send(errDatagram);
+    } catch (IOException e) {
       e.printStackTrace();
+      System.err.println("[CLIENT-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
     }
-    
-    System.out.println("[CLIENT-CONNECTION] Received packet from client, length " + responseDatagram.getLength());
-    return responseDatagram;
   }
-  
-  private boolean isClientTidValid(DatagramPacket packet) {
-    return clientAddress.equals(packet.getAddress()) && packet.getPort() == clientPort;
-  }
-  
-  public void setTimeOut(long milSec) {
-	  try {
-  		this.clientSocket.setSoTimeout((int)milSec);
-  	} catch (SocketException e) {
-  		e.printStackTrace();
-  	}
+
+  private void printDatagramPacket(DatagramPacket packet) {
+    byte[] data = new byte[packet.getLength()];
+    System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
+    String contents = new String(data);
+
+    System.out.println("\n-------------------------------------------");
+    System.out.println("\tAddress: " + packet.getAddress());
+    System.out.println("\tPort: " + packet.getPort());
+    System.out.println("\tPacket contents: ");
+    System.out.println("\t" + contents.replaceAll("\n", "\t\n"));
+
+    System.out.println("\tPacket contents (bytes): ");
+    System.out.print("\t");
+    for (int i = 0; i < data.length; i++) {
+      System.out.print(data[i] + " ");
+    }
+    System.out.println("\n-------------------------------------------\n");
   }
 }

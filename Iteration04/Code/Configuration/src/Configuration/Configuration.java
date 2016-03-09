@@ -6,7 +6,9 @@ public class Configuration {
   // Max retries before we give up
   public static final int MAX_RETRIES = 3;
   // Port the intermediate host is listening on for requests
-  public static final int INTERMEDIATE_PORT = 68; // grab from intermediatehost 
+  public static final int INTERMEDIATE_PORT = 6800; // grab from intermediatehost 
   // Port the server is listening on for requests
-  public static final int SERVER_PORT = 69; // grab from intermediatehost
+  public static final int SERVER_PORT = 6900; // grab from intermediatehost
+  // Block size of file data
+  public static final int BLOCK_SIZE = 512;
 }
