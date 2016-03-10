@@ -2,21 +2,11 @@ package packet;
 
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 public abstract class PacketBuilder<T> {
-  protected InetAddress remoteHost = findLocalHost();
-  protected int remotePort = 69;
-  
-  private InetAddress findLocalHost() {
-    try {
-      return InetAddress.getLocalHost();
-    } catch (UnknownHostException e) {
-      e.printStackTrace();
-      return null;
-    }
-  }
-  
+  protected InetAddress remoteHost = null;
+  protected int remotePort = -1;
+    
   public InetAddress getRemoteHost() {
     return remoteHost;
   }

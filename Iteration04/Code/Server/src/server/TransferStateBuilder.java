@@ -4,8 +4,6 @@ import packet.Acknowledgement;
 import packet.DataPacket;
 import packet.Request;
 
-import java.util.Iterator;
-
 /**
  * Created by phil on 05/03/16.
  */
@@ -13,7 +11,6 @@ public class TransferStateBuilder {
   private Request request = null;
   private int blockNumber = 0;
   private byte[] blockData = null;
-  private Iterator<byte[]> fileIterator = null;
   private DataPacket dataPacket = null;
   private Acknowledgement acknowledgement = null;
   private ClientConnection connection = null;
@@ -21,20 +18,48 @@ public class TransferStateBuilder {
   public TransferStateBuilder() {}
 
   public TransferState build() {
-    return new TransferState(request, blockNumber, blockData, fileIterator, dataPacket, acknowledgement, connection);
+    return new TransferState(request, blockNumber, blockData, dataPacket, acknowledgement, connection);
   }
 
-  public TransferStateBuilder clone(TransferState state) {
-    this.request = state.request;
-    this.blockNumber = state.blockNumber;
-    this.blockData = state.blockData;
-    this.fileIterator = state.fileIterator;
-    this.dataPacket = state.dataPacket;
-    this.acknowledgement = state.acknowledgement;
-    this.connection = state.connection;
+  /**
+   * Creates a new instance of the transfer state builder with values
+   * from the given state already set.
+   * 
+   * @param state
+   * @return
+   */
+  public static TransferStateBuilder clone(TransferState state) {
+    TransferStateBuilder tsb = new TransferStateBuilder();
+    tsb.request = state.request;
+    tsb.blockNumber = state.blockNumber;
+    tsb.blockData = state.blockData;
+    tsb.dataPacket = state.dataPacket;
+    tsb.acknowledgement = state.acknowledgement;
+    tsb.connection = state.connection;
+    return tsb;
+  }
+  
+  
+  /**
+   * Applies the values from the given state to this builder,
+   * but retains values that have already been set.
+   * 
+   * @param state
+   * @return
+   */
+  public TransferStateBuilder apply(TransferState state) {
+    this.request = this.request == null ? state.request : this.request;
+    this.blockNumber = this.blockNumber == 0 ? state.blockNumber : this.blockNumber;
+    this.blockData = this.blockData == null ? state.blockData : this.blockData;
+    this.dataPacket = this.dataPacket == null ? state.dataPacket : this.dataPacket;
+    this.acknowledgement = this.acknowledgement == null ? state.acknowledgement : this.acknowledgement;
+    this.connection = this.connection == null ? state.connection : this.connection;
     return this;
   }
 
+  /**
+   * Setters with 'set' keyword omitted for readability 
+   */
   public TransferStateBuilder request(Request request) {
     this.request = request;
     return this;
@@ -47,11 +72,6 @@ public class TransferStateBuilder {
 
   public TransferStateBuilder blockData(byte[] blockData) {
     this.blockData = blockData;
-    return this;
-  }
-
-  public TransferStateBuilder fileIterator(Iterator<byte[]> fileIterator) {
-    this.fileIterator = fileIterator;
     return this;
   }
 
@@ -68,5 +88,33 @@ public class TransferStateBuilder {
   public TransferStateBuilder connection(ClientConnection connection) {
     this.connection = connection;
     return this;
+  }
+
+  
+  /**
+   * Getters
+   */
+  public Request getRequest() {
+    return request;
+  }
+
+  public int getBlockNumber() {
+    return blockNumber;
+  }
+
+  public byte[] getBlockData() {
+    return blockData;
+  }
+
+  public DataPacket getDataPacket() {
+    return dataPacket;
+  }
+
+  public Acknowledgement getAcknowledgement() {
+    return acknowledgement;
+  }
+
+  public ClientConnection getConnection() {
+    return connection;
   }
 }

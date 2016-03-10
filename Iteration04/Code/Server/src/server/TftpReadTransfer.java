@@ -14,17 +14,16 @@ import java.util.stream.Stream;
 import Configuration.Configuration;
 import packet.Acknowledgement;
 import packet.DataPacket;
+import packet.DataPacketBuilder;
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
 import packet.ErrorPacketBuilder;
 import packet.InvalidAcknowledgementException;
 import packet.InvalidErrorPacketException;
-import packet.InvalidRequestException;
 import packet.PacketParser;
 import rop.ROP;
 import rop.Result;
 import utils.Recursive;
-import packet.Request;
 
 public class TftpReadTransfer {
   
@@ -45,8 +44,6 @@ public class TftpReadTransfer {
     final Iterator<byte[]> fileBlockIterator = fileBlockStream.iterator();
     
     
-    
-    
     // TODO:
     // This function violates referential transparency. Maybe a stream isn't
     // the right idea to read from the file?
@@ -63,8 +60,7 @@ public class TftpReadTransfer {
       
       fileBlock = (fileBlock == null) ? new byte[0] : fileBlock;
 
-      return Result.success(new TransferStateBuilder()
-          .clone(state)
+      return Result.success(TransferStateBuilder.clone(state)
           .blockNumber(state.blockNumber + 1)
           .blockData(fileBlock)
           .build()
@@ -94,7 +90,7 @@ public class TftpReadTransfer {
     log("Transfer complete. Terminating thread");
     fileBlockStream.close();
   }
-
+  
   private static Result<Stream<byte[]>, IrrecoverableError> createFileStream(String filename) {
     // open the file
     FileReader fileReader = new FileReader();
@@ -121,15 +117,12 @@ public class TftpReadTransfer {
   }
 
   private static TransferState buildDataPacket(TransferState state) {
-    DataPacket dp = new DataPacket(
-      state.request.getRemoteHost(),
-      state.request.getRemotePort(),
-      state.blockNumber,
-      state.blockData
-    );
+    DataPacket dp = new DataPacketBuilder()
+        .setBlockNumber(state.blockNumber)
+        .setFileData(state.blockData)
+        .buildDataPacket();
 
-    return new TransferStateBuilder()
-        .clone(state)
+    return TransferStateBuilder.clone(state)
         .dataPacket(dp)
         .build();
   }
@@ -165,8 +158,7 @@ public class TftpReadTransfer {
     receiveAck.func = (timeout, numRetries) -> {
       log("Expecting ACK with block #" + state.blockNumber);
 
-      Result<DatagramPacket, RecoverableError> recvResult =
-          receiveDatagram(state, timeout);
+      Result<DatagramPacket, RecoverableError> recvResult = receiveDatagram(state, timeout);
 
       if (recvResult.FAILURE) {
         log(recvResult.failure.message);
@@ -214,8 +206,7 @@ public class TftpReadTransfer {
             log(ack.toString());
             
             // ACK is valid
-            return Result.success(new TransferStateBuilder()
-                .clone(state)
+            return Result.success(TransferStateBuilder.clone(state)
                 .acknowledgement(ack)
                 .build()
             );
@@ -253,7 +244,8 @@ public class TftpReadTransfer {
         errPacket = parser.parseErrorPacket(datagram);
       } catch (InvalidErrorPacketException ee) {
         System.out.println("Received an invalid packet: " + ae.getMessage());
-
+        return Result.failure(new IrrecoverableError(
+            ErrorCode.ILLEGAL_TFTP_OPERATION, ae.getMessage()));
       }
       return Result.failure(new IrrecoverableError(
           "Error received " + errPacket.getErrorCode() + ": " + errPacket.getMessage()));
@@ -277,6 +269,7 @@ public class TftpReadTransfer {
   }
   
   private static void log(String msg) {
-    System.out.println("[TFTP-TRANSFER] " + msg);
+    String name = Thread.currentThread().getName();
+    System.out.println("[TFTP-READ " + name + "] " + msg);
   }
 }

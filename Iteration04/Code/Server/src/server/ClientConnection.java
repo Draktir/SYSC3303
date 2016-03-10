@@ -9,6 +9,7 @@ import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
+import utils.PacketPrinter;
 
 public class ClientConnection {
   public final TransferId clientTid;
@@ -17,6 +18,8 @@ public class ClientConnection {
   public ClientConnection(DatagramPacket originalRequest) throws SocketException {
     clientTid = new TransferId(originalRequest);
     this.socket = new DatagramSocket();
+    
+    System.out.println(clientTid.toString());
   }
 
   public void sendPacket(Packet packet) throws IOException {
@@ -28,7 +31,7 @@ public class ClientConnection {
         data, data.length, remoteHost, remotePort);
 
     System.out.println("[CLIENT-CONNECTION] sending packet");
-    printDatagramPacket(sendDatagram);
+    PacketPrinter.print(sendDatagram);
 
     socket.send(sendDatagram);
   }
@@ -66,7 +69,7 @@ public class ClientConnection {
       long tsStop = new Date().getTime();
 
       System.out.println("[CLIENT-CONNECTION] Packet received.");
-      printDatagramPacket(receiveDatagram);
+      PacketPrinter.print(receiveDatagram);
 
       // ensure the client TID is correct
       if (!clientTid.equals(new TransferId(receiveDatagram))) {
@@ -100,35 +103,18 @@ public class ClientConnection {
         .buildErrorPacket();
 
     System.err.println("[CLIENT-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
-
+    
     byte[] errData = errPacket.getPacketData();
     DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
         errPacket.getRemoteHost(), errPacket.getRemotePort());
 
+    PacketPrinter.print(errDatagram);
+    
     try {
       socket.send(errDatagram);
     } catch (IOException e) {
       e.printStackTrace();
       System.err.println("[CLIENT-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
     }
-  }
-
-  private void printDatagramPacket(DatagramPacket packet) {
-    byte[] data = new byte[packet.getLength()];
-    System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
-    String contents = new String(data);
-
-    System.out.println("\n-------------------------------------------");
-    System.out.println("\tAddress: " + packet.getAddress());
-    System.out.println("\tPort: " + packet.getPort());
-    System.out.println("\tPacket contents: ");
-    System.out.println("\t" + contents.replaceAll("\n", "\t\n"));
-
-    System.out.println("\tPacket contents (bytes): ");
-    System.out.print("\t");
-    for (int i = 0; i < data.length; i++) {
-      System.out.print(data[i] + " ");
-    }
-    System.out.println("\n-------------------------------------------\n");
   }
 }
