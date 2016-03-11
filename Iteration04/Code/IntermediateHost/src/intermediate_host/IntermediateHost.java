@@ -22,6 +22,7 @@ import java.util.Scanner;
 
 import configuration.Configuration;
 import modification.*;
+import utils.PacketPrinter;
 
 public class IntermediateHost {
   private DatagramSocket clientSocket;
@@ -47,6 +48,9 @@ public class IntermediateHost {
   public void go() {
     List<Thread> connectionThreads = new ArrayList<>();
     boolean hasRun = false;
+    
+    if (!Configuration.setMode())
+    	return;
     
     // Show the Modification configuration menu
     ModificationMenu modMenu = new ModificationMenu();
@@ -76,7 +80,7 @@ public class IntermediateHost {
       }  
       
       log("Received packet");
-      printPacketInformation(requestDatagram);
+      PacketPrinter.print(requestDatagram);
   
       Runnable tftpTransfer = new TftpTransfer(requestDatagram, packetModifier);
       Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
@@ -87,30 +91,6 @@ public class IntermediateHost {
     
     clientSocket.close();
     log("All connections terminated");
-  }
-
-  /**
-   * Prints out request contents as a String and in bytes.
-   * 
-   * @param buffer
-   */
-  public static void printPacketInformation(DatagramPacket packet) {
-    byte[] data = new byte[packet.getLength()];
-    System.arraycopy(packet.getData(), 0, data, 0, packet.getLength());
-    String contents = new String(data);
-    
-    System.out.println("\n-------------------------------------------");
-    System.out.println("\tAddress: " + packet.getAddress());
-    System.out.println("\tPort: " + packet.getPort());
-    System.out.println("\tPacket contents: ");
-    System.out.println("\t" + contents.replaceAll("\n", "\t\n"));
-
-    System.out.println("\tPacket contents (bytes): ");
-    System.out.print("\t");
-    for (int i = 0; i < data.length; i++) {
-      System.out.print(data[i] + " ");
-    }
-    System.out.println("\n-------------------------------------------\n");
   }
   
   private void log(String msg) {

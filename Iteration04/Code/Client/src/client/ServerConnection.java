@@ -13,6 +13,7 @@ import configuration.Configuration;
 import packet.ErrorPacket;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
+import utils.PacketPrinter;
 import packet.ErrorPacket.ErrorCode;
 
 public class ServerConnection {
@@ -36,7 +37,7 @@ public class ServerConnection {
         data, data.length, packet.getRemoteHost(), packet.getRemotePort());
     
     System.out.println("[CLIENT-CONNECTION] sending packet");
-    Client.printPacketInformation(sendDatagram);
+    PacketPrinter.print(sendDatagram);
     
     try {
       serverSocket.send(sendDatagram);

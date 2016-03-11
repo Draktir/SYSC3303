@@ -28,10 +28,6 @@ import java.util.function.Function;
  */
 
 
-
-
-
-
 /**
  * The RequestHandler class handles requests received by the Listener.
  * 

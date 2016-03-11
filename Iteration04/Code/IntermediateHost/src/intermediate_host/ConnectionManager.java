@@ -3,6 +3,8 @@ package intermediate_host;
 import java.io.IOException;
 import java.net.*;
 
+import utils.PacketPrinter;
+
 public class ConnectionManager implements Runnable {
   private DatagramSocket socket;
 
@@ -59,7 +61,7 @@ public class ConnectionManager implements Runnable {
 
       log("");
       log("Received packet");
-      IntermediateHost.printPacketInformation(recvDatagram);
+      PacketPrinter.print(recvDatagram);
 
       ForwardRequest receivedRequest = new ForwardRequest(recvDatagram, socket.getLocalAddress(), socket.getLocalPort());
       
@@ -76,7 +78,7 @@ public class ConnectionManager implements Runnable {
         this.getRemoteHost(), this.getRemotePort());
     
     log("Forwarding Packet:");
-    IntermediateHost.printPacketInformation(datagram);
+    PacketPrinter.print(datagram);
 
     try {
       this.socket.send(datagram);

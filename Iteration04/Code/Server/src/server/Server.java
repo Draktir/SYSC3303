@@ -20,6 +20,9 @@ public class Server {
    * @throws InterruptedException
    */
   public static void main(String[] args) {
+	if (!Configuration.setMode())
+		return;
+	  
     Listener listener = new Listener(Configuration.SERVER_PORT);
     Thread listenThread = new Thread(listener, "Listener");
     listenThread.start();
