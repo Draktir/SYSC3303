@@ -72,4 +72,8 @@ public class Configuration {
 		
 		return modeSet;
 	}
+	
+	public static Mode getMode() {
+		return applicationMode;
+	}
 }
