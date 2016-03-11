@@ -1,4 +1,4 @@
-package Configuration;
+package configuration;
 
 public class Configuration {
   // Timeout time for all sockets in milliseconds.

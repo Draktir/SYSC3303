@@ -9,11 +9,11 @@ import java.net.SocketTimeoutException;
 import java.sql.Timestamp;
 import java.util.Date;
 
+import configuration.Configuration;
 import packet.ErrorPacket;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
 import packet.ErrorPacket.ErrorCode;
-import Configuration.Configuration;
 
 public class ServerConnection {
   private DatagramSocket serverSocket;

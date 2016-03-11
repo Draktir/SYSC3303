@@ -11,7 +11,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import Configuration.Configuration;
+import configuration.Configuration;
 import packet.Acknowledgement;
 import packet.DataPacket;
 import packet.DataPacketBuilder;

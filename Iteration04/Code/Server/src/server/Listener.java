@@ -4,7 +4,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
-import Configuration.Configuration;
+import configuration.Configuration;
 
 /**
  * The Listener class is implemented in order to allow the Server application

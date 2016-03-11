@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-import Configuration.Configuration;
+import configuration.Configuration;
 import modification.*;
 
 public class IntermediateHost {

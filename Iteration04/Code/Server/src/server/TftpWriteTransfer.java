@@ -11,7 +11,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import Configuration.Configuration;
+import configuration.Configuration;
 import packet.Acknowledgement;
 import packet.AcknowledgementBuilder;
 import packet.DataPacket;

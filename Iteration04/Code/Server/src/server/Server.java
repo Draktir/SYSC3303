@@ -10,7 +10,7 @@ package server;
 
 import java.util.Scanner;
 
-import Configuration.Configuration;
+import configuration.Configuration;
 
 public class Server {
   /**

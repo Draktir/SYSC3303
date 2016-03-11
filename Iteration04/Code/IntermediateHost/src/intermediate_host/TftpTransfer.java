@@ -3,7 +3,7 @@ package intermediate_host;
 import java.net.*;
 import java.util.function.Consumer;
 
-import Configuration.Configuration;
+import configuration.Configuration;
 import packet.*;
 import packet.Request.RequestType;
 

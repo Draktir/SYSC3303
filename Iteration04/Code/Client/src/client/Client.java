@@ -28,10 +28,9 @@ import java.util.Scanner;
 
 import com.sun.xml.internal.ws.server.ServerSchemaValidationTube;
 
+import configuration.Configuration;
+
 import java.sql.Timestamp;
-
-import Configuration.Configuration;
-
 import java.io.File;
 
 import file_io.FileReader;
