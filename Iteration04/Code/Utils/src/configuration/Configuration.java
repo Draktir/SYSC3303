@@ -68,7 +68,6 @@ public class Configuration {
 			}
 		} while (modeSet == false);
 		
-		sc.close();
 		
 		return modeSet;
 	}

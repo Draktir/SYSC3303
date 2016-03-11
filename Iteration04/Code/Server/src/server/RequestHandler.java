@@ -16,7 +16,7 @@ import packet.Request.RequestType;
 import utils.PacketPrinter;
 
 import java.util.function.Function;
-
+import Log.Log;
 
 
 /*
@@ -38,7 +38,7 @@ import java.util.function.Function;
  */
 class RequestHandler implements Runnable {
   private DatagramPacket requestPacket;
-  
+  private static  Log log;
   /**
    * Default RequestHandler constructor instantiates requestPacket to
    * the packet passed down from the Listener class.
@@ -47,6 +47,7 @@ class RequestHandler implements Runnable {
    */
   public RequestHandler(DatagramPacket requestPacket) {
     this.requestPacket = requestPacket;
+    log = new Log("RequestHandler");
   }
   
   /**
@@ -61,7 +62,7 @@ class RequestHandler implements Runnable {
       return;
     }
     
-    log("Incoming request");
+    log.logalways("Incoming request");
     PacketPrinter.print(requestPacket);
     
     TransferState transferState = new TransferStateBuilder()
@@ -79,17 +80,17 @@ class RequestHandler implements Runnable {
           
           if (request.type() == RequestType.READ) {
             // initiate ReadRequest
-            log("Received ReadRequest, initiating file transfer.");
+        	  log.logalways("Received ReadRequest, initiating file transfer.");
             TftpReadTransfer readTransfer = new TftpReadTransfer();
             readTransfer.start(state);
           } else if (request.type() == RequestType.WRITE) {
             // initiate WriteRequest
-            log("Received WriteRequest, initiating file transfer.");
+        	  log.logalways("Received WriteRequest, initiating file transfer.");
             TftpWriteTransfer writeTransfer = new TftpWriteTransfer();
             writeTransfer.start(state);
           } else {
             // should never really get here
-            log("Could not identify request type, but it was parsed.");
+        	  log.logerr("Could not identify request type, but it was parsed.");
             return Result.failure(new IrrecoverableError(
                 ErrorCode.ILLEGAL_TFTP_OPERATION, "Invalid Request. Not a RRQ or WRQ."));
           }
@@ -102,7 +103,7 @@ class RequestHandler implements Runnable {
     if (result.FAILURE) {
       sendError(transferState, result.failure);
     } else {
-      log("Transfer has ended. Terminating connection thread.");
+      log.logalways("Transfer has ended. Terminating connection thread.");
     }
   }
   
@@ -118,7 +119,7 @@ class RequestHandler implements Runnable {
   };
   
   private static void sendError(TransferState state, IrrecoverableError error) {
-    log("Sending error to client " + error.errorCode + ": " + error.message);
+    log.logerr("Sending error to client " + error.errorCode + ": " + error.message);
     ErrorPacket err = new ErrorPacketBuilder()
         .setErrorCode(error.errorCode)
         .setMessage(error.message)
@@ -128,12 +129,12 @@ class RequestHandler implements Runnable {
       state.connection.sendPacket(err);
     } catch (IOException e) {
       e.printStackTrace();
-      log("Error occured while sending error packet. We're done!");
+      log.logerr("Error occured while sending error packet. We're done!");
     }
   };
   
-  private static void log(String msg) {
-    String name = Thread.currentThread().getName();
-    System.out.println("[RequestHandler] " + name + ": " + msg);
-  }
+//  private static void log(String msg) {
+//    String name = Thread.currentThread().getName();
+//    System.out.println("[RequestHandler] " + name + ": " + msg);
+//  }
 }
