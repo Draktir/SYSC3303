@@ -1,13 +1,8 @@
 package server;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 
-import packet.ErrorPacket;
-import packet.ErrorPacketBuilder;
-import packet.InvalidRequestException;
-import packet.PacketParser;
 import packet.Request;
 import rop.ROP;
 import rop.Result;
@@ -20,8 +15,6 @@ import packet.Request.RequestType;
 import utils.IrrecoverableError;
 import utils.Logger;
 import utils.PacketPrinter;
-
-import java.util.function.Function;
 
 /**
  * The RequestHandler class handles requests received by the Listener.
@@ -57,7 +50,6 @@ class RequestHandler implements Runnable {
       return;
     }
     
-    logger.logAlways("Incoming request");
     PacketPrinter.print(requestPacket);
     
     TransferState transferState = new TransferStateBuilder()
@@ -99,4 +91,5 @@ class RequestHandler implements Runnable {
       logger.logAlways("Transfer has ended. Terminating connection thread.");
     }
   }
+  
 }

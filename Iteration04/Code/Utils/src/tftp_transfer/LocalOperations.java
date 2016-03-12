@@ -9,8 +9,6 @@ import rop.Result;
 import utils.IrrecoverableError;
 import utils.Logger;
 
-import javax.xml.crypto.Data;
-
 public class LocalOperations {
   private static final Logger logger = new Logger("LocalOperations");
 
