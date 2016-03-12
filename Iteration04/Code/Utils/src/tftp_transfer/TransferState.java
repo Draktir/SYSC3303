@@ -1,4 +1,4 @@
-package server;
+package tftp_transfer;
 
 import java.util.Arrays;
 
@@ -12,10 +12,10 @@ public class TransferState {
   public final byte[] blockData;
   public final DataPacket dataPacket;
   public final Acknowledgement acknowledgement;
-  public final ClientConnection connection;
+  public final Connection connection;
 
   public TransferState(Request request, int blockNumber, byte[] blockData,
-                       DataPacket dataPacket, Acknowledgement acknowledgement, ClientConnection connection) {
+                       DataPacket dataPacket, Acknowledgement acknowledgement, Connection connection) {
     this.request = request;
     this.blockNumber = blockNumber;
     this.blockData = blockData;

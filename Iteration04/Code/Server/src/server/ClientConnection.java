@@ -7,19 +7,19 @@ import java.util.Date;
 
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
+import tftp_transfer.Connection;
+import tftp_transfer.TransferId;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
 import utils.PacketPrinter;
 
-public class ClientConnection {
+public class ClientConnection implements Connection {
   public final TransferId clientTid;
   private final DatagramSocket socket;
 
   public ClientConnection(DatagramPacket originalRequest) throws SocketException {
     clientTid = new TransferId(originalRequest);
     this.socket = new DatagramSocket();
-    
-    System.out.println(clientTid.toString());
   }
 
   public void sendPacket(Packet packet) throws IOException {

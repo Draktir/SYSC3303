@@ -6,152 +6,158 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.sql.Timestamp;
 import java.util.Date;
 
 import configuration.Configuration;
 import packet.ErrorPacket;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
-import utils.PacketPrinter;
+import packet.Request;
 import packet.ErrorPacket.ErrorCode;
+import tftp_transfer.Connection;
+import tftp_transfer.TransferId;
+import utils.PacketPrinter;
 
-public class ServerConnection {
-  private DatagramSocket serverSocket;
-  private InetAddress serverAddress = null;
-  private int serverPort = -1;
+public class ServerConnection implements Connection {
+  private final DatagramSocket socket;
+  private final InetAddress serverAddress;
+  private TransferId serverTid;
 
-  public ServerConnection() throws SocketException {
-    this.serverSocket = new DatagramSocket();
-    this.serverSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
+  public ServerConnection(InetAddress address) throws SocketException {
+    this.serverAddress = address;
+    this.socket = new DatagramSocket();
   }
 
   /**
-   * Sends a packet.
+   * sends a request to the server always on the port
+   * configured in the Configuration (INTERMEDIATE)
+   * @param request
+   * @throws IOException 
+   */
+  public void sendRequest(Request request) throws IOException {
+    byte[] data = request.getPacketData();
+    DatagramPacket reqDatagram = new DatagramPacket(
+        data, data.length, serverAddress, Configuration.INTERMEDIATE_PORT);
+    
+    System.out.println("[SERVER-CONNECTION] sending request");
+    PacketPrinter.print(reqDatagram);
+    
+    socket.send(reqDatagram);
+  }
+  
+  /**
+   * Sends a packet to the server
    * 
    * @param packet
+   * @throws IOException 
    */
-  public void sendPacket(Packet packet) {
+  public void sendPacket(Packet packet) throws IOException {
+    if (serverTid == null) {
+      throw new RuntimeException("Do not know the Server's receiving port. Make sure to send a request first.");
+    }
+    
     byte[] data = packet.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(
-        data, data.length, packet.getRemoteHost(), packet.getRemotePort());
+        data, data.length, serverAddress, serverTid.port);
     
-    System.out.println("[CLIENT-CONNECTION] sending packet");
+    System.out.println("[SERVER-CONNECTION] sending packet");
     PacketPrinter.print(sendDatagram);
     
-    try {
-      serverSocket.send(sendDatagram);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    socket.send(sendDatagram);
   }
 
   
-  public DatagramPacket receive() {
+  public DatagramPacket receive(int timeout) throws SocketTimeoutException {
     byte[] buffer;
-    DatagramPacket responseDatagram = null;
-    
+    DatagramPacket receiveDatagram = null;
+
+    // set the timeout
+    try {
+      socket.setSoTimeout(timeout);
+    } catch (SocketException e) {
+      e.printStackTrace();
+      return null;
+    }
+
+    // receive packets until we receive a packet from the correct host
     do {
       buffer = new byte[517];
-      responseDatagram = new DatagramPacket(buffer, 517);
-      
-      long tsStart = Client.currentTime();
+      receiveDatagram = new DatagramPacket(buffer, 517);
+
+      System.out.println("[SERVER-CONNECTION] Waiting for response from server on port " + socket.getLocalPort());
+
+      long tsStart = new Date().getTime();
       try {
-        System.out.println("[SERVER-CONNECTION] Waiting for response from client on port " + serverSocket.getLocalPort());
-        serverSocket.receive(responseDatagram);
+        socket.receive(receiveDatagram);
       } catch (SocketTimeoutException e) {
         System.out.println("[SERVER-CONNECTION] Response timed out.");
-        return null;  
+        throw e;
       } catch (IOException e) {
         e.printStackTrace();
-        return null;
+        receiveDatagram = null;
+        break;
       }
-      long tsStop = Client.currentTime();
+      long tsStop = new Date().getTime();
+
+      System.out.println("[SERVER-CONNECTION] Packet received.");
+      PacketPrinter.print(receiveDatagram);
+
+      // if this is the first time we receive from this server
+      if (serverTid == null) {
+        this.serverTid = new TransferId(serverAddress, receiveDatagram.getPort());
+      }
       
-      // ensure the client TID is the same
-      if (!isServerTidValid(responseDatagram)) {
-        System.err.println("[SERVER-CONNECTION] Received packet with wrong TID");
-        System.err.println("  > Server:   " + responseDatagram.getAddress() + " " + responseDatagram.getPort());
-        System.err.println("  > Expected: " + serverAddress + " " + serverPort);
-        // respond to the rogue client with an appropriate error packet
-        ErrorPacket errPacket = new ErrorPacketBuilder()
-            .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
-            .setMessage("Your request had an invalid TID.")
-            .setRemoteHost(responseDatagram.getAddress())
-            .setRemotePort(responseDatagram.getPort())
-            .buildErrorPacket();
-        
-        System.err.println("[SERVER-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
-        
-        byte[] errData = errPacket.getPacketData();
-        DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
-            errPacket.getRemoteHost(), errPacket.getRemotePort());
-        
+      // ensure the TID is correct
+      if (!serverTid.equals(new TransferId(receiveDatagram))) {
+        handleInvalidTid(receiveDatagram);
+        // recalculate the timeout
         try {
-          serverSocket.send(errDatagram);
-        } catch (IOException e) {
-          e.printStackTrace();
-          System.err.println("[SERVER-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
-        }
-        responseDatagram = null;
-        
-        System.err.println("[SERVER-CONNECTION] Waiting for another packet.");
-        
-        // reduce timeout
-        try {
-          serverSocket.setSoTimeout((int)(tsStop - tsStart));
+          int newTimeout = socket.getSoTimeout() - (int)(tsStop - tsStart);
+          socket.setSoTimeout(newTimeout);
         } catch (SocketException e) {
           e.printStackTrace();
         }
+
+        System.err.println("[SERVER-CONNECTION] Waiting for another packet.");
+        receiveDatagram = null;
       }
-    } while (responseDatagram == null);
-    
-    // reset timeout to original value
-    try {
-      serverSocket.setSoTimeout(Configuration.TIMEOUT_TIME);
-    } catch (SocketException e) {
-      e.printStackTrace();
-    }
-    
-    System.out.println("[SERVER-CONNECTION] Received packet from client, length " + responseDatagram.getLength());
-    return responseDatagram;
+    } while (receiveDatagram == null);
+
+    return receiveDatagram;
   }
   
-  private boolean isServerTidValid(DatagramPacket packet) {
-    if (serverAddress == null) return true;
-    return serverAddress.equals(packet.getAddress()) && packet.getPort() == serverPort;
-  }
+  /**
+   * handles an invalid TID by sending an Error: Code 5
+   * 
+   * @param receiveDatagram
+   */
+  private void handleInvalidTid(DatagramPacket receiveDatagram) {
+    System.err.println("[SERVER-CONNECTION] Received packet with wrong TID");
+    System.err.println("  > Received:   " + receiveDatagram.getAddress() + " " + receiveDatagram.getPort());
+    System.err.println("  > Expected:   " + serverTid.address + " " + serverTid.port);
+    // respond to the rogue client with an appropriate error packet
+    ErrorPacket errPacket = new ErrorPacketBuilder()
+        .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
+        .setMessage("Your request had an invalid TID.")
+        .buildErrorPacket();
 
-  public void resetTid() {
-    this.serverAddress = null;
-    this.serverPort = -1;
+    System.err.println("[SERVER-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
+    
+    byte[] errData = errPacket.getPacketData();
+    DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
+        receiveDatagram.getAddress(), receiveDatagram.getPort());
+
+    PacketPrinter.print(errDatagram);
+    
+    try {
+      socket.send(errDatagram);
+    } catch (IOException e) {
+      e.printStackTrace();
+      System.err.println("[SERVER-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
+    }
   }
   
   public InetAddress getServerAddress() {
     return serverAddress;
   }
-
-  public void setServerAddress(InetAddress serverAddress) {
-    this.serverAddress = serverAddress;
-  }
-
-  public int getServerPort() {
-    return serverPort;
-  }
-
-	public void setServerPort(int serverPort) {
-		this.serverPort = serverPort;
-	}
-
-	public void setTimeOut(long milSec) {
-		try {
-			this.serverSocket.setSoTimeout((int) milSec);
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
-	}
-	public static long currentTime() {
-	    Date d = new Date();
-	    return new Timestamp(d.getTime()).getTime();
-	  }
 }

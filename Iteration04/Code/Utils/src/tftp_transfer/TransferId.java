@@ -1,4 +1,4 @@
-package server;
+package tftp_transfer;
 
 import java.net.DatagramPacket;
 import java.net.InetAddress;

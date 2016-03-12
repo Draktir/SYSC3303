@@ -1,4 +1,4 @@
-package server;
+package utils;
 
 public class RecoverableError {
   public final String message;

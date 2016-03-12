@@ -18,7 +18,8 @@ public class Configuration {
 
 	public static boolean setMode() {
 		boolean modeSet = false;
-		Scanner sc = new Scanner(System.in);
+		@SuppressWarnings("resource")
+    Scanner sc = new Scanner(System.in);
 		
 		do {
 			System.out.println("Select a mode to run in: ");
@@ -67,9 +68,7 @@ public class Configuration {
 				System.err.println("An error has occured in the configuration setup.");
 			}
 		} while (modeSet == false);
-		
-		sc.close();
-		
+
 		return modeSet;
 	}
 	

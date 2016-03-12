@@ -11,22 +11,17 @@ import packet.PacketParser;
 import packet.Request;
 import rop.ROP;
 import rop.Result;
+import tftp_transfer.LocalOperations;
+import tftp_transfer.NetworkOperations;
+import tftp_transfer.TransferState;
+import tftp_transfer.TransferStateBuilder;
 import packet.ErrorPacket.ErrorCode;
 import packet.Request.RequestType;
+import utils.IrrecoverableError;
+import utils.Logger;
 import utils.PacketPrinter;
 
 import java.util.function.Function;
-
-
-
-/*
- * TODO
- *   - Create a Logger class that we can use for writing to console
- *     - It should accept a flag in the constructor that indicates TEST mode or SILENT mode
- *     - Include the timestamp with each log (new Date().getTime())
- *      - e.g. 6583234546551 [REQUEST-HANDLER] ...
- */
-
 
 /**
  * The RequestHandler class handles requests received by the Listener.
@@ -37,18 +32,19 @@ import java.util.function.Function;
  * @since 25-01-2016
  */
 class RequestHandler implements Runnable {
-  private DatagramPacket requestPacket;
+  private final Logger logger = new Logger("RequestHandler");
+  private final DatagramPacket requestPacket;
   
   /**
    * Default RequestHandler constructor instantiates requestPacket to
    * the packet passed down from the Listener class.
    * 
-   * @param packet
+   * @param requestPacket
    */
   public RequestHandler(DatagramPacket requestPacket) {
     this.requestPacket = requestPacket;
   }
-  
+
   /**
    * Processes the received request and initiates file transfer.
    */
@@ -61,7 +57,7 @@ class RequestHandler implements Runnable {
       return;
     }
     
-    log("Incoming request");
+    logger.logAlways("Incoming request");
     PacketPrinter.print(requestPacket);
     
     TransferState transferState = new TransferStateBuilder()
@@ -70,8 +66,8 @@ class RequestHandler implements Runnable {
     
     ROP<Request, TransferState, IrrecoverableError> rop = new ROP<>();
     
-    Result<TransferState, IrrecoverableError> result = 
-        parseRequest
+    Result<TransferState, IrrecoverableError> result =
+        LocalOperations.parseRequest
         .andThen(rop.bind((request) -> {
           TransferState state = TransferStateBuilder.clone(transferState)
               .request(request)
@@ -79,17 +75,15 @@ class RequestHandler implements Runnable {
           
           if (request.type() == RequestType.READ) {
             // initiate ReadRequest
-            log("Received ReadRequest, initiating file transfer.");
-            TftpReadTransfer readTransfer = new TftpReadTransfer();
-            readTransfer.start(state);
+            logger.logAlways("Received ReadRequest, initiating file transfer.");
+            TftpReadTransfer.start(state);
           } else if (request.type() == RequestType.WRITE) {
             // initiate WriteRequest
-            log("Received WriteRequest, initiating file transfer.");
-            TftpWriteTransfer writeTransfer = new TftpWriteTransfer();
-            writeTransfer.start(state);
+            logger.logAlways("Received WriteRequest, initiating file transfer.");
+            TftpWriteTransfer.start(state);
           } else {
             // should never really get here
-            log("Could not identify request type, but it was parsed.");
+            logger.logError("Could not identify request type, but it was parsed.");
             return Result.failure(new IrrecoverableError(
                 ErrorCode.ILLEGAL_TFTP_OPERATION, "Invalid Request. Not a RRQ or WRQ."));
           }
@@ -100,40 +94,9 @@ class RequestHandler implements Runnable {
     
     
     if (result.FAILURE) {
-      sendError(transferState, result.failure);
+      NetworkOperations.sendError.accept(transferState, result.failure);
     } else {
-      log("Transfer has ended. Terminating connection thread.");
+      logger.logAlways("Transfer has ended. Terminating connection thread.");
     }
-  }
-  
-  private Function<DatagramPacket, Result<Request, IrrecoverableError>> parseRequest = (datagram) -> {
-    PacketParser parser = new PacketParser();
-    Request req = null;
-    try {
-      req = parser.parseRequest(datagram);
-    } catch (InvalidRequestException e) {
-      return Result.failure(new IrrecoverableError(ErrorCode.ILLEGAL_TFTP_OPERATION, e.getMessage()));
-    }
-    return Result.success(req);
-  };
-  
-  private static void sendError(TransferState state, IrrecoverableError error) {
-    log("Sending error to client " + error.errorCode + ": " + error.message);
-    ErrorPacket err = new ErrorPacketBuilder()
-        .setErrorCode(error.errorCode)
-        .setMessage(error.message)
-        .buildErrorPacket();
-
-    try {
-      state.connection.sendPacket(err);
-    } catch (IOException e) {
-      e.printStackTrace();
-      log("Error occured while sending error packet. We're done!");
-    }
-  };
-  
-  private static void log(String msg) {
-    String name = Thread.currentThread().getName();
-    System.out.println("[RequestHandler] " + name + ": " + msg);
   }
 }

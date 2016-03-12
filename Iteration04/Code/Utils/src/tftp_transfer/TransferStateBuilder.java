@@ -1,4 +1,4 @@
-package server;
+package tftp_transfer;
 
 import packet.Acknowledgement;
 import packet.DataPacket;
@@ -13,7 +13,7 @@ public class TransferStateBuilder {
   private byte[] blockData = null;
   private DataPacket dataPacket = null;
   private Acknowledgement acknowledgement = null;
-  private ClientConnection connection = null;
+  private Connection connection = null;
 
   public TransferStateBuilder() {}
 
@@ -85,7 +85,7 @@ public class TransferStateBuilder {
     return this;
   }
 
-  public TransferStateBuilder connection(ClientConnection connection) {
+  public TransferStateBuilder connection(Connection connection) {
     this.connection = connection;
     return this;
   }
@@ -114,7 +114,7 @@ public class TransferStateBuilder {
     return acknowledgement;
   }
 
-  public ClientConnection getConnection() {
+  public Connection getConnection() {
     return connection;
   }
 }

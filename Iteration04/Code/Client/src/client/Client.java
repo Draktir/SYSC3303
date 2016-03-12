@@ -32,28 +32,15 @@ import java.io.File;
 import file_io.FileReader;
 import file_io.FileWriter;
 
+import tftp_transfer.TransferState;
+import tftp_transfer.TransferStateBuilder;
 import utils.PacketPrinter;
 
 public class Client {
-	final double MAX_FILE_SIZE = 512 * (Math.pow(2, 16) - 1); // 2 byte range
-																// for block
-																// numbers, less
-																// block number
-																// 0
+	// 2 byte range for block numbers, less block number 0
+	final double MAX_FILE_SIZE = 512 * (Math.pow(2, 16) - 1);
 	private ServerConnection serverConnection;
 	private PacketParser packetParser = new PacketParser();
-
-	/**
-	 * Default Client constructor, instantiates the server Connection
-	 */
-	public Client() {
-		try {
-			serverConnection = new ServerConnection();
-		} catch (SocketException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-	}
 
 	/**
 	 * Main method which creates an instance of Client.
@@ -69,8 +56,18 @@ public class Client {
 		int command;
 		String fileName = "";
 		
-		if (!Configuration.setMode())
+		if (!Configuration.setMode()) {
 			return;
+		}
+
+		// TODO: for Iteration 5, ask the user for a server IP
+		InetAddress serverAddress = null;
+		try {
+			serverAddress = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			return;
+		}
 
 		do {
 			System.out.println("TFTP Client");
@@ -87,8 +84,23 @@ public class Client {
 					System.out.print("Please enter a file name: ");
 					fileName = scan.next();
 				} while (!this.validateFilename(fileName));
-				this.sendFileToServer(fileName, "netAsCiI");
-				serverConnection.resetTid(); // reset for next connection
+
+				final ServerConnection connection;
+				try {
+					connection = new ServerConnection(serverAddress);
+				} catch (SocketException e) {
+					e.printStackTrace();
+					return;
+				}
+
+				TransferState initialState = new TransferStateBuilder()
+						.connection(connection)
+						.request(new RequestBuilder()
+								.setFilename(fileName)
+								.setMode("netAsCiI")
+								.buildWriteRequest())
+						.build();
+				TftpReadTransfer.start(initialState);
 				break;
 
 			case 2:
@@ -97,7 +109,7 @@ public class Client {
 					fileName = scan.next();
 				} while (fileName == null || fileName.length() == 0);
 				this.downloadFileFromServer(fileName, "ocTeT");
-				serverConnection.resetTid(); // reset for next connection
+				//serverConnection.resetTid(); // reset for next connection
 				break;
 			}
 		} while (command != 0);
@@ -134,6 +146,7 @@ public class Client {
 	 * @param filename
 	 * @param mode
 	 */
+
 	private void sendFileToServer(String filename, String mode) {
 		boolean transferComplete = false;
 		FileReader fileReader = null;
