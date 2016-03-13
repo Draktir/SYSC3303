@@ -2,6 +2,11 @@ package utils;
 
 import java.net.DatagramPacket;
 
+/**
+ * Util class containing a packet print method to print a DatagramPacket
+ *
+ */
+
 public class PacketPrinter {
   public static void print(DatagramPacket packet) {
     byte[] data = new byte[packet.getLength()];

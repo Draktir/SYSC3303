@@ -1,9 +1,14 @@
 package utils;
 
-public class RecoverableError {
-  public final String message;
+/**
+ * Class used with ROP results indicating a Recoverable Error
+ * 
+ */
 
-  public RecoverableError(String message) {
-    this.message = message;
-  }
+public class RecoverableError {
+	public final String message;
+
+	public RecoverableError(String message) {
+		this.message = message;
+	}
 }

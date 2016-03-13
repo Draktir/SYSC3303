@@ -7,7 +7,10 @@ import java.net.SocketTimeoutException;
 import packet.Packet;
 import packet.Request;
 
-// TODO: this could probably be a class since the implementors do almost the same thing
+/**
+ * Interface implemented by Connection classes in Server and Client
+ * 
+ */
 
 public interface Connection {
   void sendRequest(Request request) throws IOException;

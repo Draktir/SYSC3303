@@ -10,13 +10,12 @@
 
 package client;
 
-import packet.*;
-
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 import configuration.Configuration;
+import packet.RequestBuilder;
 
 import java.io.File;
 
@@ -26,7 +25,7 @@ import tftp_transfer.TransferStateBuilder;
 public class Client {
 	// 2 byte range for block numbers, less block number 0
 	final double MAX_FILE_SIZE = 512 * (Math.pow(2, 16) - 1);
-	
+
 	/**
 	 * Main method which creates an instance of Client.
 	 *
@@ -42,7 +41,7 @@ public class Client {
 
 		if (!Configuration.setMode()) {
 			scan.close();
-		  return;
+			return;
 		}
 
 		// TODO: for Iteration 5, ask the user for a server IP
@@ -64,24 +63,25 @@ public class Client {
 
 			command = scan.nextInt();
 
-      String filename = "";
+			String filename = "";
 
 			switch (command) {
-			  case 1:
-          do {
-            System.out.print("Please enter a file name: ");
-            filename = scan.next();
-          } while (!this.validateFilename(filename));
-          initiateTftpWrite(serverAddress, filename);
-          break;
-			  case 2:
-			    // TODO: What should happen if the file already exists?
-          do {
-            System.out.print("Please enter a file name: ");
-            filename = scan.next();
-          } while (filename == null || filename.length() == 0);
-				  initiateTftpRead(serverAddress, filename);
-				  break;
+				case 1:
+					do {
+						System.out.print("Please enter a file name: ");
+						filename = scan.next();
+					} while (!this.validateFilename(filename));
+					initiateTftpWrite(serverAddress, filename);
+					break;
+	
+				case 2:
+					// TODO: What should happen if the file already exists?
+					do {
+						System.out.print("Please enter a file name: ");
+						filename = scan.next();
+					} while (filename == null || filename.length() == 0);
+					initiateTftpRead(serverAddress, filename);
+					break;
 			}
 		} while (command != 0);
 
@@ -107,24 +107,24 @@ public class Client {
 		TftpWriteTransfer.start(initialState);
 	}
 
-  private void initiateTftpRead(InetAddress serverAddress, String filename) {
-    final ServerConnection connection;
-    try {
-      connection = new ServerConnection(serverAddress);
-    } catch (SocketException e) {
-      e.printStackTrace();
-      return;
-    }
+	private void initiateTftpRead(InetAddress serverAddress, String filename) {
+		final ServerConnection connection;
+		try {
+			connection = new ServerConnection(serverAddress);
+		} catch (SocketException e) {
+			e.printStackTrace();
+			return;
+		}
 
-    TransferState initialState = new TransferStateBuilder()
-        .connection(connection)
-        .request(new RequestBuilder()
-            .setFilename(filename)
-            .setMode("ocTET")
-            .buildReadRequest())
-        .build();
-    TftpReadTransfer.start(initialState);
-  }
+		TransferState initialState = new TransferStateBuilder()
+				.connection(connection)
+				.request(new RequestBuilder()
+						.setFilename(filename)
+						.setMode("ocTET")
+						.buildReadRequest())
+				.build();
+		TftpReadTransfer.start(initialState);
+	}
 
 	private boolean validateFilename(String filename) {
 		File f = new File(filename);
