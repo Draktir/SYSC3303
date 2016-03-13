@@ -5,6 +5,9 @@
 6. ReadMe.txt needs to be updated to reflect new changes.
 7. ClassDiagrams needs to be updated to reflect new changes.
 8. TimingDiagrams needs to be updated to reflect new changes.
+9. Explain decisions we've made in README (not overwriting files, etc.)
+10. Use Logger class everywhere
+11. Check to make sure ErrorPacket modifications work on Intermediate host
 
 ## DONE - needs testing
 
