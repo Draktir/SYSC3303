@@ -10,11 +10,11 @@ public class Configuration {
 	
 	public static Mode applicationMode;
 
-	public static int TIMEOUT_TIME = 5000;	// Timeout time for all sockets in milliseconds.
-	public static int MAX_RETRIES = 3; 		// Max retries before we give up
+	public static final int TIMEOUT_TIME = 5000;	// Timeout time for all sockets in milliseconds.
+	public static final int MAX_RETRIES = 3; 		// Max retries before we give up
 	public static int INTERMEDIATE_PORT;	// Port the intermediate host is listening on for requests
 	public static int SERVER_PORT;			// Port the server is listening on for requests
-	public static int BLOCK_SIZE = 512;		// Block size of file data
+	public static final int BLOCK_SIZE = 512;		// Block size of file data
 
 	public static boolean setMode() {
 		boolean modeSet = false;

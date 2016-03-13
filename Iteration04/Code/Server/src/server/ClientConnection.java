@@ -11,6 +11,7 @@ import tftp_transfer.Connection;
 import tftp_transfer.TransferId;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
+import packet.Request;
 import utils.PacketPrinter;
 
 public class ClientConnection implements Connection {
@@ -22,6 +23,10 @@ public class ClientConnection implements Connection {
     this.socket = new DatagramSocket();
   }
 
+  public void sendRequest(Request request) throws IOException {
+    sendPacket(request);
+  }
+  
   public void sendPacket(Packet packet) throws IOException {
     byte[] data = packet.getPacketData();
     InetAddress remoteHost = packet.getRemoteHost() == null ? clientTid.address : packet.getRemoteHost();

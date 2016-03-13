@@ -27,7 +27,7 @@ public class FileWriter {
     File file = new File(filename);
 
     if (file.exists()) {
-      throw new FileAlreadyExistsException(filename + " already exists on the server.");
+      throw new FileAlreadyExistsException(filename + " already exists.");
     }
     
     try {

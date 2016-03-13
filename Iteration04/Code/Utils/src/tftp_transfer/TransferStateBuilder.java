@@ -58,7 +58,7 @@ public class TransferStateBuilder {
   }
 
   /**
-   * Setters with 'set' keyword omitted for readability 
+   * Setters with 'set' keyword omitted, for improved readability 
    */
   public TransferStateBuilder request(Request request) {
     this.request = request;

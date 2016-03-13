@@ -52,10 +52,10 @@ public class NetworkOperations {
 
   public static final Function<TransferState, Result<TransferState, IrrecoverableError>> sendRequest = (state) -> {
     logger.log("Sending Request");
-    logger.log(state.acknowledgement.toString());
+    logger.log(state.request.toString());
 
     try {
-      state.connection.sendPacket(state.acknowledgement);
+      state.connection.sendRequest(state.request);
     } catch (IOException e) {
       return Result.failure(new IrrecoverableError(e.getMessage()));
     }
@@ -105,7 +105,7 @@ public class NetworkOperations {
         if (numAttempts < Configuration.MAX_RETRIES) {
           // resend the data packet and then recursively call this function again
           logger.log("Re-sending last Data Packet");
-          return rop.bind(NetworkOperations.sendDataPacket)
+          return rop.bind(state.dataPacket != null ? NetworkOperations.sendDataPacket : NetworkOperations.sendRequest)
               .andThen((s) -> receiveAck.func.apply(Configuration.TIMEOUT_TIME, numAttempts + 1))
               .apply(Result.success(state));
 
@@ -116,7 +116,7 @@ public class NetworkOperations {
       }
 
       ROP<Acknowledgement, TransferState, IrrecoverableError> ropAck = new ROP<>();
-      
+
       return LocalOperations.parseAck
           .andThen(ropAck.bind((ack) -> {
             if (ack.getBlockNumber() > state.blockNumber) {
@@ -127,7 +127,7 @@ public class NetworkOperations {
               );
               return Result.failure(err);
             }
-  
+
             if (ack.getBlockNumber() < state.blockNumber) {
               // duplicate ACK, ignore
               logger.log("Received a duplicate ACK, block# " + ack.getBlockNumber());
@@ -172,9 +172,9 @@ public class NetworkOperations {
         logger.logError(recvResult.failure.message);
 
         if (numAttempts < Configuration.MAX_RETRIES) {
-          // resend the last ack and then recursively call this function again
-          logger.log("Re-sending last ACK");
-          return rop.bind(NetworkOperations.sendAck)
+          // resend the last packet and then recursively call this function again
+          logger.log("Re-sending last packet");
+          return rop.bind(state.acknowledgement != null ? NetworkOperations.sendAck : NetworkOperations.sendRequest)
               .andThen((s) -> receiveDataPacket.func.apply(Configuration.TIMEOUT_TIME, numAttempts + 1))
               .apply(Result.success(state));
 

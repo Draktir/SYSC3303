@@ -2,33 +2,15 @@ package server;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.SocketTimeoutException;
-import java.nio.file.AccessDeniedException;
-import java.nio.file.FileAlreadyExistsException;
-import java.util.Date;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import configuration.Configuration;
 import file_io.FileWriter;
-import packet.Acknowledgement;
-import packet.AcknowledgementBuilder;
-import packet.DataPacket;
-import packet.ErrorPacket;
-import packet.ErrorPacketBuilder;
-import packet.InvalidDataPacketException;
-import packet.InvalidErrorPacketException;
-import packet.PacketParser;
 import packet.ErrorPacket.ErrorCode;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
 import utils.IrrecoverableError;
 import utils.Logger;
-import utils.RecoverableError;
-import utils.Recursive;
 
 public class TftpWriteTransfer {
   private static final Logger logger = new Logger("TFTP-WRITE");
@@ -65,6 +47,9 @@ public class TftpWriteTransfer {
     
     if (ackResult.FAILURE) {
       logger.logError("ERROR: Sending ACK failed.");
+      if (ackResult.failure.errorCode != null) {
+        NetworkOperations.sendError.accept(transferState, ackResult.failure);
+      }
       errorCleanup(transferState);
       fileWriter.close();
       return;
@@ -79,6 +64,12 @@ public class TftpWriteTransfer {
           .andThen(rop.bind(writeFileBlock))
           .andThen(rop.map(LocalOperations.buildAck))
           .andThen(rop.bind(NetworkOperations.sendAck))
+          .andThen(rop.map((state) -> {
+            // advance block number
+            return TransferStateBuilder.clone(state)
+                .blockNumber(state.blockNumber + 1)
+                .build();
+          }))
           .apply(currentState);
       
       if (stepResult.SUCCESS) {
@@ -93,11 +84,13 @@ public class TftpWriteTransfer {
       }
     } while (currentState.blockData.length == 512);
     
+    logger.logAlways("Transfer has ended");
     fileWriter.close();
   }
 
   private static Function<TransferState, Result<TransferState, IrrecoverableError>> fileBlockWriter(FileWriter fileWriter) {
     return (state) -> {
+      logger.log("Writing file block #" + state.blockNumber);
       try {
         fileWriter.writeBlock(state.blockData);
       } catch (IOException e) {
