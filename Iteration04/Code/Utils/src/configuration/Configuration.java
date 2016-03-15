@@ -34,6 +34,9 @@ public class Configuration {
 				int m = sc.nextInt(); // Could add more error checking here.
 				
 				switch (m) {
+					case 0:
+						System.exit(1);
+						break;
 					case 1: // Uses the intermediate host
 						applicationMode = Mode.DEBUG_MODE;
 						SERVER_PORT = 69;

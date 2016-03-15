@@ -52,7 +52,8 @@ public class TftpWriteTransfer {
 			return;
 		}
 
-		TransferState currentState = reqResult.success;
+		TransferState currentState = reqResult.success;		
+		logger.logAlways("Successfully sent request to server.");
 
 		// send file, block by block
 		do {
@@ -73,7 +74,7 @@ public class TftpWriteTransfer {
 			}
 		} while (currentState.blockData.length == Configuration.BLOCK_SIZE);
 
-		logger.logAlways("Transfer has ended");
+		logger.logAlways("File transfer has completed successfully.");
 		// closing the stream also closes the file
 		fileBlockStream.close();
 	}

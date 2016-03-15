@@ -96,7 +96,7 @@ public class TftpWriteTransfer {
       } catch (IOException e) {
         e.printStackTrace();
         IrrecoverableError err = new IrrecoverableError(
-            ErrorCode.NOT_DEFINED, "Internal error while writing file.");
+            ErrorCode.NOT_DEFINED, "Internal error while writing file."); // TODO this error should not be sent back when disk is full
         return Result.failure(err);
       }
       return Result.success(state);
