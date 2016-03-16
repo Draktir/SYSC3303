@@ -41,7 +41,7 @@ public class ServerConnection implements Connection {
 		byte[] data = request.getPacketData();
 		DatagramPacket reqDatagram = new DatagramPacket(data, data.length, serverAddress, Configuration.INTERMEDIATE_PORT);
 
-		logger.log("sending request");
+		logger.logAlways("Sending request to " + serverAddress + ":" + Configuration.INTERMEDIATE_PORT);
 		PacketPrinter.print(reqDatagram);
 
 		socket.send(reqDatagram);

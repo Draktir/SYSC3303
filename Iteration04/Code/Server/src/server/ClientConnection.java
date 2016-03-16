@@ -7,14 +7,18 @@ import java.util.Date;
 
 import packet.ErrorPacket;
 import packet.ErrorPacket.ErrorCode;
-import tftp_transfer.Connection;
-import tftp_transfer.TransferId;
 import packet.ErrorPacketBuilder;
 import packet.Packet;
 import packet.Request;
+
+import tftp_transfer.Connection;
+import tftp_transfer.TransferId;
+
+import utils.Logger;
 import utils.PacketPrinter;
 
 public class ClientConnection implements Connection {
+  private final Logger logger = new Logger("ClientConnection");
   public final TransferId clientTid;
   private final DatagramSocket socket;
 
@@ -35,7 +39,7 @@ public class ClientConnection implements Connection {
     DatagramPacket sendDatagram = new DatagramPacket(
         data, data.length, remoteHost, remotePort);
 
-    System.out.println("[CLIENT-CONNECTION] sending packet");
+    logger.log("Sending packet");
     PacketPrinter.print(sendDatagram);
 
     socket.send(sendDatagram);
@@ -58,13 +62,13 @@ public class ClientConnection implements Connection {
       buffer = new byte[517];
       receiveDatagram = new DatagramPacket(buffer, 517);
 
-      System.out.println("[CLIENT-CONNECTION] Waiting for response from client on port " + socket.getLocalPort());
+      logger.log("Waiting for response from client on port " + socket.getLocalPort());
 
       long tsStart = new Date().getTime();
       try {
         socket.receive(receiveDatagram);
       } catch (SocketTimeoutException e) {
-        System.out.println("[CLIENT-CONNECTION] Response timed out.");
+        logger.logAlways("Response timed out.");
         throw e;
       } catch (IOException e) {
         e.printStackTrace();
@@ -73,7 +77,7 @@ public class ClientConnection implements Connection {
       }
       long tsStop = new Date().getTime();
 
-      System.out.println("[CLIENT-CONNECTION] Packet received.");
+      logger.log("Packet received.");
       PacketPrinter.print(receiveDatagram);
 
       // ensure the client TID is correct
@@ -87,7 +91,7 @@ public class ClientConnection implements Connection {
           e.printStackTrace();
         }
 
-        System.err.println("[CLIENT-CONNECTION] Waiting for another packet.");
+        System.err.println("[CLIENT-CONNECTION] Waiting for another packet."); // Why is this an error message?
         receiveDatagram = null;
       }
     } while (receiveDatagram == null);
@@ -96,9 +100,9 @@ public class ClientConnection implements Connection {
   }
 
   private void handleInvalidTid(DatagramPacket receiveDatagram) {
-    System.err.println("[CLIENT-CONNECTION] Received packet with wrong TID");
-    System.err.println("  > Received:   " + receiveDatagram.getAddress() + " " + receiveDatagram.getPort());
-    System.err.println("  > Expected:   " + clientTid.address + " " + clientTid.port);
+    logger.logError("Received packet with wrong TID");
+    logger.logError("  > Received:   " + receiveDatagram.getAddress() + " " + receiveDatagram.getPort());
+    logger.logError("  > Expected:   " + clientTid.address + " " + clientTid.port);
     // respond to the rogue client with an appropriate error packet
     ErrorPacket errPacket = new ErrorPacketBuilder()
         .setErrorCode(ErrorCode.UNKNOWN_TRANSFER_ID)
@@ -107,7 +111,7 @@ public class ClientConnection implements Connection {
         .setRemotePort(receiveDatagram.getPort())
         .buildErrorPacket();
 
-    System.err.println("[CLIENT-CONNECTION] Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
+    logger.logError("Sending error to client with invalid TID\n" + errPacket.toString() + "\n");
     
     byte[] errData = errPacket.getPacketData();
     DatagramPacket errDatagram = new DatagramPacket(errData, errData.length,
@@ -119,7 +123,7 @@ public class ClientConnection implements Connection {
       socket.send(errDatagram);
     } catch (IOException e) {
       e.printStackTrace();
-      System.err.println("[CLIENT-CONNECTION] Error sending error packet to unknown client. Ignoring this error.");
+      logger.logError("Error sending error packet to unknown client. Ignoring this error.");
     }
   }
 }
