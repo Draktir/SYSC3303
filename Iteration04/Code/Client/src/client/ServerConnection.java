@@ -39,9 +39,10 @@ public class ServerConnection implements Connection {
 	 */
 	public void sendRequest(Request request) throws IOException {
 		byte[] data = request.getPacketData();
-		DatagramPacket reqDatagram = new DatagramPacket(data, data.length, serverAddress, Configuration.get().INTERMEDIATE_PORT);
+		DatagramPacket reqDatagram = new DatagramPacket(data, data.length, 
+				serverAddress, Configuration.get().CLIENT_CONNECT_TO_PORT);
 
-		logger.logAlways("Sending request to " + serverAddress + ":" + Configuration.get().INTERMEDIATE_PORT);
+		logger.logAlways("Sending request to " + serverAddress + ":" + Configuration.get().CLIENT_CONNECT_TO_PORT);
 		PacketPrinter.print(reqDatagram);
 
 		socket.send(reqDatagram);
@@ -54,14 +55,13 @@ public class ServerConnection implements Connection {
 	 * @throws IOException
 	 */
 	public void sendPacket(Packet packet) throws IOException {
-		if (serverTid == null) {
-			throw new RuntimeException("Do not know the Server's receiving port. Make sure to send a request first.");
-		}
-
+		// if we haven't heard from the server yet, send to the well-known port
+		int serverPort = (serverTid == null) ? Configuration.get().CLIENT_CONNECT_TO_PORT : serverTid.port;
+		
 		byte[] data = packet.getPacketData();
-		DatagramPacket sendDatagram = new DatagramPacket(data, data.length, serverAddress, serverTid.port);
+		DatagramPacket sendDatagram = new DatagramPacket(data, data.length, serverAddress, serverPort);
 
-		logger.log("[SERVER-CONNECTION] sending packet");
+		logger.log("sending packet");
 		PacketPrinter.print(sendDatagram);
 
 		socket.send(sendDatagram);
@@ -79,7 +79,7 @@ public class ServerConnection implements Connection {
 			return null;
 		}
 
-		// receive packets until we receive a packet from the correct host
+		// receive packets until we receive a packet from the correct host or time out
 		do {
 			buffer = new byte[517];
 			receiveDatagram = new DatagramPacket(buffer, 517);

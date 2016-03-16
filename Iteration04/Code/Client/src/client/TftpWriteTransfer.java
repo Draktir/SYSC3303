@@ -8,6 +8,7 @@ import tftp_transfer.*;
 import utils.IrrecoverableError;
 import utils.Logger;
 
+import java.nio.file.Paths;
 import java.util.function.Function;
 
 public class TftpWriteTransfer {
@@ -15,13 +16,12 @@ public class TftpWriteTransfer {
 
 	public static void start(TransferState transferState) {
 		// prepare to read the requested file
-		final Result<FileReader, IrrecoverableError> fileResult = FileOperations.createFileReader
-				.apply(transferState.request.getFilename());
+		final Result<FileReader, IrrecoverableError> fileResult = FileOperations.createFileReader.apply(
+				Paths.get(Configuration.get().CLIENT_PATH).resolve(transferState.request.getFilename()).toString());
 
 		if (fileResult.FAILURE) {
-			if (fileResult.failure.errorCode != null) {
-				NetworkOperations.sendError.accept(transferState, fileResult.failure);
-			}
+			// we haven't talked to the server yet, so no need to send an error
+			logger.logError("Error while preparing file. " + fileResult.failure.message);
 			return;
 		}
 

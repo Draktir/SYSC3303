@@ -13,7 +13,14 @@ package client;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+
+import configuration.Configuration;
 import configuration.ConfigurationMenu;
 import packet.RequestBuilder;
 
@@ -23,8 +30,9 @@ import tftp_transfer.TransferState;
 import tftp_transfer.TransferStateBuilder;
 
 public class Client {
+	private Scanner scan = new Scanner(System.in);
 	// 2 byte range for block numbers, less block number 0
-	final double MAX_FILE_SIZE = 512 * (Math.pow(2, 16) - 1);
+	private final double MAX_FILE_SIZE = Configuration.get().BLOCK_SIZE * (Math.pow(2, 16) - 1);
 
 	/**
 	 * Main method which creates an instance of Client.
@@ -36,7 +44,6 @@ public class Client {
 	}
 
 	public void start() {
-		Scanner scan = new Scanner(System.in);
 		int command;
 
 		// let user choose a configuration
@@ -61,24 +68,12 @@ public class Client {
 
 			command = scan.nextInt();
 
-			String filename = "";
-
 			switch (command) {
 				case 1:
-					do {
-						System.out.print("Please enter a file name: ");
-						filename = scan.next();
-					} while (!this.validateFilename(filename));
-					initiateTftpWrite(serverAddress, filename);
+					initiateTftpWrite(serverAddress);
 					break;
-	
 				case 2:
-					// TODO: What should happen if the file already exists?
-					do {
-						System.out.print("Please enter a file name: ");
-						filename = scan.next();
-					} while (filename == null || filename.length() == 0);
-					initiateTftpRead(serverAddress, filename);
+					initiateTftpRead(serverAddress);
 					break;
 			}
 		} while (command != 0);
@@ -86,7 +81,13 @@ public class Client {
 		scan.close();
 	}
 
-	private void initiateTftpWrite(InetAddress serverAddress, String filename) {
+	private void initiateTftpWrite(InetAddress serverAddress) {
+		File selectedFile = userSelectFile(getClientFilePath());
+		
+		if (selectedFile == null) {
+			return;
+		}
+		
 		final ServerConnection connection;
 		try {
 			connection = new ServerConnection(serverAddress);
@@ -94,18 +95,20 @@ public class Client {
 			e.printStackTrace();
 			return;
 		}
-
+		
 		TransferState initialState = new TransferStateBuilder()
 				.connection(connection)
 				.request(new RequestBuilder()
-						.setFilename(filename)
+						.setFilename(selectedFile.getName())
 						.setMode("netAsCiI")
 						.buildWriteRequest())
 				.build();
 		TftpWriteTransfer.start(initialState);
 	}
 
-	private void initiateTftpRead(InetAddress serverAddress, String filename) {
+	private void initiateTftpRead(InetAddress serverAddress) {
+		String filename = userEnterFilename(getClientFilePath());
+		
 		final ServerConnection connection;
 		try {
 			connection = new ServerConnection(serverAddress);
@@ -124,26 +127,80 @@ public class Client {
 		TftpReadTransfer.start(initialState);
 	}
 
-	private boolean validateFilename(String filename) {
-		File f = new File(filename);
-
-		if (!f.exists()) {
+	private Path getClientFilePath() {
+		if (Configuration.get().CLIENT_PATH != null && Configuration.get().CLIENT_PATH.length() > 0) {
+			return Paths.get(Configuration.get().CLIENT_PATH);
+		} else {
+			return Paths.get(System.getProperty("user.dir"));
+		}
+	}
+	
+	private File userSelectFile(Path path) {
+		// show a list of all files in the client directory
+		List<File> files = Arrays.asList(path.toFile().listFiles())
+			.stream()
+			.filter((f) -> !f.isDirectory())
+			.collect(Collectors.toList());
+		
+		if (files.size() == 0) {
+			System.out.println("There are not files in " + path.toString());
+			return null;
+		}
+		
+		System.out.println("\nPlease select a file from " + path.toString());
+		for (int i = 0; i < files.size(); i++) {
+			System.out.println("  [" + i + "] " + files.get(i).getName());
+		}
+		
+		int selected = -1;
+		do {
+			System.out.print(" > ");
+			selected = scan.nextInt();
+		} while (selected < 0 || selected > files.size() - 1 || !validateWriteFile(files.get(selected)));
+		
+		return files.get(selected);
+	}
+	
+	
+	private boolean validateWriteFile(File file) {
+		if (!file.exists()) {
 			System.out.println("The file does not exist.");
 			return false;
 		}
-		if (f.isDirectory()) {
-			System.out.println("The filename you entered is a directory.");
+		if (file.isDirectory()) {
+			System.out.println(file.toString() + " is a directory. Cannot send a directory");
 			return false;
 		}
-		if (f.length() > MAX_FILE_SIZE) {
-			System.out.println("The file is too big. size: " + f.length() + " max: " + MAX_FILE_SIZE);
+		if (file.length() > MAX_FILE_SIZE) {
+			System.out.println("The file is too big. size: " + file.length() + " max: " + MAX_FILE_SIZE);
 			return false;
 		}
-		if (f.length() < 1) {
+		if (file.length() < 1) {
 			System.out.println("The file is empty. Cannot send an empty file.");
 			return false;
 		}
 
+		return true;
+	}
+	
+	private String userEnterFilename(Path path) {
+		String filename = null;
+		
+		do {
+			System.out.print("Please enter a filename: ");
+			filename = scan.next();
+		} while (filename.equals("") || !validateReadFilename(path, filename));
+		
+		return filename;
+	}
+	
+	private boolean validateReadFilename(Path path, String filename) {
+		File f = new File(path.resolve(filename).toString());
+		
+		if (f.exists()) {
+			System.out.println("A file with that name already exists in " + path.toString());
+			return false;
+		}
 		return true;
 	}
 }

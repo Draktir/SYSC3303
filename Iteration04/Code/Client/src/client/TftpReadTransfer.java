@@ -1,6 +1,6 @@
 package client;
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.util.function.Function;
 
 import configuration.Configuration;
@@ -17,12 +17,11 @@ public class TftpReadTransfer {
 	public static void start(TransferState transferState) {
 		// create the file
 		final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(
-				Configuration.get().CLIENT_PATH + transferState.request.getFilename());
+				Paths.get(Configuration.get().CLIENT_PATH).resolve(transferState.request.getFilename()).toString());
 
 		if (fileResult.FAILURE) {
-			if (fileResult.failure.errorCode != null) {
-				NetworkOperations.sendError.accept(transferState, fileResult.failure);
-			}
+			// we haven't talked to the server yet, so no need to send an error
+			logger.logError("Error while creating file. " + fileResult.failure.message);
 			errorCleanup(transferState);
 			return;
 		}
@@ -89,9 +88,7 @@ public class TftpReadTransfer {
 	}
 
 	private static void errorCleanup(TransferState transferState) {
-		File f = new File(transferState.request.getFilename());
-		if (f.exists()) {
-			f.delete();
-		}
+		FileOperations.deleteFile.accept(
+				Configuration.get().CLIENT_PATH + transferState.request.getFilename());
 	}
 }
