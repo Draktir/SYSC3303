@@ -3,15 +3,14 @@ package configuration;
 public final class Configuration {
 	private static Configuration instance = null;
 	
-	public final boolean VERBOSE; 	// print all logging output true/false.
-	public final int TIMEOUT_TIME;	// Timeout time for all sockets in milliseconds.
-	public final int MAX_RETRIES; 		// Max retries to send a timed out packet
-	public final int CLIENT_CONNECT_TO_PORT;	// Port the client will send a request to
+	public final boolean VERBOSE; // print all logging output true/false.
+	public final int TIMEOUT_TIME; // Timeout time for all sockets in milliseconds.
+	public final int MAX_RETRIES; // Max retries to send a timed out packet
+	public final int CLIENT_CONNECT_TO_PORT; // Port the client will send a request to
 	public final int INTERMEDIATE_PORT; // port the intermediate host will listen on
 	public final int SERVER_PORT;	// Port the server is listening on for requests
-	public final int BLOCK_SIZE;		// Block size of file data
-	public final String CLIENT_PATH; // path client will store files under, trailing slash required if not empty
-	public final String SERVER_PATH; // path server will store files under, trailing slash required if not empty
+	public final int BLOCK_SIZE; // Block size of file data
+	public final String FILE_PATH; // path to store files under, trailing slash required if not empty
 
 	// default constructor assigns default values
 	private Configuration() {
@@ -22,12 +21,11 @@ public final class Configuration {
 		INTERMEDIATE_PORT = 68;
 		SERVER_PORT = 69;
 		BLOCK_SIZE = 512;
-		CLIENT_PATH = "";
-		SERVER_PATH = "";
+		FILE_PATH = "";
 	}
 	
 	private Configuration(boolean verbose, int timeoutTime, int maxRetries, int clientConnectToPort, int intermediatePort,
-			int serverPort, int blockSize, String clientPath, String serverPath) {
+			int serverPort, int blockSize, String filePath) {
 		VERBOSE = verbose;
 		TIMEOUT_TIME = timeoutTime;
 		MAX_RETRIES = maxRetries;
@@ -35,8 +33,7 @@ public final class Configuration {
 		INTERMEDIATE_PORT = intermediatePort;
 		SERVER_PORT = serverPort;
 		BLOCK_SIZE = blockSize;
-		CLIENT_PATH = clientPath;
-		SERVER_PATH = serverPath;
+		FILE_PATH = filePath;
 	}
 	
 	
@@ -54,10 +51,10 @@ public final class Configuration {
 	 * @param serverPath
 	 */
 	public static void set(boolean verbose, int timeoutTime, int maxRetries, int clientConnectToPort, int intermediatePort,
-			int serverPort, int blockSize, String clientPath, String serverPath) {
+			int serverPort, int blockSize, String filePath) {
 		
 		Configuration.instance = new Configuration(verbose, timeoutTime, maxRetries, clientConnectToPort, intermediatePort, 
-				serverPort, blockSize, clientPath, serverPath);
+				serverPort, blockSize, filePath);
 	}
 	
 	/**
@@ -77,6 +74,6 @@ public final class Configuration {
 		return "Configuration [\n    VERBOSE=" + VERBOSE + ", \n    TIMEOUT_TIME=" + TIMEOUT_TIME + ", \n    MAX_RETRIES="
 				+ MAX_RETRIES + ", \n    CLIENT_CONNECT_TO_PORT=" + CLIENT_CONNECT_TO_PORT + ", \n    INTERMEDIATE_PORT="
 				+ INTERMEDIATE_PORT + ", \n    SERVER_PORT=" + SERVER_PORT + ", \n    BLOCK_SIZE=" + BLOCK_SIZE
-				+ ", \n    CLIENT_PATH=" + CLIENT_PATH + ", \n    SERVER_PATH=" + SERVER_PATH + "\n]";
+				+ ", \n    FILE_PATH=" + FILE_PATH + "\n]";
 	}
 }

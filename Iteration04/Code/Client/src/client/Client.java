@@ -128,8 +128,8 @@ public class Client {
 	}
 
 	private Path getClientFilePath() {
-		if (Configuration.get().CLIENT_PATH != null && Configuration.get().CLIENT_PATH.length() > 0) {
-			return Paths.get(Configuration.get().CLIENT_PATH);
+		if (Configuration.get().FILE_PATH != null && Configuration.get().FILE_PATH.length() > 0) {
+			return Paths.get(Configuration.get().FILE_PATH);
 		} else {
 			return Paths.get(System.getProperty("user.dir"));
 		}

@@ -17,7 +17,7 @@ public class TftpReadTransfer {
   public static void start(TransferState transferState) {
     // prepare to read from the requested file
     final Result<FileReader, IrrecoverableError> fileResult = FileOperations.createFileReader.apply(
-    		Paths.get(Configuration.get().SERVER_PATH).resolve(transferState.request.getFilename()).toString());
+    		Paths.get(Configuration.get().FILE_PATH).resolve(transferState.request.getFilename()).toString());
 
     if (fileResult.FAILURE) {
     	if (fileResult.failure.errorCode != null) {

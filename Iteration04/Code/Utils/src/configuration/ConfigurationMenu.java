@@ -35,22 +35,22 @@ public class ConfigurationMenu {
 						break;
 					case 1: // Uses the intermediate host, verbose
 						Configuration.set(true, conf.TIMEOUT_TIME, conf.MAX_RETRIES, 68, 
-								68, 69, conf.BLOCK_SIZE, conf.CLIENT_PATH, conf.SERVER_PATH);
+								68, 69, conf.BLOCK_SIZE, conf.FILE_PATH);
 						modeSet = true;
 						break;
 					case 2: // Ignores intermediate host, very verbose.
 						Configuration.set(true, conf.TIMEOUT_TIME, conf.MAX_RETRIES, 69, 
-								conf.INTERMEDIATE_PORT, 69, conf.BLOCK_SIZE, conf.CLIENT_PATH, conf.SERVER_PATH);
+								conf.INTERMEDIATE_PORT, 69, conf.BLOCK_SIZE, conf.FILE_PATH);
 						modeSet = true;
 						break;
 					case 3: // Ignores intermediate host, very little output.
 						Configuration.set(false, conf.TIMEOUT_TIME, conf.MAX_RETRIES, 69, 
-								conf.INTERMEDIATE_PORT, 69, conf.BLOCK_SIZE, conf.CLIENT_PATH, conf.SERVER_PATH);
+								conf.INTERMEDIATE_PORT, 69, conf.BLOCK_SIZE, conf.FILE_PATH);
 						modeSet = true;
 						break;
 					case 4:	// Debug mode for Linux as it requires root permissions to use ports 68, 69
 						Configuration.set(true, conf.TIMEOUT_TIME, conf.MAX_RETRIES, 6800, 
-								6800, 6900, conf.BLOCK_SIZE, conf.CLIENT_PATH, conf.SERVER_PATH);
+								6800, 6900, conf.BLOCK_SIZE, conf.FILE_PATH);
 						modeSet = true;
 						break;
 					case 5:
@@ -97,14 +97,11 @@ public class ConfigurationMenu {
 		System.out.print("BLOCK_SIZE: Size of file blocks in bytes (" + conf.BLOCK_SIZE + "): ");
 		int blockSize = getPositiveIntOrDefault(conf.BLOCK_SIZE);
 		
-		System.out.println("CLIENT_PATH: Path the client stores files under, using '/' (" + conf.CLIENT_PATH + "): ");
-		String clientPath = getPathOrNothing();
-		
-		System.out.println("SERVER_PATH: Path the server stores files under, using '/' (" + conf.SERVER_PATH + "): ");
-		String serverPath = getPathOrNothing();
+		System.out.println("FILE_PATH: Path to store files under, using '/' (" + conf.FILE_PATH + "): ");
+		String filePath = getPathOrNothing();
 		
 		Configuration.set(verbose, timeoutTime, maxRetries, clientConnectToPort, intermediatePort, serverPort, 
-				blockSize, clientPath, serverPath);
+				blockSize, filePath);
 		
 		return true;
 	}

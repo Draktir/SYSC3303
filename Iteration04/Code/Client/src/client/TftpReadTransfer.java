@@ -17,7 +17,7 @@ public class TftpReadTransfer {
 	public static void start(TransferState transferState) {
 		// create the file
 		final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(
-				Paths.get(Configuration.get().CLIENT_PATH).resolve(transferState.request.getFilename()).toString());
+				Paths.get(Configuration.get().FILE_PATH).resolve(transferState.request.getFilename()).toString());
 
 		if (fileResult.FAILURE) {
 			// we haven't talked to the server yet, so no need to send an error
@@ -89,6 +89,6 @@ public class TftpReadTransfer {
 
 	private static void errorCleanup(TransferState transferState) {
 		FileOperations.deleteFile.accept(
-				Configuration.get().CLIENT_PATH + transferState.request.getFilename());
+				Paths.get(Configuration.get().FILE_PATH).resolve(transferState.request.getFilename()).toString());
 	}
 }
