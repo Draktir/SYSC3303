@@ -60,6 +60,7 @@ public class TftpReadTransfer {
 		}
 
 		TransferState currentState = reqResult.success;
+		boolean transferSuccess = true;
 
 		// perform the file transfer
 		do {
@@ -84,11 +85,19 @@ public class TftpReadTransfer {
 					NetworkOperations.sendError.accept(currentState, stepResult.failure);
 				}
 				errorCleanup(currentState);
+				transferSuccess = false;
 				break;
 			}
 		} while (currentState.blockData.length == Configuration.get().BLOCK_SIZE);
 
-		logger.logAlways("Transfer has ended.");
+		logger.log("Transfer has ended.");
+		
+		if (transferSuccess) {
+			logger.logAlways("File " + currentState.request.getFilename() + " received successfully.");
+		} else {
+			logger.logAlways("Error occured. No file transferred.");
+		}
+		
 		fileWriter.close();
 	}
 

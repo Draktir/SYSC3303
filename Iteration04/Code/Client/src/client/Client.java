@@ -140,6 +140,7 @@ public class Client {
 		List<File> files = Arrays.asList(path.toFile().listFiles())
 			.stream()
 			.filter((f) -> !f.isDirectory())
+			.sorted((f1, f2) -> f1.getName().compareTo(f2.getName()))
 			.collect(Collectors.toList());
 		
 		if (files.size() == 0) {

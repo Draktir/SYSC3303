@@ -35,6 +35,8 @@ public class TftpReadTransfer {
     final Function<TransferState, Result<TransferState, IrrecoverableError>> readFileBlock = 
     		FileOperations.createFileBlockReader(fileReader);
     
+    boolean transferSuccess = true;
+    
     // send file, block by block
     do {
       Result<TransferState, IrrecoverableError> stepResult =
@@ -51,11 +53,19 @@ public class TftpReadTransfer {
         if (stepResult.failure.errorCode != null) {
           NetworkOperations.sendError.accept(transferState, stepResult.failure);
         }
+        transferSuccess = false;
         break;
       }
     } while(transferState.blockData.length == Configuration.get().BLOCK_SIZE);
-
-    logger.logAlways("Transfer complete. Terminating thread.");
+    
+    logger.log("Transfer ended.");
+    
+    if (transferSuccess) {
+    	logger.logAlways("File " + transferState.request.getFilename() + " sent successfully.");
+    } else {
+    	logger.logError("Error occured. No file transferred.");
+    }
+    
     fileReader.close();
   }
 }

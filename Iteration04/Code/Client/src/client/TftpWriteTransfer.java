@@ -52,10 +52,12 @@ public class TftpWriteTransfer {
 			fileReader.close();
 			return;
 		}
-
+		
 		TransferState currentState = reqResult.success;		
 		logger.logAlways("Successfully sent request to server.");
 
+		boolean transferSuccess = true;
+		
 		// send file, block by block
 		do {
 			Result<TransferState, IrrecoverableError> stepResult = readFileBlock
@@ -72,11 +74,19 @@ public class TftpWriteTransfer {
 				if (stepResult.failure.errorCode != null) {
 					NetworkOperations.sendError.accept(transferState, stepResult.failure);
 				}
+				transferSuccess = false;
 				break;
 			}
 		} while (currentState.blockData.length == Configuration.get().BLOCK_SIZE);
 
-		logger.logAlways("Transfer has ended");
+		logger.log("Transfer has ended");
+		
+		if (transferSuccess) {
+			logger.logAlways("File " + currentState.request.getFilename() + " sent successfully.");
+		} else {
+			logger.logError("Error occured. No file transferred.");
+		}
+		
 		fileReader.close();
 	}
 }

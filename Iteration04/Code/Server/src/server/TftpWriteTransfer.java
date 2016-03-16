@@ -64,6 +64,7 @@ public class TftpWriteTransfer {
     }
     
     TransferState currentState = ackResult.success;
+    boolean transferSuccess = true;
     
     // perform the file transfer
     do {
@@ -89,11 +90,19 @@ public class TftpWriteTransfer {
           NetworkOperations.sendError.accept(currentState, stepResult.failure);
         }
         errorCleanup(currentState);
+        transferSuccess = false;
         break;
       }
     } while (currentState.blockData.length == 512);
     
-    logger.logAlways("Transfer has ended");
+    logger.log("Transfer has ended");
+    
+    if (transferSuccess) {
+    	logger.logAlways("File " + currentState.request.getFilename() + " received successfully.");
+    } else {
+    	logger.logError("Error occured. No file transferred");
+    }
+    
     fileWriter.close();
   }
 

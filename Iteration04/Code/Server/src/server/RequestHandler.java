@@ -87,6 +87,7 @@ class RequestHandler implements Runnable {
     
     if (result.FAILURE) {
       NetworkOperations.sendError.accept(transferState, result.failure);
+      logger.logError("Error occured. Terminating connection thread.");
     } else {
       logger.logAlways("Transfer has ended. Terminating connection thread.");
     }
