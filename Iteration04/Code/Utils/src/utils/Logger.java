@@ -39,21 +39,11 @@ public class Logger {
 	}
 
 	public String getTime() {
-		String str = null;
-		int h = calendar.get(Calendar.HOUR_OF_DAY) % 12;
+		int h = calendar.get(Calendar.HOUR_OF_DAY);
 		int m = calendar.get(Calendar.MINUTE);
 		int s = calendar.get(Calendar.SECOND);
-		int timeOfDay = calendar.get(Calendar.AM);
+		int ms = calendar.get(Calendar.MILLISECOND);
 
-		str = h + ":";
-		str += m + ":";
-		str += s;
-
-		if (timeOfDay == 0)
-			str += "AM";
-		if (timeOfDay == 1)
-			str += "PM";
-
-		return str;
+		return h + ":" + m + ":" + s + ":" + ms;
 	}
 }
