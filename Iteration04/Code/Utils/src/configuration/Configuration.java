@@ -1,6 +1,6 @@
 package configuration;
 
-public class Configuration {
+public final class Configuration {
 	private static Configuration instance = null;
 	
 	public final boolean VERBOSE; 	// print all logging output true/false.
@@ -14,7 +14,7 @@ public class Configuration {
 	public final String SERVER_PATH; // path server will store files under, trailing slash required if not empty
 
 	// default constructor assigns default values
-	public Configuration() {
+	private Configuration() {
 		VERBOSE = true;
 		TIMEOUT_TIME = 5000;
 		MAX_RETRIES = 3;
@@ -26,7 +26,7 @@ public class Configuration {
 		SERVER_PATH = "";
 	}
 	
-	public Configuration(boolean verbose, int timeoutTime, int maxRetries, int clientConnectToPort, int intermediatePort,
+	private Configuration(boolean verbose, int timeoutTime, int maxRetries, int clientConnectToPort, int intermediatePort,
 			int serverPort, int blockSize, String clientPath, String serverPath) {
 		VERBOSE = verbose;
 		TIMEOUT_TIME = timeoutTime;
