@@ -3,7 +3,10 @@ package configuration;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
+import utils.Logger;
+
 public class ConfigurationMenu {
+	private final Logger logger = new Logger("Configuration");
 	private Scanner sc = new Scanner(System.in);
 	
 	public void show() {
@@ -61,6 +64,8 @@ public class ConfigurationMenu {
 				System.err.println("An error has occured in the configuration setup.");
 			}
 		} while (modeSet == false);
+
+		logger.log("Using configruation: " + Configuration.get().toString());
 	}
 	
 	private boolean configureManualMode() {
@@ -69,6 +74,7 @@ public class ConfigurationMenu {
 		
 		System.out.print("\nMODE: Do you want verbose output (y/n)? ");
 		boolean verbose = sc.next().equals("y");
+		sc.nextLine();
 		
 		System.out.print("TIMEOUT: Timeout time in ms (" + conf.TIMEOUT_TIME + "): ");
 		int timeoutTime = getPositiveIntOrDefault(conf.TIMEOUT_TIME);

@@ -5,7 +5,7 @@ public final class Configuration {
 	
 	public final boolean VERBOSE; 	// print all logging output true/false.
 	public final int TIMEOUT_TIME;	// Timeout time for all sockets in milliseconds.
-	public final int MAX_RETRIES; 		// Max retries before we give up
+	public final int MAX_RETRIES; 		// Max retries to send a timed out packet
 	public final int CLIENT_CONNECT_TO_PORT;	// Port the client will send a request to
 	public final int INTERMEDIATE_PORT; // port the intermediate host will listen on
 	public final int SERVER_PORT;	// Port the server is listening on for requests
@@ -71,5 +71,12 @@ public final class Configuration {
 		}
 		return instance;
 	}
-	
+
+	@Override
+	public String toString() {
+		return "Configuration [\n    VERBOSE=" + VERBOSE + ", \n    TIMEOUT_TIME=" + TIMEOUT_TIME + ", \n    MAX_RETRIES="
+				+ MAX_RETRIES + ", \n    CLIENT_CONNECT_TO_PORT=" + CLIENT_CONNECT_TO_PORT + ", \n    INTERMEDIATE_PORT="
+				+ INTERMEDIATE_PORT + ", \n    SERVER_PORT=" + SERVER_PORT + ", \n    BLOCK_SIZE=" + BLOCK_SIZE
+				+ ", \n    CLIENT_PATH=" + CLIENT_PATH + ", \n    SERVER_PATH=" + SERVER_PATH + "\n]";
+	}
 }
