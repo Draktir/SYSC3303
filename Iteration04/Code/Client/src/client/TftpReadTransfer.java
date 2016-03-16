@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import configuration.Configuration;
 import file_io.FileWriter;
+import packet.ErrorPacket.ErrorCode;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
@@ -22,7 +23,11 @@ public class TftpReadTransfer {
 		if (fileResult.FAILURE) {
 			// we haven't talked to the server yet, so no need to send an error
 			logger.logError("Error while creating file. " + fileResult.failure.message);
-			errorCleanup(transferState);
+			
+			// only delete file if it doesn't exist already
+			if (fileResult.failure.errorCode != ErrorCode.FILE_ALREADY_EXISTS) {
+				errorCleanup(transferState);
+			}
 			return;
 		}
 

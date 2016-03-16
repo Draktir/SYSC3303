@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import configuration.Configuration;
 import file_io.FileWriter;
+import packet.ErrorPacket.ErrorCode;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
@@ -23,7 +24,11 @@ public class TftpWriteTransfer {
     	if (fileResult.failure.errorCode != null) {
 				NetworkOperations.sendError.accept(transferState, fileResult.failure);
 			}
-    	errorCleanup(transferState);
+    	
+    	// only delete file if it doesn't already exist
+    	if (fileResult.failure.errorCode != ErrorCode.FILE_ALREADY_EXISTS) {
+      	errorCleanup(transferState);
+    	}
     	return;
     }
 
