@@ -1,81 +1,74 @@
 package configuration;
 
-import java.util.InputMismatchException;
-import java.util.Scanner;
-
 public class Configuration {
-	public static enum Mode {
-		DEBUG_MODE, TEST_MODE, QUIET_MODE, LINUX_MODE
-	};
+	private static Configuration instance = null;
 	
-	public static Mode applicationMode;
+	public final boolean VERBOSE; 	// print all logging output true/false.
+	public final int TIMEOUT_TIME;	// Timeout time for all sockets in milliseconds.
+	public final int MAX_RETRIES; 		// Max retries before we give up
+	public final int CLIENT_CONNECT_TO_PORT;	// Port the client will send a request to
+	public final int INTERMEDIATE_PORT; // port the intermediate host will listen on
+	public final int SERVER_PORT;	// Port the server is listening on for requests
+	public final int BLOCK_SIZE;		// Block size of file data
+	public final String CLIENT_PATH; // path client will store files under, trailing slash required if not empty
+	public final String SERVER_PATH; // path server will store files under, trailing slash required if not empty
 
-	public static final int TIMEOUT_TIME = 5000;	// Timeout time for all sockets in milliseconds.
-	public static final int MAX_RETRIES = 3; 		// Max retries before we give up
-	public static int INTERMEDIATE_PORT;	// Port the intermediate host is listening on for requests
-	public static int SERVER_PORT;			// Port the server is listening on for requests
-	public static final int BLOCK_SIZE = 512;		// Block size of file data
-
-	public static boolean setMode() {
-		boolean modeSet = false;
-		@SuppressWarnings("resource")
-    Scanner sc = new Scanner(System.in);
+	// default constructor assigns default values
+	public Configuration() {
+		VERBOSE = true;
+		TIMEOUT_TIME = 5000;
+		MAX_RETRIES = 3;
+		CLIENT_CONNECT_TO_PORT = 68;
+		INTERMEDIATE_PORT = 68;
+		SERVER_PORT = 69;
+		BLOCK_SIZE = 512;
+		CLIENT_PATH = "";
+		SERVER_PATH = "";
+	}
+	
+	public Configuration(boolean verbose, int timeoutTime, int maxRetries, int clientConnectToPort, int intermediatePort,
+			int serverPort, int blockSize, String clientPath, String serverPath) {
+		VERBOSE = verbose;
+		TIMEOUT_TIME = timeoutTime;
+		MAX_RETRIES = maxRetries;
+		CLIENT_CONNECT_TO_PORT = clientConnectToPort;
+		INTERMEDIATE_PORT = intermediatePort;
+		SERVER_PORT = serverPort;
+		BLOCK_SIZE = blockSize;
+		CLIENT_PATH = clientPath;
+		SERVER_PATH = serverPath;
+	}
+	
+	
+	/**
+	 * globally sets the given configuration
+	 * @param mode
+	 * @param timeoutTime
+	 * @param maxRetries
+	 * @param clientConnectToPort
+	 * @param intermediatePort
+	 * @param serverPort
+	 * @param blockSize
+	 * @param clientPath
+	 * @param serverPath
+	 */
+	public static void set(boolean verbose, int timeoutTime, int maxRetries, int clientConnectToPort, int intermediatePort,
+			int serverPort, int blockSize, String clientPath, String serverPath) {
 		
-		do {
-			System.out.println("Select a mode to run in: ");
-			System.out.println("  [ 1 ] Debug Mode [uses Intermediate Host]");
-			System.out.println("  [ 2 ] Test Mode  [ignores Intermediate Host; verbose]");
-			System.out.println("  [ 3 ] Quiet Mode [ignores Intermediate Host]");
-			System.out.println("  [ 4 ] Linux Mode [debug mode compatible with Linux]");
-			System.out.println("  [ 0 ] Exit");
-			System.out.print(" > ");
-			
-			try {
-				int m = sc.nextInt(); // Could add more error checking here.
-				
-				switch (m) {
-					case 0:
-						System.exit(1);
-						break;
-					case 1: // Uses the intermediate host
-						applicationMode = Mode.DEBUG_MODE;
-						SERVER_PORT = 69;
-						INTERMEDIATE_PORT = 68;
-						modeSet = true;
-						break;
-					case 2: // Ignores intermediate host, very verbose.
-						// TODO currently the client reads the "server port" from INTERMEDIATE_PORT
-						applicationMode = Mode.TEST_MODE;
-						SERVER_PORT = 68;
-						INTERMEDIATE_PORT = SERVER_PORT;
-						modeSet = true;
-						break;
-					case 3: // Ignores intermediate host, very little output.
-						// TODO currently the client reads the "server port" from INTERMEDIATE_PORT
-						applicationMode = Mode.QUIET_MODE;
-						SERVER_PORT = 68;
-						INTERMEDIATE_PORT = SERVER_PORT;
-						modeSet = true;
-						break;
-					case 4:	// Debug mode for Linux as it reserves ports 68, 69 for TFTP
-						applicationMode = Mode.LINUX_MODE;
-						INTERMEDIATE_PORT = 6800;
-						SERVER_PORT = 6900;
-						modeSet = true;
-					default:
-						break;
-				}
-			} catch (InputMismatchException e) {
-				e.printStackTrace();
-				modeSet = false;
-				System.err.println("An error has occured in the configuration setup.");
-			}
-		} while (modeSet == false);
-
-		return modeSet;
+		Configuration.instance = new Configuration(verbose, timeoutTime, maxRetries, clientConnectToPort, intermediatePort, 
+				serverPort, blockSize, clientPath, serverPath);
 	}
 	
-	public static Mode getMode() {
-		return applicationMode;
+	/**
+	 * returns the currently active configuration
+	 * @return Configuration
+	 */
+	public static Configuration get() {
+		if (instance == null) {
+			// if nothing has been configured, create a default configuration
+			instance = new Configuration();
+		}
+		return instance;
 	}
+	
 }
