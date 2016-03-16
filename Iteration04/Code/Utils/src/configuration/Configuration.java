@@ -42,7 +42,8 @@ public class Configuration {
 	
 	/**
 	 * globally sets the given configuration
-	 * @param mode
+	 * 
+	 * @param verbose
 	 * @param timeoutTime
 	 * @param maxRetries
 	 * @param clientConnectToPort
