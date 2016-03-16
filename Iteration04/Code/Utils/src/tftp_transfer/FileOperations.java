@@ -24,10 +24,10 @@ import utils.Logger;
 public class FileOperations {
 	private static final Logger logger = new Logger("FileOperations");
 
-	public static Function<TransferState, Result<FileWriter, IrrecoverableError>> createFile = (state) -> {
-		FileWriter fw = new FileWriter(state.request.getFilename());
+	public static Function<String, Result<FileWriter, IrrecoverableError>> createFile = (filepath) -> {
+		FileWriter fw = new FileWriter(filepath);
 		
-		logger.log("Creating file " + state.request.getFilename() + " for writing.");
+		logger.log("Creating file " + filepath + " for writing.");
 		
 		try {
 			fw.createFile();
@@ -40,9 +40,9 @@ public class FileOperations {
 		return Result.success(fw);
 	};
 	
-	public static Consumer<TransferState> deleteFile = (state) -> {
-		File f = new File(state.request.getFilename());
-		logger.log("Deleting " + state.request.getFilename());
+	public static Consumer<String> deleteFile = (filepath) -> {
+		File f = new File(filepath);
+		logger.log("Deleting " + filepath);
 		if (f.exists()) {
 			f.delete();
 		}

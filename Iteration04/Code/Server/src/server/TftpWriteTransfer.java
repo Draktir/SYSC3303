@@ -3,6 +3,7 @@ package server;
 import java.io.File;
 import java.util.function.Function;
 
+import configuration.Configuration;
 import file_io.FileWriter;
 import rop.ROP;
 import rop.Result;
@@ -15,7 +16,8 @@ public class TftpWriteTransfer {
 
   public static void start(TransferState transferState) {
     // create the file
-    final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(transferState);
+    final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(
+    		Configuration.get().SERVER_PATH + transferState.request.getFilename());
     
     if (fileResult.FAILURE) {
     	if (fileResult.failure.errorCode != null) {
