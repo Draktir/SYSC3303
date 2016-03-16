@@ -233,8 +233,10 @@ public class NetworkOperations {
 			return;
 		}
 
-		logger.log("Sending error " + error.errorCode + ": " + error.message);
-		ErrorPacket err = new ErrorPacketBuilder().setErrorCode(error.errorCode).setMessage(error.message)
+		logger.log("Sending error " + error.errorCode + " " + error.message);
+		ErrorPacket err = new ErrorPacketBuilder()
+				.setErrorCode(error.errorCode)
+				.setMessage(error.message)
 				.buildErrorPacket();
 
 		try {

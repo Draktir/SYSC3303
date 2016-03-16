@@ -1,7 +1,7 @@
 package file_io;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -33,14 +33,14 @@ public class FileWriter {
     try {
       file.createNewFile();
     } catch (IOException e) {
-      throw new AccessDeniedException("Could not create file " + filename);
+      throw new AccessDeniedException("Insufficient permissions to create " + filename);
     }
     
     // this is highly unlikely since we were able to create the file,
     // but doesn't hurt to check.
     if (!file.canWrite()) {
       file.delete();
-      throw new AccessDeniedException("Insufficient permission to write to " + filename);
+      throw new AccessDeniedException("Insufficient permissions to write to " + filename);
     }
   }
   
@@ -48,14 +48,33 @@ public class FileWriter {
    * Writes a block of data to the file
    * 
    * @param data
+   * @throws DiskFullException 
    * @throws IOException 
    */
-  public void writeBlock(byte[] data) throws IOException {    
-    // we're lazy, don't create the file stream until we have to
+  public void writeBlock(byte[] data) throws 
+  		FileAlreadyExistsException, AccessDeniedException, FileNotFoundException, DiskFullException {    
     if (fileOut == null) {
-      fileOut = new BufferedOutputStream(new FileOutputStream(filename));
+      File f = new File(filename);
+      if (!f.exists()) {
+      	createFile();
+      }
+			fileOut = new BufferedOutputStream(new FileOutputStream(filename));
     }
-    fileOut.write(data, 0, data.length);
+    
+    try {
+    	fileOut.write(data, 0, data.length);
+    	fileOut.flush();
+    } catch (IOException e) {
+    	File f = new File(filename);
+
+    	if (!f.exists()) {
+    		throw new FileNotFoundException("The file has been moved");
+    	} else if (!f.canWrite()) {
+    		throw new AccessDeniedException("Insufficient permission to write to file.");
+    	} else {
+    		throw new DiskFullException("The disk is full");
+    	}
+    }
   }
   
   /**
@@ -67,12 +86,7 @@ public class FileWriter {
       return; 
     }
     
-    try {
-      this.fileOut.flush();
-      this.fileOut.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    try { this.fileOut.close(); } catch (IOException e) {}
   }
 
   /**
@@ -101,3 +115,4 @@ public class FileWriter {
     return "FileWriter [filename=" + filename + ", fileOut=" + fileOut + "]";
   }
 }
+

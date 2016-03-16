@@ -8,6 +8,8 @@
 9. Explain decisions we've made in README (not overwriting files, etc.)
 10. Use Logger class everywhere
 11. Check to make sure ErrorPacket modifications work on Intermediate host
+12. Choosing exit [0] in Configuration menu does not work
+13. Make file path on server and client configurable
 
 ## DONE - needs testing
 

@@ -1,35 +1,36 @@
 package client;
 
 import configuration.Configuration;
+import file_io.FileReader;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
 import utils.IrrecoverableError;
 import utils.Logger;
 
-import java.util.Iterator;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 public class TftpWriteTransfer {
 	private static final Logger logger = new Logger("TFTP-WRITE");
 
 	public static void start(TransferState transferState) {
-		// open the requested file as a lazy Stream
-		final Result<Stream<byte[]>, IrrecoverableError> streamResult = FileOperations.createFileReadStream
+		// prepare to read the requested file
+		final Result<FileReader, IrrecoverableError> fileResult = FileOperations.createFileReader
 				.apply(transferState.request.getFilename());
 
-		if (streamResult.FAILURE) {
-			NetworkOperations.sendError.accept(transferState, streamResult.failure);
+		if (fileResult.FAILURE) {
+			if (fileResult.failure.errorCode != null) {
+				NetworkOperations.sendError.accept(transferState, fileResult.failure);
+			}
 			return;
 		}
 
-		final Stream<byte[]> fileBlockStream = streamResult.success;
+		final FileReader fileReader = fileResult.success;
 
 		// create a file reader function
-		final Function<TransferState, Result<TransferState, IrrecoverableError>> readFileBlock = fileReader(
-				fileBlockStream.iterator());
-
+		final Function<TransferState, Result<TransferState, IrrecoverableError>> readFileBlock = 
+				FileOperations.createFileBlockReader(fileReader);
+				
 		// create an ROP helper (for error handling)
 		final ROP<TransferState, TransferState, IrrecoverableError> rop = new ROP<>();
 
@@ -48,7 +49,7 @@ public class TftpWriteTransfer {
 			if (reqResult.failure.errorCode != null) {
 				NetworkOperations.sendError.accept(transferState, reqResult.failure);
 			}
-			fileBlockStream.close();
+			fileReader.close();
 			return;
 		}
 
@@ -65,7 +66,8 @@ public class TftpWriteTransfer {
 			if (stepResult.SUCCESS) {
 				currentState = stepResult.success;
 			} else {
-				logger.logError("Error encountered during file transfer: " + stepResult.failure.message);
+				logger.logError("Error encountered during file transfer.");
+				logger.logError(stepResult.failure.message);
 				if (stepResult.failure.errorCode != null) {
 					NetworkOperations.sendError.accept(transferState, stepResult.failure);
 				}
@@ -74,29 +76,6 @@ public class TftpWriteTransfer {
 		} while (currentState.blockData.length == Configuration.BLOCK_SIZE);
 
 		logger.logAlways("Transfer has ended");
-		// closing the stream also closes the file
-		fileBlockStream.close();
+		fileReader.close();
 	}
-
-	// returns a file reader function using the provided stream iterator
-	private static Function<TransferState, Result<TransferState, IrrecoverableError>> fileReader(
-			Iterator<byte[]> fileBlockIterator) {
-		// reads one block at a time using the iterator
-		return (state) -> {
-			logger.log("Reading next file block");
-			byte[] fileBlock = null;
-			if (fileBlockIterator.hasNext()) {
-				fileBlock = fileBlockIterator.next();
-			} else {
-				// in case we need to send a last data packet with no data
-				fileBlock = new byte[0];
-			}
-
-			return Result.success(TransferStateBuilder.clone(state)
-					.blockNumber(state.blockNumber + 1)
-					.blockData(fileBlock)
-					.build());
-		};
-	}
-
 }

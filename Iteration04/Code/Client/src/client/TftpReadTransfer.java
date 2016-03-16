@@ -1,12 +1,10 @@
 package client;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.function.Function;
 
 import configuration.Configuration;
 import file_io.FileWriter;
-import packet.ErrorPacket.ErrorCode;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
@@ -21,15 +19,18 @@ public class TftpReadTransfer {
 		final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(transferState);
 
 		if (fileResult.FAILURE) {
-			NetworkOperations.sendError.accept(transferState, fileResult.failure);
+			if (fileResult.failure.errorCode != null) {
+				NetworkOperations.sendError.accept(transferState, fileResult.failure);
+			}
+			errorCleanup(transferState);
 			return;
 		}
 
 		final FileWriter fileWriter = fileResult.success;
 
 		// file writer function
-		final Function<TransferState, Result<TransferState, IrrecoverableError>> writeFileBlock = fileBlockWriter(
-				fileWriter);
+		final Function<TransferState, Result<TransferState, IrrecoverableError>> writeFileBlock = 
+				FileOperations.createFileBlockWriter(fileWriter);
 
 		// create an ROP helper (for error handling)
 		final ROP<TransferState, TransferState, IrrecoverableError> rop = new ROP<>();
@@ -72,7 +73,8 @@ public class TftpReadTransfer {
 			if (stepResult.SUCCESS) {
 				currentState = stepResult.success;
 			} else {
-				logger.logError("Error encountered during file transfer: " + stepResult.failure.message);
+				logger.logError("Error encountered during file transfer."); 
+				logger.logError(stepResult.failure.message);
 				if (stepResult.failure.errorCode != null) {
 					NetworkOperations.sendError.accept(currentState, stepResult.failure);
 				}
@@ -83,23 +85,6 @@ public class TftpReadTransfer {
 
 		logger.logAlways("Transfer has ended.");
 		fileWriter.close();
-	}
-
-	private static Function<TransferState, Result<TransferState, IrrecoverableError>> fileBlockWriter(
-			FileWriter fileWriter) {
-
-		return (state) -> {
-			logger.log("Writing file block #" + state.blockNumber);
-			try {
-				fileWriter.writeBlock(state.blockData);
-			} catch (IOException e) {
-				e.printStackTrace();
-				IrrecoverableError err = new IrrecoverableError(ErrorCode.NOT_DEFINED,
-						"Internal Error while writing file. Please try again.");
-				return Result.failure(err);
-			}
-			return Result.success(state);
-		};
 	}
 
 	private static void errorCleanup(TransferState transferState) {

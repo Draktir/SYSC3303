@@ -1,10 +1,9 @@
 package server;
 
-import java.util.Iterator;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import configuration.Configuration;
+import file_io.FileReader;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
@@ -15,23 +14,25 @@ public class TftpReadTransfer {
   private static final Logger logger = new Logger("TFTP-READ");
   
   public static void start(TransferState transferState) {
-    // open the requested file as a lazy Stream
-    final Result<Stream<byte[]>, IrrecoverableError> streamResult =
-        FileOperations.createFileReadStream.apply(transferState.request.getFilename());
+    // prepare to read from the requested file
+    final Result<FileReader, IrrecoverableError> fileResult =
+        FileOperations.createFileReader.apply(transferState.request.getFilename());
 
-    if (streamResult.FAILURE) {
-      NetworkOperations.sendError.accept(transferState, streamResult.failure);
-      return;
+    if (fileResult.FAILURE) {
+    	if (fileResult.failure.errorCode != null) {
+				NetworkOperations.sendError.accept(transferState, fileResult.failure);
+			}
+    	return;
     }
 
-    final Stream<byte[]> fileBlockStream = streamResult.success;
+    final FileReader fileReader = fileResult.success;
 
     // create an ROP helper (for error handling)
     final ROP<TransferState, TransferState, IrrecoverableError> rop = new ROP<>();
 
-    // create a file reader function
-    final Function<TransferState, Result<TransferState, IrrecoverableError>> readFileBlock =
-        fileReader(fileBlockStream.iterator());
+    // create a file block reader function
+    final Function<TransferState, Result<TransferState, IrrecoverableError>> readFileBlock = 
+    		FileOperations.createFileBlockReader(fileReader);
     
     // send file, block by block
     do {
@@ -54,28 +55,6 @@ public class TftpReadTransfer {
     } while(transferState.blockData.length == Configuration.BLOCK_SIZE);
 
     logger.logAlways("Transfer complete. Terminating thread.");
-    // closing the stream also closes the file
-    fileBlockStream.close();
-  }
-
-  // returns a file reader function using the provided stream iterator
-  private static Function<TransferState, Result<TransferState, IrrecoverableError>> fileReader(Iterator<byte[]> fileBlockIterator) {
-    // reads one block at a time using the iterator
-    return (state) -> {
-      logger.log("Reading file block");
-      byte[] fileBlock = null;
-      if (fileBlockIterator.hasNext()) {
-        fileBlock = fileBlockIterator.next();
-      } else {
-        // in case we need to send a last data packet with no data
-        fileBlock = new byte[0];
-      }
-
-      return Result.success(TransferStateBuilder.clone(state)
-          .blockNumber(state.blockNumber + 1)
-          .blockData(fileBlock)
-          .build()
-      );
-    };
+    fileReader.close();
   }
 }

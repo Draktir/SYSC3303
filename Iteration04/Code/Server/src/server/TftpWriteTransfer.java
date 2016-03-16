@@ -1,11 +1,9 @@
 package server;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.function.Function;
 
 import file_io.FileWriter;
-import packet.ErrorPacket.ErrorCode;
 import rop.ROP;
 import rop.Result;
 import tftp_transfer.*;
@@ -20,15 +18,18 @@ public class TftpWriteTransfer {
     final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(transferState);
     
     if (fileResult.FAILURE) {
-      NetworkOperations.sendError.accept(transferState, fileResult.failure);
-      return;
+    	if (fileResult.failure.errorCode != null) {
+				NetworkOperations.sendError.accept(transferState, fileResult.failure);
+			}
+    	errorCleanup(transferState);
+    	return;
     }
 
     final FileWriter fileWriter = fileResult.success;
     
-    // file writer function
-    final Function<TransferState, Result<TransferState, IrrecoverableError>> writeFileBlock =
-        fileBlockWriter(fileWriter);
+    // create a file writer function
+    final Function<TransferState, Result<TransferState, IrrecoverableError>> writeFileBlock = 
+    		FileOperations.createFileBlockWriter(fileWriter);
 
     // create an ROP helper (for error handling)
     final ROP<TransferState, TransferState, IrrecoverableError> rop = new ROP<>();
@@ -46,7 +47,7 @@ public class TftpWriteTransfer {
         .apply(transferState);
     
     if (ackResult.FAILURE) {
-      logger.logError("ERROR: Sending ACK failed.");
+      logger.logError("Sending ACK failed.");
       if (ackResult.failure.errorCode != null) {
         NetworkOperations.sendError.accept(transferState, ackResult.failure);
       }
@@ -75,7 +76,8 @@ public class TftpWriteTransfer {
       if (stepResult.SUCCESS) {
         currentState = stepResult.success;
       } else {
-        logger.logError("Error encountered during file transfer: " + stepResult.failure.message);
+        logger.logError("Error encountered during file transfer.");
+        logger.logError(stepResult.failure.message);
         if (stepResult.failure.errorCode != null) {
           NetworkOperations.sendError.accept(currentState, stepResult.failure);
         }
@@ -88,21 +90,6 @@ public class TftpWriteTransfer {
     fileWriter.close();
   }
 
-  private static Function<TransferState, Result<TransferState, IrrecoverableError>> fileBlockWriter(FileWriter fileWriter) {
-    return (state) -> {
-      logger.log("Writing file block #" + state.blockNumber);
-      try {
-        fileWriter.writeBlock(state.blockData);
-      } catch (IOException e) {
-        e.printStackTrace();
-        IrrecoverableError err = new IrrecoverableError(
-            ErrorCode.NOT_DEFINED, "Internal error while writing file.");
-        return Result.failure(err);
-      }
-      return Result.success(state);
-    };
-  }
-  
   private static void errorCleanup(TransferState transferState) {
     File f = new File(transferState.request.getFilename());
     if (f.exists()) {
