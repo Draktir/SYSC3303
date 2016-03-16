@@ -45,7 +45,7 @@ public class TftpWriteTransfer {
 				.apply(transferState);
 
 		if (reqResult.FAILURE) {
-			logger.logError("Sending request to server failed: " + reqResult.failure.message);
+			logger.logError(reqResult.failure.message);
 			if (reqResult.failure.errorCode != null) {
 				NetworkOperations.sendError.accept(transferState, reqResult.failure);
 			}
