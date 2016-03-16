@@ -1,5 +1,7 @@
 package configuration;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
@@ -50,6 +52,7 @@ public class ConfigurationMenu {
 						Configuration.set(true, conf.TIMEOUT_TIME, conf.MAX_RETRIES, 6800, 
 								6800, 6900, conf.BLOCK_SIZE, conf.CLIENT_PATH, conf.SERVER_PATH);
 						modeSet = true;
+						break;
 					case 5:
 						modeSet = configureManualMode();
 						break;
@@ -76,7 +79,7 @@ public class ConfigurationMenu {
 		boolean verbose = sc.next().equals("y");
 		sc.nextLine();
 		
-		System.out.print("TIMEOUT: Timeout time in ms (" + conf.TIMEOUT_TIME + "): ");
+		System.out.print("TIMEOUT_TIME: Timeout time in ms (" + conf.TIMEOUT_TIME + "): ");
 		int timeoutTime = getPositiveIntOrDefault(conf.TIMEOUT_TIME);
 		
 		System.out.print("MAX_ATTEMPTS: Max attempts to re-send a timed out packet (" + conf.MAX_RETRIES + "): ");
@@ -94,10 +97,10 @@ public class ConfigurationMenu {
 		System.out.print("BLOCK_SIZE: Size of file blocks in bytes (" + conf.BLOCK_SIZE + "): ");
 		int blockSize = getPositiveIntOrDefault(conf.BLOCK_SIZE);
 		
-		System.out.print("CLIENT_PATH: Path the client stores files under, using '/' (" + conf.CLIENT_PATH + "): ");
+		System.out.println("CLIENT_PATH: Path the client stores files under, using '/' (" + conf.CLIENT_PATH + "): ");
 		String clientPath = getPathOrNothing();
 		
-		System.out.print("CLIENT_PATH: Path the server stores files under, using '/' (" + conf.SERVER_PATH + "): ");
+		System.out.println("SERVER_PATH: Path the server stores files under, using '/' (" + conf.SERVER_PATH + "): ");
 		String serverPath = getPathOrNothing();
 		
 		Configuration.set(verbose, timeoutTime, maxRetries, clientConnectToPort, intermediatePort, serverPort, 
@@ -126,16 +129,32 @@ public class ConfigurationMenu {
 	}
 	
 	private String getPathOrNothing() {
-		String in = sc.nextLine();
+		String path = null;
 		
-		if (in.length() == 0) {
-			return "";
-		}
+		do {
+			System.out.print("  Enter an absolute path or hit enter to use the default: ");
+			path = sc.nextLine();
+			
+			if (path.length() == 0) {
+				return "";
+			}
+			
+			Path p = Paths.get(path);
+			if (!p.isAbsolute()) {
+				System.out.println("Invalid path: Path must be absolute.");
+				path = null;
+			} else if (!p.toFile().exists()) {
+				System.out.println("Invalid path: Path does not exist.");
+				path = null;
+			} else if (!p.toFile().isDirectory()) {
+				System.out.println("Invalid path: Path cannot be a file.");
+				path = null;
+			} else {
+				path = p.toString() + "/";
+			}
+		} while (path == null);
 		
-		if (in.charAt(in.length() - 1) != '/') {
-			in += "/";
-		}
-		return in;
+		return path;
 	}
 	
 }

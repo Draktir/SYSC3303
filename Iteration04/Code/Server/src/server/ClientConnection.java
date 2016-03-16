@@ -33,11 +33,9 @@ public class ClientConnection implements Connection {
   
   public void sendPacket(Packet packet) throws IOException {
     byte[] data = packet.getPacketData();
-    InetAddress remoteHost = packet.getRemoteHost() == null ? clientTid.address : packet.getRemoteHost();
-    int remotePort = packet.getRemotePort() < 1 ? clientTid.port : packet.getRemotePort();
 
     DatagramPacket sendDatagram = new DatagramPacket(
-        data, data.length, remoteHost, remotePort);
+        data, data.length, clientTid.address, clientTid.port);
 
     logger.log("Sending packet");
     PacketPrinter.print(sendDatagram);
@@ -57,7 +55,7 @@ public class ClientConnection implements Connection {
       return null;
     }
 
-    // receive packets until we receive a packet from the correct host
+    // receive packets until we receive a packet from the correct host or time out
     do {
       buffer = new byte[517];
       receiveDatagram = new DatagramPacket(buffer, 517);

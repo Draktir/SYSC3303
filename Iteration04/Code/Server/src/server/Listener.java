@@ -24,9 +24,9 @@ class Listener implements Runnable {
    * 
    * @param port
    */
-  public Listener(int port) {
+  public Listener() {
     try {
-      this.receiveSocket = new DatagramSocket(port);
+      this.receiveSocket = new DatagramSocket(Configuration.get().SERVER_PORT);
       this.stopRequested = false;
     } catch (SocketException e) {
       e.printStackTrace();
@@ -48,7 +48,7 @@ class Listener implements Runnable {
       DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
       
       try {
-        System.out.println("[SYSTEM] Listening for requests on port " + Configuration.get().SERVER_PORT);
+        System.out.println("[SYSTEM] Listening for requests on port " + receiveSocket.getLocalPort());
         receiveSocket.receive(receivePacket);
       } catch (IOException e) { // catches an exception thrown by the Socket when it is closed via "shutdown" command
         System.out.println("[SYSTEM] Listener shut down. No longer accepting new connections.");

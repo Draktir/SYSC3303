@@ -74,13 +74,13 @@ public class FileOperations {
 		};
 	}
 
-	public static Function<String, Result<FileReader, IrrecoverableError>> createFileReader = (filename) -> {
+	public static Function<String, Result<FileReader, IrrecoverableError>> createFileReader = (filepath) -> {
 		FileReader fr = null;
 		
-		logger.log("Preparing to read file " + filename);
+		logger.log("Preparing to read file " + filepath);
 		
 		try {
-			fr = new FileReader(filename);
+			fr = new FileReader(filepath);
 		} catch (FileNotFoundException fnf) {
 			return Result.failure(new IrrecoverableError(ErrorCode.FILE_NOT_FOUND, fnf.getMessage()));
 		} catch (AccessDeniedException ade) {

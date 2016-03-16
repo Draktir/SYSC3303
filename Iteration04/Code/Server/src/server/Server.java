@@ -10,7 +10,6 @@ package server;
 
 import java.util.Scanner;
 
-import configuration.Configuration;
 import configuration.ConfigurationMenu;
 
 public class Server {
@@ -24,7 +23,7 @@ public class Server {
 		// let user choose a configuration
   	new ConfigurationMenu().show();
 	  
-    Listener listener = new Listener(Configuration.get().SERVER_PORT);
+    Listener listener = new Listener();
     Thread listenThread = new Thread(listener, "Listener");
     listenThread.start();
 

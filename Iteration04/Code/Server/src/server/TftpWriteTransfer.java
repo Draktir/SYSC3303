@@ -1,6 +1,6 @@
 package server;
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.util.function.Function;
 
 import configuration.Configuration;
@@ -17,7 +17,7 @@ public class TftpWriteTransfer {
   public static void start(TransferState transferState) {
     // create the file
     final Result<FileWriter, IrrecoverableError> fileResult = FileOperations.createFile.apply(
-    		Configuration.get().SERVER_PATH + transferState.request.getFilename());
+    		Paths.get(Configuration.get().SERVER_PATH).resolve(transferState.request.getFilename()).toString());
     
     if (fileResult.FAILURE) {
     	if (fileResult.failure.errorCode != null) {
@@ -93,9 +93,7 @@ public class TftpWriteTransfer {
   }
 
   private static void errorCleanup(TransferState transferState) {
-    File f = new File(transferState.request.getFilename());
-    if (f.exists()) {
-      f.delete();
-    }
+    FileOperations.deleteFile.accept(
+    		Configuration.get().SERVER_PATH + transferState.request.getFilename());
   }
 }
