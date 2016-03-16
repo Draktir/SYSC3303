@@ -89,7 +89,7 @@ public class NetworkOperations {
 	public static final Function<TransferState, Result<TransferState, IrrecoverableError>> receiveValidAck = (state) -> {
 		final long tsStart = currentTime.get();
 		Supplier<Integer> calculateNewTimeout = () -> {
-			Long to = Configuration.TIMEOUT_TIME - (currentTime.get() - tsStart);
+			Long to = Configuration.get().TIMEOUT_TIME - (currentTime.get() - tsStart);
 			return to.intValue();
 		};
 
@@ -106,12 +106,12 @@ public class NetworkOperations {
 			if (recvResult.FAILURE) {
 				logger.log(recvResult.failure.message);
 
-				if (numAttempts < Configuration.MAX_RETRIES) {
+				if (numAttempts < Configuration.get().MAX_RETRIES) {
 					// resend the data packet and then recursively call this function
 					// again
 					logger.log("Re-sending last Data Packet");
 					return rop.bind(state.dataPacket != null ? NetworkOperations.sendDataPacket : NetworkOperations.sendRequest)
-							.andThen((s) -> receiveAck.func.apply(Configuration.TIMEOUT_TIME, numAttempts + 1))
+							.andThen((s) -> receiveAck.func.apply(Configuration.get().TIMEOUT_TIME, numAttempts + 1))
 							.apply(Result.success(state));
 
 				} else {
@@ -145,14 +145,14 @@ public class NetworkOperations {
 			})).apply(recvResult.success);
 		};
 
-		return receiveAck.func.apply(Configuration.TIMEOUT_TIME, 1);
+		return receiveAck.func.apply(Configuration.get().TIMEOUT_TIME, 1);
 	};
 
 	public static final Function<TransferState, Result<TransferState, IrrecoverableError>> receiveValidDataPacket = 
 	(state) -> {
 		final long tsStart = currentTime.get();
 		Supplier<Integer> calculateNewTimeout = () -> {
-			Long to = Configuration.TIMEOUT_TIME - (currentTime.get() - tsStart);
+			Long to = Configuration.get().TIMEOUT_TIME - (currentTime.get() - tsStart);
 			return to.intValue();
 		};
 
@@ -169,12 +169,12 @@ public class NetworkOperations {
 			if (recvResult.FAILURE) {
 				logger.logError(recvResult.failure.message);
 
-				if (numAttempts < Configuration.MAX_RETRIES) {
+				if (numAttempts < Configuration.get().MAX_RETRIES) {
 					// resend the last packet and then recursively call this function
 					// again
 					logger.log("Re-sending last packet");
 					return rop.bind(state.acknowledgement != null ? NetworkOperations.sendAck : NetworkOperations.sendRequest)
-							.andThen((s) -> receiveDataPacket.func.apply(Configuration.TIMEOUT_TIME, numAttempts + 1))
+							.andThen((s) -> receiveDataPacket.func.apply(Configuration.get().TIMEOUT_TIME, numAttempts + 1))
 							.apply(Result.success(state));
 
 				} else {
@@ -224,7 +224,7 @@ public class NetworkOperations {
 			})).apply(recvResult.success);
 		};
 
-		return receiveDataPacket.func.apply(Configuration.TIMEOUT_TIME, 1);
+		return receiveDataPacket.func.apply(Configuration.get().TIMEOUT_TIME, 1);
 	};
 
 	public static final BiConsumer<TransferState, IrrecoverableError> sendError = (state, error) -> {

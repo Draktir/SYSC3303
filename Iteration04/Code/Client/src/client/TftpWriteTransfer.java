@@ -74,7 +74,7 @@ public class TftpWriteTransfer {
 				}
 				break;
 			}
-		} while (currentState.blockData.length == Configuration.BLOCK_SIZE);
+		} while (currentState.blockData.length == Configuration.get().BLOCK_SIZE);
 
 		logger.logAlways("Transfer has ended");
 		fileReader.close();

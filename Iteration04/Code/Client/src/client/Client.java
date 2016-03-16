@@ -14,7 +14,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
-import configuration.Configuration;
+import configuration.ConfigurationMenu;
 import packet.RequestBuilder;
 
 import java.io.File;
@@ -39,10 +39,8 @@ public class Client {
 		Scanner scan = new Scanner(System.in);
 		int command;
 
-		if (!Configuration.setMode()) {
-			scan.close();
-			return;
-		}
+		// let user choose a configuration
+		new ConfigurationMenu().show();
 
 		// TODO: for Iteration 5, ask the user for a server IP
 		InetAddress serverAddress = null;

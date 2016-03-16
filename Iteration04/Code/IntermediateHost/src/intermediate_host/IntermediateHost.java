@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import configuration.Configuration;
+import configuration.ConfigurationMenu;
 import modification.*;
 import utils.PacketPrinter;
 
@@ -49,8 +50,8 @@ public class IntermediateHost {
     List<Thread> connectionThreads = new ArrayList<>();
     boolean hasRun = false;
     
-    if (!Configuration.setMode())
-    	return;
+    // let user choose a configuration
+    new ConfigurationMenu().show();
     
     // Show the Modification configuration menu
     ModificationMenu modMenu = new ModificationMenu();
@@ -58,14 +59,14 @@ public class IntermediateHost {
     packetModifier = modMenu.show();
 
     try {
-      clientSocket = new DatagramSocket(Configuration.INTERMEDIATE_PORT);
+      clientSocket = new DatagramSocket(Configuration.get().INTERMEDIATE_PORT);
       clientSocket.setSoTimeout(1000);
     } catch (SocketException e1) {
       e1.printStackTrace();
       return;
     }
 
-    log("Waiting for client requests on port " + Configuration.INTERMEDIATE_PORT);
+    log("Waiting for client requests on port " + Configuration.get().INTERMEDIATE_PORT);
 
     do {
       byte[] buffer = new byte[1024];

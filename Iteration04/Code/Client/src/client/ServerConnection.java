@@ -39,9 +39,9 @@ public class ServerConnection implements Connection {
 	 */
 	public void sendRequest(Request request) throws IOException {
 		byte[] data = request.getPacketData();
-		DatagramPacket reqDatagram = new DatagramPacket(data, data.length, serverAddress, Configuration.INTERMEDIATE_PORT);
+		DatagramPacket reqDatagram = new DatagramPacket(data, data.length, serverAddress, Configuration.get().INTERMEDIATE_PORT);
 
-		logger.logAlways("Sending request to " + serverAddress + ":" + Configuration.INTERMEDIATE_PORT);
+		logger.logAlways("Sending request to " + serverAddress + ":" + Configuration.get().INTERMEDIATE_PORT);
 		PacketPrinter.print(reqDatagram);
 
 		socket.send(reqDatagram);

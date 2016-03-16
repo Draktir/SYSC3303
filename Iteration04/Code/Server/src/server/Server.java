@@ -11,6 +11,7 @@ package server;
 import java.util.Scanner;
 
 import configuration.Configuration;
+import configuration.ConfigurationMenu;
 
 public class Server {
   /**
@@ -20,10 +21,10 @@ public class Server {
    * @throws InterruptedException
    */
   public static void main(String[] args) {
-	if (!Configuration.setMode())
-		return;
+		// let user choose a configuration
+  	new ConfigurationMenu().show();
 	  
-    Listener listener = new Listener(Configuration.SERVER_PORT);
+    Listener listener = new Listener(Configuration.get().SERVER_PORT);
     Thread listenThread = new Thread(listener, "Listener");
     listenThread.start();
 

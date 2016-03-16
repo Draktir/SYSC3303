@@ -52,7 +52,7 @@ public class TftpReadTransfer {
         }
         break;
       }
-    } while(transferState.blockData.length == Configuration.BLOCK_SIZE);
+    } while(transferState.blockData.length == Configuration.get().BLOCK_SIZE);
 
     logger.logAlways("Transfer complete. Terminating thread.");
     fileReader.close();

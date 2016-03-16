@@ -3,7 +3,6 @@ package utils;
 import java.util.Calendar;
 
 import configuration.Configuration;
-import configuration.Configuration.Mode;
 
 /**
  * Logger class that prints logging info to console.
@@ -20,8 +19,7 @@ public class Logger {
 	}
 
 	public void log(String message) {
-		if (Configuration.getMode() == Mode.DEBUG_MODE || Configuration.getMode() == Mode.TEST_MODE
-				|| Configuration.getMode() == Mode.LINUX_MODE) {
+		if (Configuration.get().VERBOSE) {
 			System.out.println(
 					getTime() + " [" + this.unitName + " - " + Thread.currentThread().getName() + "] " + message);
 		}

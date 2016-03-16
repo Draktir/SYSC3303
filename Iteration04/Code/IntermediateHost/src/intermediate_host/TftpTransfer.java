@@ -27,7 +27,7 @@ public class TftpTransfer implements Runnable {
     this.clientConnection =
         new ConnectionManager(clientReceiveBuffer, clientSendBuffer, requestDatagram.getAddress(), requestDatagram.getPort());
     this.serverConnnection =
-        new ConnectionManager(serverReceiveBuffer, serverSendBuffer, requestDatagram.getAddress(), Configuration.SERVER_PORT);
+        new ConnectionManager(serverReceiveBuffer, serverSendBuffer, requestDatagram.getAddress(), Configuration.get().SERVER_PORT);
   }
 
   @Override

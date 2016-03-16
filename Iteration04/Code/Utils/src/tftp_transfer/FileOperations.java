@@ -104,7 +104,7 @@ public class FileOperations {
 			
 			byte[] read = null;
 			try {
-				read = fr.read(Configuration.BLOCK_SIZE);
+				read = fr.read(Configuration.get().BLOCK_SIZE);
 			} catch (AccessDeniedException e) {
 				return Result.failure(new IrrecoverableError(ErrorCode.ACCESS_VIOLATION, e.getMessage()));
 			} catch (FileNotFoundException e) {
