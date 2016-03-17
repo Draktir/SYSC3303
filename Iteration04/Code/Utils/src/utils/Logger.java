@@ -11,11 +11,9 @@ import configuration.Configuration;
 
 public class Logger {
 	String unitName;
-	Calendar calendar;
 
 	public Logger(String unitName) {
 		this.unitName = unitName;
-		this.calendar = Calendar.getInstance();
 	}
 
 	public void log(String message) {
@@ -37,6 +35,8 @@ public class Logger {
 	}
 
 	public String getTime() {
+		Calendar calendar = Calendar.getInstance();
+		
 		int h = calendar.get(Calendar.HOUR_OF_DAY);
 		int m = calendar.get(Calendar.MINUTE);
 		int s = calendar.get(Calendar.SECOND);
