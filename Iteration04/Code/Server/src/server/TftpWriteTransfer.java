@@ -27,7 +27,7 @@ public class TftpWriteTransfer {
     	
     	// only delete file if it doesn't already exist
     	if (fileResult.failure.errorCode != ErrorCode.FILE_ALREADY_EXISTS) {
-      	errorCleanup(transferState);
+      	deleteFile(transferState);
     	}
     	return;
     }
@@ -58,8 +58,8 @@ public class TftpWriteTransfer {
       if (ackResult.failure.errorCode != null) {
         NetworkOperations.sendError.accept(transferState, ackResult.failure);
       }
-      errorCleanup(transferState);
       fileWriter.close();
+      deleteFile(transferState);
       return;
     }
     
@@ -89,7 +89,8 @@ public class TftpWriteTransfer {
         if (stepResult.failure.errorCode != null) {
           NetworkOperations.sendError.accept(currentState, stepResult.failure);
         }
-        errorCleanup(currentState);
+        fileWriter.close();
+        deleteFile(currentState);
         transferSuccess = false;
         break;
       }
@@ -106,7 +107,7 @@ public class TftpWriteTransfer {
     fileWriter.close();
   }
 
-  private static void errorCleanup(TransferState transferState) {
+  private static void deleteFile(TransferState transferState) {
     FileOperations.deleteFile.accept(
     		Paths.get(Configuration.get().FILE_PATH).resolve(transferState.request.getFilename()).toString());
   }
