@@ -34,7 +34,7 @@ public class Logger {
 				getTime() + " [" + this.unitName + " - " + Thread.currentThread().getName() + "] " + message);
 	}
 
-	public String getTime() {
+	private String getTime() {
 		Calendar calendar = Calendar.getInstance();
 		
 		int h = calendar.get(Calendar.HOUR_OF_DAY);

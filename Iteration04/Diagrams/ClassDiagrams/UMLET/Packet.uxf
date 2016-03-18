@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>4</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>0</x>
+      <y>316</y>
+      <w>116</w>
+      <h>44</h>
+    </coordinates>
+    <panel_attributes>Acknowledgement
+--
+-blockNumber: int
+--
++Acknowledgement(InetAddress, int, int)
++getPacketData(): byte[]
++getOpcode(): byte[]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>148</x>
+      <y>316</y>
+      <w>116</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>DataPacket
+--
+-blockNumber: int
+-fileData: byte[]
+--
+DataPacket(InetAddress, int, int, byte[])
++getPacketData(): byte[]
++getOpcode(): byte[]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>288</x>
+      <y>180</y>
+      <w>116</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>/Packet/
+--
+-remoteHost: InetAddress
+-remotePort: int
+--
+Packet(InetAddress, int)
+/getPacketData(): byte[]/
+/getOpcode(): byte[]/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>292</x>
+      <y>316</y>
+      <w>116</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>ErrorPacket
+--
+-message: String
+--
+DataPacket(InetAddress, int, String)
++getPacketData(): byte[]
++getOpcode(): byte[]</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>264</x>
+      <y>436</y>
+      <w>144</w>
+      <h>116</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Enumeration&gt;&gt;
+ErrorCode
+--
+-value: int
+_+NOT_DEFINED: ErrorCode_
+_+FILE_NOT_FOUND: ErrorCode_
+_+ACCESS_VIOLATION: ErrorCode_
+_+DISK_FULL_OR_ALLOCATION_EXCEEDED: ErrorCode_
+_+ILLEGAL_TFTP_OPERATION: ErrorCode_
+_+UNKNOWN_TRANSFER_ID: ErrorCode_
+_+FILE_ALREADY_EXISTS: ErrorCode_
+_+NO_SUCH_USER: ErrorCode_
+--
++getValue(): int
+_+fromValue(int): ErrorCode_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>436</x>
+      <y>316</y>
+      <w>116</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>Request
+--
+#filename: String
+#mode: String
+--
++Request(InetAddress, int, String, String)
+/+type(): RequestType/
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>588</x>
+      <y>436</y>
+      <w>124</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>WriteRequest
+--
+
+--
+WriteRequest(InetAddress, int, String, String)
++getPacketData(): byte[]
++getOpcode(): byte[]
++type(): RequestType</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>440</x>
+      <y>436</y>
+      <w>124</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>ReadRequest
+--
+
+--
+WriteRequest(InetAddress, int, String, String)
++getPacketData(): byte[]
++getOpcode(): byte[]
++type(): RequestType</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>608</x>
+      <y>316</y>
+      <w>68</w>
+      <h>44</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Enumeration&gt;&gt;
+RequestType
+--
+_+READ: RequestType_
+_+WRITE: RequestType_
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>340</x>
+      <y>236</y>
+      <w>12</w>
+      <h>44</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>48</x>
+      <y>264</y>
+      <w>304</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>740.0;20.0;10.0;20.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>204</x>
+      <y>264</y>
+      <w>148</w>
+      <h>60</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>350.0;20.0;10.0;20.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>340</x>
+      <y>268</y>
+      <w>12</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>340</x>
+      <y>268</y>
+      <w>168</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>400.0;120.0;400.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>332</x>
+      <y>364</y>
+      <w>12</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=-(+)
+
+</panel_attributes>
+    <additional_attributes>10.0;180.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>552</x>
+      <y>328</y>
+      <w>64</w>
+      <h>20</h>
+    </coordinates>
+    <panel_attributes>lt=-(+)
+
+</panel_attributes>
+    <additional_attributes>140.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>496</x>
+      <y>352</y>
+      <w>12</w>
+      <h>92</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;210.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>496</x>
+      <y>392</y>
+      <w>164</w>
+      <h>52</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>10.0;20.0;390.0;20.0;390.0;110.0</additional_attributes>
+  </element>
+</diagram>

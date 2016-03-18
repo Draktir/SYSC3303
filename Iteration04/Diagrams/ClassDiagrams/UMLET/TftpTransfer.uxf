@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>8</zoom_level>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>104</x>
+      <y>56</y>
+      <w>144</w>
+      <h>48</h>
+    </coordinates>
+    <panel_attributes>tftp_transfer package
+in Utils project</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>312</x>
+      <y>200</y>
+      <w>240</w>
+      <h>96</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Interface&gt;&gt;
+Connection
+--
+
+--
+/+sendRequest(Request)/
+/+sendPacket(Packet)/
+/+receive(int: timeout): DatagramPacket/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>312</x>
+      <y>384</y>
+      <w>240</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>TransferState
+&lt;&lt;Immutable&gt;&gt;
+--
++blockNumber: int
++blockData: byte
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>672</x>
+      <y>312</y>
+      <w>176</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>Request
+--
+/See "Packet" class diagram for/
+/implementation details/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>768</x>
+      <y>208</y>
+      <w>160</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>The RRQ or WRQ received 
+on the Server or to be sent
+by the Client</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>720</x>
+      <y>224</y>
+      <w>64</w>
+      <h>104</h>
+    </coordinates>
+    <panel_attributes>lt=.</panel_attributes>
+    <additional_attributes>10.0;110.0;60.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>424</x>
+      <y>288</y>
+      <w>24</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>512</x>
+      <y>336</y>
+      <w>176</w>
+      <h>64</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=1</panel_attributes>
+    <additional_attributes>200.0;10.0;10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>672</x>
+      <y>392</y>
+      <w>176</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>DataPacket
+--
+/See "Packet" class diagram for/
+/implementation details/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>544</x>
+      <y>416</y>
+      <w>144</w>
+      <h>32</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=0..1</panel_attributes>
+    <additional_attributes>160.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>672</x>
+      <y>472</y>
+      <w>176</w>
+      <h>56</h>
+    </coordinates>
+    <panel_attributes>Acknowledgement
+--
+/See "Packet" class diagram for/
+/implementation details/</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>544</x>
+      <y>448</y>
+      <w>144</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+m1=0..1</panel_attributes>
+    <additional_attributes>160.0;70.0;90.0;70.0;90.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>400</x>
+      <y>592</y>
+      <w>392</w>
+      <h>176</h>
+    </coordinates>
+    <panel_attributes>LocalOperations
+--
+_-logger: Logger_
+_+buildDataPacket: Function&lt;TransferState, TransferState&gt;_
+_+buildAck: Function&lt;TransferState, TransferState&gt;_
+_+parseDataPacket: Function_
+_     &lt;DatagramPacket, Result&lt;DataPacket, IrrecoverableError&gt; &gt;_
+_+parseAck: Function
+_     &lt;DatagramPacket, Result&lt;Acknowledgement, IrrecoverableError&gt; &gt;_
+_+parseRequest: Function
+_     &lt;DatagramPacket, Result&lt;Request, IrrecoverableError&gt; &gt;_
+
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>400</x>
+      <y>800</y>
+      <w>392</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>FileOperations
+--
+_-logger: Logger_
+_+createFile: Function&lt;String, Result&lt;FileWriter, IrrecoverableError&gt; &gt;_
+_+deleteFile: Consumer&lt;String&gt;_
+_+createFileReader: Function_
+_    &lt;String, Result&lt;FileReader, IrrecoverableError&gt; &gt;_
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>400</x>
+      <y>952</y>
+      <w>392</w>
+      <h>240</h>
+    </coordinates>
+    <panel_attributes>NetworkOperations
+--
+_-logger: Logger_
+_-currentTime: Supplier&lt;Long&gt;_
+_-receiveDatagram: BiFunction_
+_    TransferState, Integer, Result&lt;DatagramPacket, IrrecoverableError&gt; &gt;_
+_+sendDataPacket: Function_
+_    &lt;TransferState, Result&lt;TransferState, IrrecoverableError&gt; &gt;_
+_+sendAck: Function_
+_    &lt;TransferSTate, Result&lt;TransferState, IrrecoverableError&gt; &gt;_
+_+sendRequest: Function_
+_    &lt;TransferState, Result&lt;TransferState, IrrecoverableError&gt; &gt;_
+_+receiveValidAck: Function_
+_    &lt;TransferState, Result&lt;TransferState, IrrecoverableError&gt; &gt;_
+_+receiveValidDataPacket: Function_
+_    &lt;TransferState, Result&lt;TransferState, IrrecoverableError&gt; &gt;_
+_+sendError: BiConsumer&lt;TransferState, IrrecoverableError&gt;_
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLPackage</id>
+    <coordinates>
+      <x>248</x>
+      <y>152</y>
+      <w>704</w>
+      <h>1072</h>
+    </coordinates>
+    <panel_attributes>tftp_transfer</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>240</x>
+      <y>96</y>
+      <w>56</w>
+      <h>72</h>
+    </coordinates>
+    <panel_attributes>lt=.</panel_attributes>
+    <additional_attributes>50.0;70.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>
