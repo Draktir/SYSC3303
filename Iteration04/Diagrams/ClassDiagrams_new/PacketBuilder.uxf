@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>3</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>315</x>
+      <y>468</y>
+      <w>63</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>PacketBuilder&lt;T&gt;
+--
+remoteHost: InetAddress
+remotePort: int
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>81</x>
+      <y>552</y>
+      <w>99</w>
+      <h>24</h>
+    </coordinates>
+    <panel_attributes>AcknowledgemenetBuilder
+--
+-blockNumber: int
+--
++buildAcknowledgement(): Acknowledgement</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>213</x>
+      <y>552</y>
+      <w>69</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>DataPacketBuilder
+--
+-blockNumber: int
+-fileData: byte[]
+--
++buildDataPacket(): DataPacket</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>315</x>
+      <y>552</y>
+      <w>72</w>
+      <h>27</h>
+    </coordinates>
+    <panel_attributes>ErrorPacketBuilder
+--
+-errorCode: ErrorCode
+-message: String
+--
++buildErrorPacket(): ErrorPacket</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>423</x>
+      <y>552</y>
+      <w>78</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>RequestBuilder
+--
+-filename: String
+-mode: String
+--
++buildWriteRequest(): WriteRequest
++buildReadRequest(): ReadRequest</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>345</x>
+      <y>516</y>
+      <w>126</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>400.0;120.0;400.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>345</x>
+      <y>516</y>
+      <w>9</w>
+      <h>42</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;120.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>345</x>
+      <y>492</y>
+      <w>9</w>
+      <h>33</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;90.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>243</x>
+      <y>513</y>
+      <w>111</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>350.0;20.0;10.0;20.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>126</x>
+      <y>513</y>
+      <w>228</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>lt=-
+</panel_attributes>
+    <additional_attributes>740.0;20.0;10.0;20.0;10.0;130.0</additional_attributes>
+  </element>
+</diagram>

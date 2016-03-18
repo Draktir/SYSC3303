@@ -168,6 +168,9 @@ public class Client {
 			System.out.println("The file does not exist.");
 			return false;
 		}
+		if (!file.canRead()) {
+		  System.out.println("You do not have read persmissions for this file.");
+		}
 		if (file.isDirectory()) {
 			System.out.println(file.toString() + " is a directory. Cannot send a directory");
 			return false;

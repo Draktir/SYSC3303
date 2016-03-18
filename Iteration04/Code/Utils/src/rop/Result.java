@@ -4,8 +4,8 @@ import java.util.Objects;
 
 /**
  * A generic class to be used as the result of an operation.
- * Allows to return both a Success and a Failure value at
- * the same time, eliminating the need for most exceptions.
+ * Allows to return either a Success or a Failure value,
+ * eliminating the need for most exceptions.
  * 
  * All instances of this class are immutable.
  * 
