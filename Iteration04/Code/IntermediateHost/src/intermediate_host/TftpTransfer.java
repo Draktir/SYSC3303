@@ -129,7 +129,8 @@ public class TftpTransfer implements Runnable {
     byte[] rawData = null;
     if (packet instanceof ReadRequest) {
       ReadRequest rrq = (ReadRequest) packet;
-      rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      //rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      rawData = rrq.getPacketData();
       if (rawData != null) {
         log("Forwarding ReadRequest:");
         log(rrq.toString());
@@ -137,7 +138,8 @@ public class TftpTransfer implements Runnable {
       
     } else if (packet instanceof WriteRequest) {
       WriteRequest wrq = (WriteRequest) packet;
-      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      //rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      rawData = wrq.getPacketData();
       if (rawData != null) {
         log("Forwarding WriteRequest:");
         log(wrq.toString());
@@ -170,8 +172,8 @@ public class TftpTransfer implements Runnable {
     } else if (packet instanceof ErrorPacket) {
       ErrorPacket errPacket = (ErrorPacket) packet;
       rawData = packetModifier.process(errPacket, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
-      // if this is an error with code != 5, we are done after this
-      if (rawData != null && errPacket.getErrorCode() != ErrorPacket.ErrorCode.UNKNOWN_TRANSFER_ID) {
+      // if this is an error we are done after this
+      if (rawData != null) {
         this.setTransferComplete(true);
       }
       if (rawData != null) {

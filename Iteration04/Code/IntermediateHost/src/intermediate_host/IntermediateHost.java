@@ -19,10 +19,18 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import configuration.Configuration;
 import configuration.ConfigurationMenu;
 import modification.*;
+import packet.InvalidRequestException;
+import packet.Packet;
+import packet.PacketParser;
+import packet.ReadRequest;
+import packet.Request;
+import packet.Request.RequestType;
+import packet.WriteRequest;
 import utils.PacketPrinter;
 
 public class IntermediateHost {
@@ -68,27 +76,75 @@ public class IntermediateHost {
 
     log("Waiting for client requests on port " + Configuration.get().INTERMEDIATE_PORT);
 
+    AtomicBoolean keepAlive = new AtomicBoolean(false);
+    
     do {
       byte[] buffer = new byte[1024];
       DatagramPacket requestDatagram = new DatagramPacket(buffer, buffer.length);
-  
       try {
         clientSocket.receive(requestDatagram);
       } catch (SocketTimeoutException e) {
         continue;
       } catch (IOException e) {
         e.printStackTrace();
-      }  
+      }
       
       log("Received packet");
       PacketPrinter.print(requestDatagram);
   
+      PacketParser parser = new PacketParser();
+      Request req = null;
+      try {
+        req = parser.parseRequest(requestDatagram);
+      } catch (InvalidRequestException e) {}
+      
+      if (req != null) {
+        if (req.type() == RequestType.READ) {
+          if (packetModifier.getRrqModification() != null) {
+            ReadRequestModification rrqMod = packetModifier.getRrqModification();
+            if (rrqMod.getDelayModification() != null || rrqMod.getDuplicatePacketModification() != null) {
+              keepAlive.set(true);
+            }
+          }
+          packetModifier.process((ReadRequest) req, clientSocket.getLocalPort(), 
+              Configuration.get().SERVER_PORT, (Packet p) -> {
+                byte[] data = p.getPacketData();
+                DatagramPacket dp = new DatagramPacket(data, data.length, 
+                    p.getRemoteHost(), p.getRemotePort());
+                Runnable tftpTransfer = new TftpTransfer(dp, packetModifier);
+                Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
+                connectionThreads.add(t);
+                t.start();
+                keepAlive.set(false);
+              });
+        } else if (req.type() == RequestType.WRITE) {
+          if (packetModifier.getWrqModification() != null) {
+            WriteRequestModification wrqMod = packetModifier.getWrqModification();
+            if (wrqMod.getDelayModification() != null || wrqMod.getDuplicatePacketModification() != null) {
+              keepAlive.set(true);
+            }
+          }
+          packetModifier.process((WriteRequest) req, clientSocket.getLocalPort(), 
+              Configuration.get().SERVER_PORT, (Packet p) -> {
+                byte[] data = p.getPacketData();
+                DatagramPacket dp = new DatagramPacket(data, data.length, 
+                    p.getRemoteHost(), p.getRemotePort());
+                Runnable tftpTransfer = new TftpTransfer(dp, packetModifier);
+                Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
+                connectionThreads.add(t);
+                t.start();
+                keepAlive.set(false);
+              });
+        }
+      }
+      
+      
       Runnable tftpTransfer = new TftpTransfer(requestDatagram, packetModifier);
       Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
       connectionThreads.add(t);
       t.start();
       hasRun = true;
-    } while (!hasRun || connectionThreads.stream().anyMatch((t) -> t.isAlive()));
+    } while (!hasRun || keepAlive.get() || connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
     clientSocket.close();
     log("All connections terminated");
