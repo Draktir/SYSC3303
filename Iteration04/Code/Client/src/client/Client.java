@@ -149,17 +149,25 @@ public class Client {
 		}
 		
 		System.out.println("\nPlease select a file from " + path.toString());
+		System.out.println("  [0] Enter a filename by hand.");
 		for (int i = 0; i < files.size(); i++) {
-			System.out.println("  [" + i + "] " + files.get(i).getName());
+			System.out.println("  [" + (i+1) + "] " + files.get(i).getName());
 		}
 		
 		int selected = -1;
 		do {
 			System.out.print(" > ");
 			selected = scan.nextInt();
-		} while (selected < 0 || selected > files.size() - 1 || !validateWriteFile(files.get(selected)));
+		} while (selected < 0 || selected > files.size());
 		
-		return files.get(selected);
+		if (selected == 0) {
+		  System.out.print("Please enter a filename: ");
+		  String fn = scan.next();
+		  File f = new File(fn);
+		  return validateWriteFile(f) ? f : null;
+		} else {
+		  return validateWriteFile(files.get(selected - 1)) ? files.get(selected - 1) : null;
+		}
 	}
 	
 	
