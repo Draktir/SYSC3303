@@ -13,3 +13,5 @@ dd if=/dev/urandom of=./four-blocks bs=510 count=4
 dd if=/dev/urandom of=./four-blocks-exactly bs=512 count=4
 
 dd if=/dev/urandom of=./large-file bs=510 count=11
+dd if=/dev/urandom of=./huge-file bs=512 count=65530
+dd if=/dev/urandom of=./too-big bs=512 count=65540

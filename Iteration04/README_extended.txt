@@ -5,10 +5,18 @@ File Not Found:
 ---------------------
 There are two possible scenarios in which this error may occur:
 
-1) The server received a RRQ but the filename contained in the request cannot be found.
+1) The file does not exist on the server:
+
+   The server received a RRQ but the filename contained in the request cannot be found.
    In that case the server sends an error (Code 1) and aborts the transfer.
 
-2) On the server, if during a Read Transfer, the file we are reading from is (re)moved,
+   On the client on a Write Request if the user enters a filename and that file does not exist, 
+   the client will show an error message and NOT send a Write Request, therefore there is no
+   Error being sent either.
+
+2) The file goes away during transfer (e.g. USB key unplugged)
+   
+   On the server, if during a Read Transfer, the file we are reading from is (re)moved,
    the server cannot continue to read from it and thus will send an Error Code 1, and 
    abort the transfer.
    On the client, if during a Write Transfer, the file we are reading from is (re)moved 
@@ -22,14 +30,14 @@ Access Violation:
 --------------------
 On the Client:
    If, on a Write Transfer, the file the user selects cannot be read, the user is informed
-   a with an error message and we DO NOT send a WRQ to the server.
-   If during a Read Transfer, on receipt of the first DataPacket the file cannot be created, 
-   the Client sends an Error code 2 to the server and terminates the transfer, displaying
-   the error to the user.
+   with an error message and we DO NOT send a WRQ to the server. Therefore the is no error packet.
+   On a Read Transfer the Client will first attempt to create a file. Only if that's successful
+   will it send the RRQ.
 
 On the Server:
-   If trying to read or write a file is not possible because the permissions are insufficient
-   (no read/write access), the server responds with an Error code 2 and terminates the transfer.
+   If the server receives a RRQ or WRQ, and  trying to read or write the file is not possible 
+   because the permissions are insufficient (no read/write access), the server responds with an 
+   Error code 2 and terminates the transfer.
 
 Note that if the permissions change during a transfer, it does not affect the program, since it 
 already opened the file and has a valid file descriptor. Thus it can continue to read/write and
@@ -43,7 +51,7 @@ and server will respond in the same way. First an error message (Code 3) is sent
 the file that had been written to is deleted, since it is incomplete.
 
 
-File Alread Exists:
+File Already Exists:
 ----------------------
 On the Client:
   When performing a Read Transfer, we first check whether a file with the requested filename
