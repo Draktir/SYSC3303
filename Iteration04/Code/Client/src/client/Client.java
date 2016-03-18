@@ -144,7 +144,7 @@ public class Client {
 			.collect(Collectors.toList());
 		
 		if (files.size() == 0) {
-			System.out.println("There are not files in " + path.toString());
+			System.out.println("\nThere are no files in " + path.toString() + "\n");
 			return null;
 		}
 		
@@ -190,18 +190,15 @@ public class Client {
 		do {
 			System.out.print("Please enter a filename: ");
 			filename = scan.next();
-		} while (filename.equals("") || !validateReadFilename(path, filename));
+			
+			File f = new File(path.resolve(filename).toString());
+			if (f.exists()) {
+				System.out.println("A file with that name already exists in " + path.toString());
+				filename = null;
+			}
+			
+		} while (filename == null || filename.equals(""));
 		
 		return filename;
-	}
-	
-	private boolean validateReadFilename(Path path, String filename) {
-		File f = new File(path.resolve(filename).toString());
-		
-		if (f.exists()) {
-			System.out.println("A file with that name already exists in " + path.toString());
-			return false;
-		}
-		return true;
 	}
 }
