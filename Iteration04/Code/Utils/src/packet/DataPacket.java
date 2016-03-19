@@ -68,6 +68,6 @@ public class DataPacket extends Packet {
   @Override
   public String toString() {
     return "DataPacket [\n    blockNumber=" + blockNumber + ",\n    fileData=" + Arrays.toString(fileData)
-        + ",\n    remoteHost=" + remoteHost + ",\n    remotePort=" + remotePort + "\n]";
+        + "\n]";
   }
 }

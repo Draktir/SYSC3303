@@ -87,12 +87,6 @@ public class NetworkOperations {
 	};
 
 	public static final Function<TransferState, Result<TransferState, IrrecoverableError>> receiveValidAck = (state) -> {
-		final long tsStart = currentTime.get();
-		Supplier<Integer> calculateNewTimeout = () -> {
-			Long to = Configuration.get().TIMEOUT_TIME - (currentTime.get() - tsStart);
-			return to.intValue();
-		};
-
 		final ROP<TransferState, TransferState, IrrecoverableError> rop = new ROP<>();
 
 		final Recursive<BiFunction<Integer, Integer, Result<TransferState, IrrecoverableError>>> receiveAck = new Recursive<>();
@@ -100,13 +94,19 @@ public class NetworkOperations {
 		// receive ACK Function
 		receiveAck.func = (timeout, numAttempts) -> {
 			logger.log("Expecting ACK with block #" + state.blockNumber);
+			
+			final long tsStart = currentTime.get();
+      Supplier<Integer> calculateNewTimeout = () -> {
+        Long to = timeout - (currentTime.get() - tsStart);
+        return to.intValue() < 1 ? 1 : to.intValue();
+      };
 
 			Result<DatagramPacket, RecoverableError> recvResult = receiveDatagram.apply(state, timeout);
 
 			if (recvResult.FAILURE) {
 				logger.log(recvResult.failure.message);
 
-				if (numAttempts < Configuration.get().MAX_RETRIES) {
+				if (numAttempts <= Configuration.get().MAX_RETRIES) {
 					// resend the data packet and then recursively call this function
 					// again
 					logger.log("Re-sending last Data Packet");
@@ -150,12 +150,6 @@ public class NetworkOperations {
 
 	public static final Function<TransferState, Result<TransferState, IrrecoverableError>> receiveValidDataPacket = 
 	(state) -> {
-		final long tsStart = currentTime.get();
-		Supplier<Integer> calculateNewTimeout = () -> {
-			Long to = Configuration.get().TIMEOUT_TIME - (currentTime.get() - tsStart);
-			return to.intValue();
-		};
-
 		ROP<TransferState, TransferState, IrrecoverableError> rop = new ROP<>();
 
 		final Recursive<BiFunction<Integer, Integer, Result<TransferState, IrrecoverableError>>> receiveDataPacket = new Recursive<>();
@@ -163,13 +157,19 @@ public class NetworkOperations {
 		// receive DataPacket Function
 		receiveDataPacket.func = (timeout, numAttempts) -> {
 			logger.log("Expecting DataPacket with block #" + state.blockNumber);
-
+			
+			final long tsStart = currentTime.get();
+	    Supplier<Integer> calculateNewTimeout = () -> {
+	      Long to = timeout - (currentTime.get() - tsStart);
+	      return to.intValue() < 1 ? 1 : to.intValue();
+	    };
+			
 			Result<DatagramPacket, RecoverableError> recvResult = receiveDatagram.apply(state, timeout);
 
 			if (recvResult.FAILURE) {
 				logger.logError(recvResult.failure.message);
 
-				if (numAttempts < Configuration.get().MAX_RETRIES) {
+				if (numAttempts <= Configuration.get().MAX_RETRIES) {
 					// resend the last packet and then recursively call this function
 					// again
 					logger.log("Re-sending last packet");

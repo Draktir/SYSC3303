@@ -36,7 +36,6 @@ public class WriteRequest extends Request {
   
   @Override
   public String toString() {
-    return "WriteRequest [\n    filename=" + filename + ",\n    mode=" + mode + ",\n    remoteHost=" + remoteHost
-        + ",\n    remotePort=" + remotePort + "\n]";
+    return "WriteRequest [\n    filename=" + filename + ",\n    mode=" + mode + "\n]";
   }
 }

@@ -84,7 +84,7 @@ public class ServerConnection implements Connection {
 			buffer = new byte[517];
 			receiveDatagram = new DatagramPacket(buffer, 517);
 
-			logger.log("Waiting for response from server on port " + socket.getLocalPort());
+			logger.log("Waiting for response from server on port " + socket.getLocalPort() + ", timeout " + timeout + " ms");
 
 			long tsStart = new Date().getTime();
 			try {
