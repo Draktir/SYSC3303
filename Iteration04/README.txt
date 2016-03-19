@@ -103,6 +103,8 @@ Linux Mode (for testing): verbose output, uses different ports to avoid permissi
 
 
 Manual Mode: Everything can be configured by the user
+  - configure ports, timeouts, etc.
+  - File path: Enter an absolute file path using. e.g. E:/testfolder
 
 ==============================================
 Configure the Intermediate Host

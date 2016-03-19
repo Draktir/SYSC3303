@@ -60,7 +60,7 @@ public class ClientConnection implements Connection {
       buffer = new byte[517];
       receiveDatagram = new DatagramPacket(buffer, 517);
 
-      logger.log("Waiting for response from client on port " + socket.getLocalPort());
+      logger.log("Waiting for response from client on port " + socket.getLocalPort() + ", timeout " + timeout + " ms");
 
       long tsStart = new Date().getTime();
       try {
