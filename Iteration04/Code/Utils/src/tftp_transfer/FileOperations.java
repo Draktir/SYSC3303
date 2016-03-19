@@ -32,9 +32,9 @@ public class FileOperations {
 		try {
 			fw.createFile();
 		} catch (FileAlreadyExistsException fae) {
-			return Result.failure(new IrrecoverableError(ErrorCode.FILE_ALREADY_EXISTS, fae.getMessage()));
+			return Result.failure(new IrrecoverableError(ErrorCode.FILE_ALREADY_EXISTS, "File already exists"));
 		} catch (AccessDeniedException ade) {
-			return Result.failure(new IrrecoverableError(ErrorCode.ACCESS_VIOLATION, ade.getMessage()));
+			return Result.failure(new IrrecoverableError(ErrorCode.ACCESS_VIOLATION, "Insufficient permissions to create file."));
 		}
 		
 		return Result.success(fw);
