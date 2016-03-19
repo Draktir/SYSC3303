@@ -136,7 +136,12 @@ public class Client {
 	}
 	
 	private File userSelectFile(Path path) {
-		// show a list of all files in the client directory
+		if (path.toFile().listFiles() == null) {
+		  System.err.println("You do not have permission to read from " + path.toString());
+		  return null;
+		}
+	  
+	  // show a list of all files in the client directory
 		List<File> files = Arrays.asList(path.toFile().listFiles())
 			.stream()
 			.filter((f) -> !f.isDirectory())
