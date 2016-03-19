@@ -167,6 +167,7 @@ There are two possible scenarios in which this error may occur:
 Testing:
   - Client:
     - Try to send a file that does not exist in the configured path.
+       -> Does not send an error packet since non-existent file is discovered before sending WRQ
     - Configure the client (Manual Mode) to use a path to a USB key
       Then initiate a file transfer and unplug the USB key mid-transfer.
   - Server:
@@ -197,6 +198,7 @@ Testing:
   - Client:
     - Configure the client (Manual Mode) to use a path to C:\Users\[someOtherUser]
       Then do a RRQ or WRQ.
+        -> Does not send and error packet, since missing permissions are discovered before RRQ or WRQ is sent
   - Server:
     - Configure the server (Manual Mode) to use a path to C:\Users\[someOtherUser]
       Then do a RRQ or WRQ from the client.
@@ -233,6 +235,7 @@ On the Server:
 Testing:
   - Client:
     - Try to do a RRQ entering a file that already exists on the client.
+       -> Does not send an error packet, since existing file is discovered before sending RRQ.
   - Server:
     - Try to do a WRQ sending a file that already exists on the Server.
 
