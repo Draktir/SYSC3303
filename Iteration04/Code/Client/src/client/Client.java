@@ -16,6 +16,7 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -66,7 +67,11 @@ public class Client {
 			System.out.println("  [ 0 ] Exit");
 			System.out.print(" > ");
 
-			command = scan.nextInt();
+			try {
+			  command = scan.nextInt();
+			} catch (InputMismatchException e) {
+			  command = -1;
+			}
 
 			switch (command) {
 				case 1:
