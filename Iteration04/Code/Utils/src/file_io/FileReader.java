@@ -78,10 +78,17 @@ public class FileReader {
     }
 
     if (!file.canRead()) {
-      throw new AccessDeniedException("Insufficient persmissions to read file.");
+      throw new AccessDeniedException("Insufficient permissions to read file.");
     }
 		
-    return new BufferedInputStream(new FileInputStream(filename), 512);
+    // NOTE: Windows sucks! It will actually tell us that we ".canRead()", even though
+    //       we do not have READ permissions for a file. So catch any error here and
+    //       throw as an AccessDeniedException.
+    try {
+    	return new BufferedInputStream(new FileInputStream(filename), 512);
+    } catch (IOException e) {
+    	throw new AccessDeniedException("Insufficient permissions to read file.");
+    }
 	}
 	
 	public void close() {

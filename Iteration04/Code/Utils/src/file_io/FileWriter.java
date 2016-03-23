@@ -38,27 +38,34 @@ public class FileWriter {
     
     // this is highly unlikely since we were able to create the file,
     // but doesn't hurt to check.
-    if (!file.canWrite()) {
+    if (!file.exists() || !file.canWrite()) {
       file.delete();
       throw new AccessDeniedException("Insufficient permissions to write to " + filename);
     }
   }
   
   /**
-   * Writes a block of data to the file
-   * 
+   * writes a block of data to the file
    * @param data
-   * @throws DiskFullException 
-   * @throws IOException 
+   * @throws FileAlreadyExistsException
+   * @throws AccessDeniedException
+   * @throws FileNotFoundException
+   * @throws DiskFullException
    */
   public void writeBlock(byte[] data) throws 
-  		FileAlreadyExistsException, AccessDeniedException, FileNotFoundException, DiskFullException {    
+  		AccessDeniedException, FileNotFoundException, DiskFullException, FileAlreadyExistsException {    
     if (fileOut == null) {
       File f = new File(filename);
       if (!f.exists()) {
       	createFile();
       }
-			fileOut = new BufferedOutputStream(new FileOutputStream(filename));
+      // NOTE: Windows lies and tells us we ".canWrite()" a file even if we do not have
+      //       the right permissions. So we interpret this as an AccessDeniedException.
+			try {
+				fileOut = new BufferedOutputStream(new FileOutputStream(filename));
+			} catch (IOException e) {
+				throw new AccessDeniedException("Insufficient permissions to write to file.");
+			}
     }
     
     try {
