@@ -28,8 +28,10 @@ import modification.*;
 import packet.InvalidRequestException;
 import packet.Packet;
 import packet.PacketParser;
+import packet.ReadRequest;
 import packet.Request;
 import packet.Request.RequestType;
+import packet.WriteRequest;
 import utils.PacketPrinter;
 
 public class IntermediateHost {
@@ -108,6 +110,8 @@ public class IntermediateHost {
        */
       if (req != null) {
       	
+      	log(req.toString());
+      	
       	/* 
       	 * consumer that handles a delayed packet by starting a new TftpTransfer thread with
       	 * a duplicated DatagramPacket
@@ -131,10 +135,15 @@ public class IntermediateHost {
           	
             if (rrqMod.getDelayModification() != null) {
             	keepAlive.set(true);
-            	rrqMod.performDelayPacketModification(req, recvPort, delayedPacketConsumer);
+            	rrqMod.performDelayPacketModification((ReadRequest) req, recvPort, delayedPacketConsumer);
             } else if (rrqMod.getDuplicatePacketModification() != null) {
             	keepAlive.set(true);
             	rrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);;
+            } else if (rrqMod.getDropModification() != null) {
+            	byte[] d = packetModifier.process((ReadRequest) req, recvPort, Configuration.get().SERVER_PORT, (p) -> {});
+            	if (d == null) {
+            		continue;
+            	}
             }
           }
         } else if (req.type() == RequestType.WRITE) {
@@ -146,11 +155,16 @@ public class IntermediateHost {
             	
             	if (wrqMod.getDelayModification() != null) {
             		keepAlive.set(true);
-            		wrqMod.performDelayPacketModification(req, recvPort, delayedPacketConsumer);
+            		wrqMod.performDelayPacketModification((WriteRequest) req, recvPort, delayedPacketConsumer);
             	} else if (wrqMod.getDuplicatePacketModification() != null) {
             		keepAlive.set(true);
-            		wrqMod.performDelayPacketModification(req, recvPort, delayedPacketConsumer);
-            	}           	
+            		wrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);
+            	} else if (wrqMod.getDelayModification() != null) {
+            		byte[] d = packetModifier.process((WriteRequest) req, recvPort, Configuration.get().SERVER_PORT, (p) -> {});
+            		if (d == null) {
+              		continue;
+              	}
+            	}
             }
           }
         }

@@ -40,14 +40,11 @@ public class PacketModifier {
     packetCount++;
     rrqCount++;
     
-    System.out.println("Processing RRQ" + readRequest.toString());
-    
     if (rrqModification == null) {
       return readRequest.getPacketData();
     }
     
     if (rrqModification.getPacketNumber() == rrqCount) {
-    	System.out.println("Aplying RRQ modification");
       return rrqModification.apply(readRequest, localReceivePort, remoteReceivePort, delayedPacketConsumer);
     }
     return readRequest.getPacketData();
