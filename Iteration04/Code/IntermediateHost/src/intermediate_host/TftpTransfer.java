@@ -65,14 +65,14 @@ public class TftpTransfer implements Runnable {
     Thread clientHandler = new Thread(() -> {
       while (!Thread.currentThread().isInterrupted()) {
         ForwardRequest clientRequest = clientReceiveBuffer.takeRequest();
-        handleRequest(clientRequest, clientConnection.getRemotePort(), serverSendBuffer);
+        handleRequest(clientRequest, serverConnnection.getRemotePort(), serverSendBuffer);
       }
     }, "CLIENT-HANDLER");
         
     Thread serverHandler = new Thread(() -> {
       while (!Thread.currentThread().isInterrupted()) {
         ForwardRequest serverRequest = serverReceiveBuffer.takeRequest();
-        handleRequest(serverRequest, serverConnnection.getRemotePort(), clientSendBuffer);
+        handleRequest(serverRequest, clientConnection.getRemotePort(), clientSendBuffer);
       }
     }, "SERVER-HANDLER");
     
