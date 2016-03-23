@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>200</y>
+      <w>280</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>IrrecoverableError
+--
++errorCode: ErrorCode
++message: String
+--
++IrrecoverableError(String)
++IrrecoverableError(ErrorCode, String)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>380</x>
+      <y>200</y>
+      <w>220</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>RecoverableError
+--
++message: String
+--
++Result(boolean, boolean, S, F)
++Result(S)
+_+success(S): Result&lt;S, F&gt;_
+_+failure(F): Result&lt;S, F&gt;_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>50</x>
+      <y>500</y>
+      <w>240</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>Logger
+--
+-unitName: String
+--
++Logger(String)
++log(message: String)
++logAlways(message: String)
++logError(message: String)
+-getTime(): String</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>250</x>
+      <y>370</y>
+      <w>140</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>Recursive&lt;I&gt;
+--
++func: I
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>320</x>
+      <y>500</y>
+      <w>240</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>PacketPrinter
+--
+
+--
+_+print(DatagramPacket)_</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

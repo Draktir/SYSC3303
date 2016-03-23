@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>40</x>
+      <y>110</y>
+      <w>380</w>
+      <h>250</h>
+    </coordinates>
+    <panel_attributes>Configuration
+--
+-instance: Configuration
++VERBOSE: boolean
++TIMEOUT_TIME: int
++MAX_RETRIES: int
++CLIENT_CONNECT_TO_PORT: int
++INTERMEDIATE_PORT: int
++SERVER_PORT: int
++BLOCK_SIZE: int
++FILE_PATH: String
+--
++Configuration()
++Configuration(boolean, int, int, int, int, int, int, String)
++set(boolean, int, int, int, int, int, int, String)
++get(): Configuration</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>100</x>
+      <y>470</y>
+      <w>240</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>ConfigurationMenu
+--
+-logger: Logger
+-sc: Scanner
+--
++show(): void
+-configureManualMode(): boolean
+-getPositiveIntOrDefault(int): int
+-getPathOrNothing(): String</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>210</x>
+      <y>350</y>
+      <w>30</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;120.0</additional_attributes>
+  </element>
+</diagram>

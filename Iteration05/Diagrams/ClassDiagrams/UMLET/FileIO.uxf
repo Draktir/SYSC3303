@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>70</x>
+      <y>160</y>
+      <w>460</w>
+      <h>290</h>
+    </coordinates>
+    <panel_attributes>ROP&lt;I,S,F&gt;
+--
+
+--
++bind(Function&lt;I, Result&lt;S,F&gt; &gt;): 
+    Function&lt;Result&lt;I,F&gt;, Result&lt;S,F&gt; &gt;
++buildSwitch(Funciton&lt;I, S&gt;):
+    Function&lt;I, Result&lt;S, F&gt; &gt;
++combine(Function&lt;I, Result&lt;S, F&gt; &gt;, Function &lt;S, Result&lt;S, F&gt; &gt;):
+    Function&lt;I, Result&lt;S,F&gt; &gt;
++map(Function&lt;I,S&gt;):
+    Function&lt;Result&lt;I, F&gt;, Result&lt;S,F&gt; &gt;
++tee(Consumer&lt;S&gt;): Function&lt;S, S&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>350</x>
+      <y>630</y>
+      <w>210</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>FileWriter
+--
+-filename: String
+-fileOut: BufferedInputStream
+--
++FileWriter(String)
++createFile()
++writeBlock(byte[])
++close()</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>

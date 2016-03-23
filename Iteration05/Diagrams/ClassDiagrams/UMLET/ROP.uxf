@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.1.1">
+  <zoom_level>10</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>30</x>
+      <y>170</y>
+      <w>460</w>
+      <h>210</h>
+    </coordinates>
+    <panel_attributes>ROP&lt;I,S,F&gt;
+--
+
+--
++bind(Function&lt;I, Result&lt;S,F&gt; &gt;): 
+    Function&lt;Result&lt;I,F&gt;, Result&lt;S,F&gt; &gt;
++buildSwitch(Funciton&lt;I, S&gt;):
+    Function&lt;I, Result&lt;S, F&gt; &gt;
++combine(Function&lt;I, Result&lt;S, F&gt; &gt;, Function &lt;S, Result&lt;S, F&gt; &gt;):
+    Function&lt;I, Result&lt;S,F&gt; &gt;
++map(Function&lt;I,S&gt;):
+    Function&lt;Result&lt;I, F&gt;, Result&lt;S,F&gt; &gt;
++tee(Consumer&lt;S&gt;): Function&lt;S, S&gt;</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>130</x>
+      <y>480</y>
+      <w>220</w>
+      <h>170</h>
+    </coordinates>
+    <panel_attributes>Result&lt;S, F&gt;
+--
++SUCCESS: boolean
++FAILURE: boolean
++success: S
++failure: F
+--
++Result(boolean, boolean, S, F)
++Result(S)
+_+success(S): Result&lt;S, F&gt;_
+_+failure(F): Result&lt;S, F&gt;_</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>220</x>
+      <y>370</y>
+      <w>30</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;.</panel_attributes>
+    <additional_attributes>10.0;110.0;10.0;10.0</additional_attributes>
+  </element>
+</diagram>
