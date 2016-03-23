@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import configuration.Configuration;
 import configuration.ConfigurationMenu;
@@ -27,10 +28,8 @@ import modification.*;
 import packet.InvalidRequestException;
 import packet.Packet;
 import packet.PacketParser;
-import packet.ReadRequest;
 import packet.Request;
 import packet.Request.RequestType;
-import packet.WriteRequest;
 import utils.PacketPrinter;
 
 public class IntermediateHost {
@@ -92,51 +91,74 @@ public class IntermediateHost {
       log("Received packet");
       PacketPrinter.print(requestDatagram);
   
+      /*
+       * START of DISGUSTINGNESS
+       */
       PacketParser parser = new PacketParser();
       Request req = null;
       try {
         req = parser.parseRequest(requestDatagram);
       } catch (InvalidRequestException e) {}
       
+      
+      /* 
+       * 
+       * This if block is DISGUSTING. If we have time we REALLY should make this better!
+       * 
+       */
       if (req != null) {
-        if (req.type() == RequestType.READ) {
-          if (packetModifier.getRrqModification() != null) {
-            ReadRequestModification rrqMod = packetModifier.getRrqModification();
-            if (rrqMod.getDelayModification() != null || rrqMod.getDuplicatePacketModification() != null) {
-              keepAlive.set(true);
+      	
+      	/* 
+      	 * consumer that handles a delayed packet by starting a new TftpTransfer thread with
+      	 * a duplicated DatagramPacket
+      	 */
+        Consumer<Packet> delayedPacketConsumer = (p) -> {
+      		byte[] data = p.getPacketData();
+          DatagramPacket dp = new DatagramPacket(data, data.length, 
+              p.getRemoteHost(), p.getRemotePort());
+          Runnable tftpTransfer = new TftpTransfer(dp, packetModifier);
+          Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
+          connectionThreads.add(t);
+          t.start();
+          keepAlive.set(false);
+      	};
+      	
+      	if (req.type() == RequestType.READ) {
+      		ReadRequestModification rrqMod = packetModifier.getRrqModification();
+      		
+      		if (rrqMod != null) {
+          	int recvPort = Configuration.get().INTERMEDIATE_PORT;
+          	
+            if (rrqMod.getDelayModification() != null) {
+            	keepAlive.set(true);
+            	rrqMod.performDelayPacketModification(req, recvPort, delayedPacketConsumer);
+            } else if (rrqMod.getDuplicatePacketModification() != null) {
+            	keepAlive.set(true);
+            	rrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);;
             }
           }
-          packetModifier.process((ReadRequest) req, clientSocket.getLocalPort(), 
-              Configuration.get().SERVER_PORT, (Packet p) -> {
-                byte[] data = p.getPacketData();
-                DatagramPacket dp = new DatagramPacket(data, data.length, 
-                    p.getRemoteHost(), p.getRemotePort());
-                Runnable tftpTransfer = new TftpTransfer(dp, packetModifier);
-                Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
-                connectionThreads.add(t);
-                t.start();
-                keepAlive.set(false);
-              });
         } else if (req.type() == RequestType.WRITE) {
+        	WriteRequestModification wrqMod = packetModifier.getWrqModification();
+        	
           if (packetModifier.getWrqModification() != null) {
-            WriteRequestModification wrqMod = packetModifier.getWrqModification();
-            if (wrqMod.getDelayModification() != null || wrqMod.getDuplicatePacketModification() != null) {
-              keepAlive.set(true);
+            if (wrqMod != null) {
+            	int recvPort = Configuration.get().INTERMEDIATE_PORT;
+            	
+            	if (wrqMod.getDelayModification() != null) {
+            		keepAlive.set(true);
+            		wrqMod.performDelayPacketModification(req, recvPort, delayedPacketConsumer);
+            	} else if (wrqMod.getDuplicatePacketModification() != null) {
+            		keepAlive.set(true);
+            		wrqMod.performDelayPacketModification(req, recvPort, delayedPacketConsumer);
+            	}           	
             }
           }
-          packetModifier.process((WriteRequest) req, clientSocket.getLocalPort(), 
-              Configuration.get().SERVER_PORT, (Packet p) -> {
-                byte[] data = p.getPacketData();
-                DatagramPacket dp = new DatagramPacket(data, data.length, 
-                    p.getRemoteHost(), p.getRemotePort());
-                Runnable tftpTransfer = new TftpTransfer(dp, packetModifier);
-                Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
-                connectionThreads.add(t);
-                t.start();
-                keepAlive.set(false);
-              });
         }
       }
+
+      /*
+       * END of DISGUSTINGNESS
+       */
       
       
       Runnable tftpTransfer = new TftpTransfer(requestDatagram, packetModifier);

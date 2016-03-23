@@ -129,8 +129,8 @@ public class TftpTransfer implements Runnable {
     byte[] rawData = null;
     if (packet instanceof ReadRequest) {
       ReadRequest rrq = (ReadRequest) packet;
-      //rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
-      rawData = rrq.getPacketData();
+      // delayed/duplicated RRQs are handled in the IntermediateHost class
+      rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort, (p) -> {});
       if (rawData != null) {
         log("Forwarding ReadRequest:");
         log(rrq.toString());
@@ -138,8 +138,8 @@ public class TftpTransfer implements Runnable {
       
     } else if (packet instanceof WriteRequest) {
       WriteRequest wrq = (WriteRequest) packet;
-      //rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
-      rawData = wrq.getPacketData();
+      // delayed/duplicated WRQs are handled in the IntermediateHost class
+      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort, (p) -> {});
       if (rawData != null) {
         log("Forwarding WriteRequest:");
         log(wrq.toString());
