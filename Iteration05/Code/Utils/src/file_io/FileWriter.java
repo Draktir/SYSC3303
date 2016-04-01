@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileLock;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 
 public class FileWriter {
   private String filename;
-  private BufferedOutputStream fileOut = null;
+  private FileLock fileLock = null;
+  private FileOutputStream fileOut = null;
+  private BufferedOutputStream bufferedOut = null;
 
   public FileWriter(String filename) {
     this.filename = filename;
@@ -54,23 +57,13 @@ public class FileWriter {
    */
   public void writeBlock(byte[] data) throws 
   		AccessDeniedException, FileNotFoundException, DiskFullException, FileAlreadyExistsException {    
-    if (fileOut == null) {
-      File f = new File(filename);
-      if (!f.exists()) {
-      	createFile();
-      }
-      // NOTE: Windows lies and tells us we ".canWrite()" a file even if we do not have
-      //       the right permissions. So we interpret this as an AccessDeniedException.
-			try {
-				fileOut = new BufferedOutputStream(new FileOutputStream(filename));
-			} catch (IOException e) {
-				throw new AccessDeniedException("Insufficient permissions to write to file.");
-			}
+    if (bufferedOut == null) {
+      this.open();
     }
     
     try {
-    	fileOut.write(data, 0, data.length);
-    	fileOut.flush();
+    	bufferedOut.write(data, 0, data.length);
+    	bufferedOut.flush();
     } catch (IOException e) {
     	File f = new File(filename);
 
@@ -84,16 +77,42 @@ public class FileWriter {
     }
   }
   
+  private void open() throws FileAlreadyExistsException, AccessDeniedException {
+  	File f = new File(filename);
+    if (!f.exists()) {
+    	createFile();
+    }
+    // NOTE: Windows lies and tells us we ".canWrite()" a file even if we do not have
+    //       the right permissions. So we interpret this as an AccessDeniedException.
+		try {
+			fileOut = new FileOutputStream(filename);
+			
+			// try to acquire an exclusive lock on the file. If it fails, someone else is reading/writing the file
+			try {
+				fileLock = fileOut.getChannel().lock();
+			} catch (IOException e) {
+				throw new AccessDeniedException("The file is currently being used. Try again later.");
+			}
+			
+			bufferedOut = new BufferedOutputStream(fileOut);
+		} catch (IOException e) {
+			throw new AccessDeniedException("Insufficient permissions to write to file.");
+		}
+  }
+  
   /**
    * Closes the file output stream
    * 
    */
   public void close() {
-    if (this.fileOut == null) {
+    if (this.bufferedOut == null) {
       return; 
     }
     
-    try { this.fileOut.close(); } catch (IOException e) {}
+    try { 
+    	this.fileLock.release();
+    	this.bufferedOut.close(); 
+  	} catch (IOException e) {}
   }
 
   /**
@@ -119,7 +138,7 @@ public class FileWriter {
    */
   @Override
   public String toString() {
-    return "FileWriter [filename=" + filename + ", fileOut=" + fileOut + "]";
+    return "FileWriter [filename=" + filename + ", fileOut=" + bufferedOut + "]";
   }
 }
 

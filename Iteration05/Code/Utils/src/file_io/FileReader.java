@@ -4,11 +4,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.nio.file.AccessDeniedException;
 
 
 public class FileReader {
-	private BufferedInputStream fileIn;
+	private FileLock fileLock;
+	private RandomAccessFile randomAccessFile;
+	private BufferedInputStream bufferedIn;
 	private String filename;
 	
 	public FileReader(String filename) throws FileNotFoundException, AccessDeniedException {
@@ -34,14 +38,14 @@ public class FileReader {
 	}
 	
   public byte[] read(final int blockSize) throws FileNotFoundException, AccessDeniedException {
-  	if (fileIn == null) {
-  		this.fileIn = open(this.filename);
+  	if (bufferedIn == null) {
+  		open(this.filename);
   	}
   	
   	byte[] buffer = new byte[blockSize];
   	int bytesRead = 0;
   	try {
-			bytesRead = fileIn.read(buffer);
+			bytesRead = bufferedIn.read(buffer);
 		} catch (IOException e) {
 			File f = new File(filename);
 			
@@ -62,7 +66,7 @@ public class FileReader {
   	return result;
   }
   
-	private BufferedInputStream open(String filename) throws FileNotFoundException, AccessDeniedException {
+	private void open(String filename) throws FileNotFoundException, AccessDeniedException {
 		File file = new File(filename);
 		
     if (!file.exists()) {
@@ -85,16 +89,27 @@ public class FileReader {
     //       we do not have READ permissions for a file. So catch any error here and
     //       throw as an AccessDeniedException.
     try {
-    	return new BufferedInputStream(new FileInputStream(filename), 512);
+    	randomAccessFile = new RandomAccessFile(filename, "rw");
+    	
+    	// try to acquire an exclusive lock. If it fails, the file is already in use.
+    	try {
+    		fileLock = randomAccessFile.getChannel().lock();
+    	} catch (IOException e) {
+    		throw new AccessDeniedException("File is in use. Please try again later.");
+    	}
+    		
+    	bufferedIn = new BufferedInputStream(new FileInputStream(filename), 512);
     } catch (IOException e) {
     	throw new AccessDeniedException("Insufficient permissions to read file.");
     }
 	}
 	
 	public void close() {
-		if (this.fileIn != null) {
+		if (this.bufferedIn != null) {
 			try {
-				this.fileIn.close();
+				fileLock.release();
+				this.randomAccessFile.close();
+				this.bufferedIn.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
