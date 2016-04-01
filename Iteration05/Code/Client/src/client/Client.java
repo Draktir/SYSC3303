@@ -56,7 +56,7 @@ public class Client {
 		new ConfigurationMenu().show();
 
 		// use localhost by default
-		InetAddress serverAddress = InetAddress.getLocalHost();
+		InetAddress serverAddress = UserIpInput.get(scan);
 		
 		do {
 			System.out.println("TFTP Client");
