@@ -47,7 +47,7 @@ public class LocalOperations {
 						new IrrecoverableError(ErrorCode.ILLEGAL_TFTP_OPERATION, "Expected a DataPacket. " + de.getMessage()));
 			}
 			return Result.failure(
-					new IrrecoverableError("Error received " + errPacket.getErrorCode() + ": " + errPacket.getMessage()));
+					new IrrecoverableError("Error received, code " + errPacket.getErrorCode().getValue() + ", " + errPacket.getErrorCode() + ": " + errPacket.getMessage()));
 		}
 		return Result.success(dataPacket);
 	};
@@ -68,7 +68,7 @@ public class LocalOperations {
 						"Expected an Acknowledgement. " + ae.getMessage()));
 			}
 			return Result.failure(
-					new IrrecoverableError("Error received " + errPacket.getErrorCode() + ": " + errPacket.getMessage()));
+					new IrrecoverableError("Error received, code " + errPacket.getErrorCode().getValue() + ", " + errPacket.getErrorCode() + ": " + errPacket.getMessage()));
 		}
 		return Result.success(ack);
 	};
