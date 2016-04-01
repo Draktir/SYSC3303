@@ -2,20 +2,22 @@
 
 ## Outstanding tasks
 
-* (A) Update Client to allow user to enter server IP
-* (A) Ensure Server works with clients on different computer
-* (F) Implement File Locking (in Utils project file_io/FileReader and file_io/FileWriter)
-* (P) Update Intermediate to work with remote Client/Server
 * ReadMe.txt needs to be updated to reflect new changes.
 * (Everyone: change code => update diagram) ClassDiagrams need to be updated to reflect new changes.
+  * (P) FileReader & FileWriter
+  * (P) IntermediateHost modifications
 * Explain decisions we've made in README (not overwriting files, etc.)
 * (R) Use Logger class everywhere (IntermediateHost)
 * (P) Check to make sure delaying, dropping, duplicating packets and TID modification work on Intermediate when connecting to another computer over the network.
 
 
 ## DONE - needs testing
+* (F) Implement File Locking (in Utils project file_io/FileReader and file_io/FileWriter)
+* (P) Update Intermediate to work with remote Client/Server
 
 ## DONE - tested
+* (A) Update Client to allow user to enter server IP
+* (A) Ensure Server works with clients on different computer
 
 ## Work Products for Project Demonstration – Iteration #4 or #5:
 
