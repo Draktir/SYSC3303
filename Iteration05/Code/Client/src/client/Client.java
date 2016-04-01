@@ -41,30 +41,26 @@ public class Client {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		new Client().start();
+		try {
+			new Client().start();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 	}
 
-	public void start() {
+	public void start() throws UnknownHostException {
 		int command;
 
 		// let user choose a configuration
 		new ConfigurationMenu().show();
 
-		// TODO: for Iteration 5, ask the user for a server IP
-		InetAddress serverAddress = null;
-		try {
-			serverAddress = InetAddress.getByAddress(
-					new byte[] {(byte) 127, (byte) 0, (byte) 0, (byte) 1});
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			scan.close();
-			return;
-		}
+		InetAddress serverAddress = configureAddress();
 
 		do {
 			System.out.println("TFTP Client");
 			System.out.println("  [ 1 ] Write file to server");
 			System.out.println("  [ 2 ] Read file from server");
+			System.out.println("  [ 3 ] Configure server address");
 			System.out.println("  [ 0 ] Exit");
 			System.out.print(" > ");
 
@@ -80,6 +76,11 @@ public class Client {
 					break;
 				case 2:
 					initiateTftpRead(serverAddress);
+					break;
+				case 3:
+					serverAddress = configureAddress();
+					break;
+				default:
 					break;
 			}
 		} while (command != 0);
@@ -228,5 +229,16 @@ public class Client {
 		} while (filename == null || filename.equals(""));
 		
 		return filename;
+	}
+	
+	private InetAddress configureAddress() throws UnknownHostException {
+		InetAddress address = null;
+		
+		System.out.print("Enter the IP address of the server: ");
+		String ip = scan.next();
+		
+		address = InetAddress.getByName(ip);
+		
+		return address;
 	}
 }
