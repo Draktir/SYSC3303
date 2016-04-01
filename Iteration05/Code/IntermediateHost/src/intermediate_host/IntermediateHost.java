@@ -17,6 +17,7 @@ import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -54,11 +55,6 @@ import utils.UserIpInput;
 
 
 
-
-
-
-
-
 public class IntermediateHost {
   private DatagramSocket clientSocket;
   private PacketModifier packetModifier;
@@ -73,7 +69,13 @@ public class IntermediateHost {
     IntermediateHost h = new IntermediateHost();
     Scanner scan = new Scanner(System.in);
     
-    InetAddress serverAddress = UserIpInput.get(scan);
+    InetAddress serverAddress = null;
+		try {
+			serverAddress = UserIpInput.get(scan);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
     
     do {
       h.go(serverAddress);

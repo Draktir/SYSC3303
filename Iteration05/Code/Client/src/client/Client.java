@@ -29,6 +29,7 @@ import java.io.File;
 
 import tftp_transfer.TransferState;
 import tftp_transfer.TransferStateBuilder;
+import utils.UserIpInput;
 
 public class Client {
 	private Scanner scan = new Scanner(System.in);
@@ -54,8 +55,9 @@ public class Client {
 		// let user choose a configuration
 		new ConfigurationMenu().show();
 
-		InetAddress serverAddress = configureAddress();
-
+		// use localhost by default
+		InetAddress serverAddress = InetAddress.getLocalHost();
+		
 		do {
 			System.out.println("TFTP Client");
 			System.out.println("  [ 1 ] Write file to server");
@@ -78,9 +80,8 @@ public class Client {
 					initiateTftpRead(serverAddress);
 					break;
 				case 3:
-					serverAddress = configureAddress();
-					break;
-				default:
+					scan.nextLine(); // Scanner is so WEIRD!
+					serverAddress = UserIpInput.get(scan);
 					break;
 			}
 		} while (command != 0);
@@ -229,16 +230,5 @@ public class Client {
 		} while (filename == null || filename.equals(""));
 		
 		return filename;
-	}
-	
-	private InetAddress configureAddress() throws UnknownHostException {
-		InetAddress address = null;
-		
-		System.out.print("Enter the IP address of the server: ");
-		String ip = scan.next();
-		
-		address = InetAddress.getByName(ip);
-		
-		return address;
 	}
 }

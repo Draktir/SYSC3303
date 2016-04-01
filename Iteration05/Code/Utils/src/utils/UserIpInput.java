@@ -6,7 +6,7 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class UserIpInput {
-	public static InetAddress get(Scanner scan) {
+	public static InetAddress get(Scanner scan) throws UnknownHostException {
     byte[] ipBytes = null;
     
     do {
@@ -38,11 +38,6 @@ public class UserIpInput {
 	    }
     } while (ipBytes == null);
     
-    try {
-			return InetAddress.getByAddress(ipBytes);
-		} catch (UnknownHostException e2) {
-			e2.printStackTrace();
-			return null;
-		}
+		return InetAddress.getByAddress(ipBytes);
 	}
 }
