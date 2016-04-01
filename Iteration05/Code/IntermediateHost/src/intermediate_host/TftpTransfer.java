@@ -21,13 +21,16 @@ public class TftpTransfer implements Runnable {
   private final DatagramPacket requestDatagram;
   private final PacketModifier packetModifier;
 
-  public TftpTransfer(DatagramPacket requestDatagram, PacketModifier packetModifier) {
+  public TftpTransfer(DatagramPacket requestDatagram, InetAddress serverAddress, PacketModifier packetModifier) {
     this.packetModifier = packetModifier;
     this.requestDatagram = requestDatagram;
-    this.clientConnection =
-        new ConnectionManager(clientReceiveBuffer, clientSendBuffer, requestDatagram.getAddress(), requestDatagram.getPort());
-    this.serverConnnection =
-        new ConnectionManager(serverReceiveBuffer, serverSendBuffer, requestDatagram.getAddress(), Configuration.get().SERVER_PORT);
+    
+    InetAddress clientAddress = requestDatagram.getAddress();
+   
+    this.clientConnection = new ConnectionManager(
+    		clientReceiveBuffer, clientSendBuffer, clientAddress, requestDatagram.getPort());
+    this.serverConnnection = new ConnectionManager(
+    		serverReceiveBuffer, serverSendBuffer, serverAddress, Configuration.get().SERVER_PORT);
   }
 
   @Override
@@ -65,14 +68,14 @@ public class TftpTransfer implements Runnable {
     Thread clientHandler = new Thread(() -> {
       while (!Thread.currentThread().isInterrupted()) {
         ForwardRequest clientRequest = clientReceiveBuffer.takeRequest();
-        handleRequest(clientRequest, serverConnnection.getRemotePort(), serverSendBuffer);
+        handleRequest(clientRequest, serverConnnection);
       }
     }, "CLIENT-HANDLER");
         
     Thread serverHandler = new Thread(() -> {
       while (!Thread.currentThread().isInterrupted()) {
         ForwardRequest serverRequest = serverReceiveBuffer.takeRequest();
-        handleRequest(serverRequest, clientConnection.getRemotePort(), clientSendBuffer);
+        handleRequest(serverRequest, clientConnection);
       }
     }, "SERVER-HANDLER");
     
@@ -111,10 +114,11 @@ public class TftpTransfer implements Runnable {
    * @param remotePort
    * @param sendBuffer
    */
-  private void handleRequest(ForwardRequest fwdRequest, int remotePort, RequestBuffer sendBuffer) {
+  private void handleRequest(ForwardRequest fwdRequest, ConnectionManager connection) {
     log("Request received. Forwarding...");
     final PacketParser packetParser = new PacketParser();
     final DatagramPacket datagramPacket = fwdRequest.getDatagramPacket();
+    final int remotePort = connection.getRemotePort();
     
     Packet packet = null;
     try {
@@ -130,7 +134,7 @@ public class TftpTransfer implements Runnable {
     if (packet instanceof ReadRequest) {
       ReadRequest rrq = (ReadRequest) packet;
       // delayed/duplicated RRQs are handled in the IntermediateHost class
-      rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), remotePort, (p) -> {});
+      rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, (p) -> {});
       if (rawData != null) {
         log("Forwarding ReadRequest:");
         log(rrq.toString());
@@ -139,7 +143,7 @@ public class TftpTransfer implements Runnable {
     } else if (packet instanceof WriteRequest) {
       WriteRequest wrq = (WriteRequest) packet;
       // delayed/duplicated WRQs are handled in the IntermediateHost class
-      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), remotePort, (p) -> {});
+      rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, (p) -> {});
       if (rawData != null) {
         log("Forwarding WriteRequest:");
         log(wrq.toString());
@@ -147,7 +151,7 @@ public class TftpTransfer implements Runnable {
 
     } else if (packet instanceof Acknowledgement) {
       Acknowledgement ack = (Acknowledgement) packet;
-      rawData = packetModifier.process(ack, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      rawData = packetModifier.process(ack, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, buildPacketConsumer(connection));
       // if we are sending the last ACK we are done after this
       if (rawData != null && this.getLastBlockNumber() == ack.getBlockNumber()) {
         this.setTransferComplete(true);
@@ -159,7 +163,7 @@ public class TftpTransfer implements Runnable {
 
     } else if (packet instanceof DataPacket) {
       DataPacket dp = (DataPacket) packet;
-      rawData = packetModifier.process(dp, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      rawData = packetModifier.process(dp, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, buildPacketConsumer(connection));
       // if this is the last block, remember the block number
       if (dp.getFileData().length < 512) {
         this.setLastBlockNumber(dp.getBlockNumber());
@@ -171,7 +175,7 @@ public class TftpTransfer implements Runnable {
 
     } else if (packet instanceof ErrorPacket) {
       ErrorPacket errPacket = (ErrorPacket) packet;
-      rawData = packetModifier.process(errPacket, fwdRequest.getReceivingPort(), remotePort, delayedPacketConsumer);
+      rawData = packetModifier.process(errPacket, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, buildPacketConsumer(connection));
       // if this is an error we are done after this
       if (rawData != null) {
         this.setTransferComplete(true);
@@ -193,36 +197,22 @@ public class TftpTransfer implements Runnable {
     // set our potentially modified data and hand off
     // the request to the connection manager
     fwdRequest.setData(rawData);
-    sendBuffer.putRequest(fwdRequest);
+    connection.getSendBuffer().putRequest(fwdRequest);
   }
 
-  /**
-   * Called from the Packet Modification after a packet has been
-   * delayed. It will add the delayed packet to the appropriate
-   * send buffer so it can be forwarded.
-   */
-  private Consumer<Packet> delayedPacketConsumer = (packet) -> {
-    boolean sendToServer;
-    int remotePort;
-    if (packet.getRemotePort() == this.clientConnection.getRemotePort()) {
-      sendToServer = true;
-      remotePort = this.serverConnnection.getRemotePort();
-    } else {
-      sendToServer = false;
-      remotePort = this.clientConnection.getRemotePort();
-    }
-    
-    ForwardRequest fwRequest = 
-        new ForwardRequest(packet.getPacketData(), packet.getRemoteHost(), remotePort);
-    
-    if (sendToServer) {
-      log("Adding delayed packet to Server send buffer");
-      this.serverSendBuffer.putRequest(fwRequest);
-    } else {
-      log("Adding delayed packet to Client send buffer");
-      this.clientSendBuffer.putRequest(fwRequest);
-    }
-  };
+  
+  private Consumer<Packet> buildPacketConsumer(final ConnectionManager connection) {
+    /**
+     * Called from the Packet Modification after a packet has been
+     * delayed. It will add the delayed packet to the appropriate
+     * send buffer so it can be forwarded.
+     */
+  	return (packet) -> {
+  		ForwardRequest fwRequest = new ForwardRequest(
+  				packet.getPacketData(), packet.getRemoteHost(), connection.getRemotePort());
+  		connection.getSendBuffer().putRequest(fwRequest);
+  	};
+  }
   
   private synchronized void setTransferComplete(boolean transferComplete) {
     this.transferComplete = transferComplete;

@@ -3,6 +3,7 @@ package modification;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.Arrays;
 import java.util.List;
@@ -28,9 +29,9 @@ public abstract class PacketModification {
     this.packetNumber = packetNumber;
   }
 
-  public abstract byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer);
+  public abstract byte[] apply(Packet packet, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer);
   
-  public void performTidModification(Packet packet, int remoteReceivePort) {
+  public void performTidModification(Packet packet, InetAddress receiverAddress, int remoteReceivePort) {
     System.out.println("[Modification] Sending packet with wrong TID: port " + tidModification.getPort());
     DatagramSocket tempSock = null;
     try {
@@ -42,7 +43,7 @@ public abstract class PacketModification {
     
     byte[] data = packet.getPacketData();
     DatagramPacket sendDatagram = new DatagramPacket(data, data.length,
-        packet.getRemoteHost(), remoteReceivePort);
+    		receiverAddress, remoteReceivePort);
     
     try {
       tempSock.send(sendDatagram);

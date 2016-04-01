@@ -111,4 +111,12 @@ public class ConnectionManager implements Runnable {
   public synchronized int getLocalPort() {
     return this.socket.getLocalPort();
   }
+  
+  public synchronized RequestBuffer getReceiveBuffer() {
+  	return this.receiveBuffer;
+  }
+  
+  public synchronized RequestBuffer getSendBuffer() {
+  	return this.sendBuffer;
+  }
 }

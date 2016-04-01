@@ -1,5 +1,6 @@
 package intermediate_host;
 
+import java.net.InetAddress;
 import java.util.function.Consumer;
 
 import modification.AcknowledgementModification;
@@ -28,7 +29,8 @@ public class PacketModifier {
   int ackCount = 0;
   int errCount = 0;
   
-  public byte[] process(Packet packet, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] process(Packet packet, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, 
+  		Consumer<Packet> delayedPacketConsumer) {
     packetCount++;
     // we don't make any modifications here since this is an
     // unexpected packet type and an error has already been
@@ -36,7 +38,8 @@ public class PacketModifier {
     return packet.getPacketData();    
   }
   
-  public byte[] process(ReadRequest readRequest, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] process(ReadRequest readRequest, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, 
+  		Consumer<Packet> delayedPacketConsumer) {
     packetCount++;
     rrqCount++;
     
@@ -45,12 +48,13 @@ public class PacketModifier {
     }
     
     if (rrqModification.getPacketNumber() == rrqCount) {
-      return rrqModification.apply(readRequest, localReceivePort, remoteReceivePort, delayedPacketConsumer);
+      return rrqModification.apply(readRequest, localReceivePort, receiverAddress, remoteReceivePort, delayedPacketConsumer);
     }
     return readRequest.getPacketData();
   }
   
-  public byte[] process(WriteRequest writeRequest, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] process(WriteRequest writeRequest, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, 
+  		Consumer<Packet> delayedPacketConsumer) {
     packetCount++;
     wrqCount++;
     
@@ -59,12 +63,13 @@ public class PacketModifier {
     }
     
     if (wrqModification.getPacketNumber() == wrqCount) {
-      return wrqModification.apply(writeRequest, localReceivePort, remoteReceivePort, delayedPacketConsumer);
+      return wrqModification.apply(writeRequest, localReceivePort, receiverAddress, remoteReceivePort, delayedPacketConsumer);
     }
     return writeRequest.getPacketData();
   }
   
-  public byte[] process(DataPacket dataPacket, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] process(DataPacket dataPacket, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, 
+  		Consumer<Packet> delayedPacketConsumer) {
     packetCount++;
     dataCount++;
     
@@ -73,12 +78,13 @@ public class PacketModifier {
     }
     
     if (dataModification.getPacketNumber() == dataCount) {
-      return dataModification.apply(dataPacket, localReceivePort, remoteReceivePort, delayedPacketConsumer);
+      return dataModification.apply(dataPacket, localReceivePort, receiverAddress, remoteReceivePort, delayedPacketConsumer);
     }
     return dataPacket.getPacketData();
   }
   
-  public byte[] process(Acknowledgement ackPacket, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] process(Acknowledgement ackPacket, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, 
+  		Consumer<Packet> delayedPacketConsumer) {
     packetCount++;
     ackCount++;
 
@@ -87,12 +93,13 @@ public class PacketModifier {
     }
     
     if (ackModification.getPacketNumber() == ackCount) {
-      return ackModification.apply(ackPacket, localReceivePort, remoteReceivePort, delayedPacketConsumer);
+      return ackModification.apply(ackPacket, localReceivePort, receiverAddress, remoteReceivePort, delayedPacketConsumer);
     }
     return ackPacket.getPacketData();
   }
 
-  public byte[] process(ErrorPacket errPacket, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] process(ErrorPacket errPacket, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, 
+  		Consumer<Packet> delayedPacketConsumer) {
     packetCount++;
     errCount++;
 
@@ -101,7 +108,7 @@ public class PacketModifier {
     }
     
     if (errorModification.getPacketNumber() == errCount) {
-      return errorModification.apply(errPacket, localReceivePort, remoteReceivePort, delayedPacketConsumer);
+      return errorModification.apply(errPacket, localReceivePort, receiverAddress, remoteReceivePort, delayedPacketConsumer);
     }
     return errPacket.getPacketData();
   }
@@ -150,7 +157,32 @@ public class PacketModifier {
     return packetCount;
   }
 
-  public void setPacketCount(int packetCount) {
+  
+  public int getRrqCount() {
+		return rrqCount;
+	}
+
+	public void setRrqCount(int rrqCount) {
+		this.rrqCount = rrqCount;
+	}
+
+	public int getWrqCount() {
+		return wrqCount;
+	}
+
+	public void setWrqCount(int wrqCount) {
+		this.wrqCount = wrqCount;
+	}
+
+	public int getErrCount() {
+		return errCount;
+	}
+
+	public void setErrCount(int errCount) {
+		this.errCount = errCount;
+	}
+
+	public void setPacketCount(int packetCount) {
     this.packetCount = packetCount;
   }
 

@@ -37,10 +37,10 @@ public class Logger {
 	private String getTime() {
 		Calendar calendar = Calendar.getInstance();
 		
-		int h = calendar.get(Calendar.HOUR_OF_DAY);
-		int m = calendar.get(Calendar.MINUTE);
-		int s = calendar.get(Calendar.SECOND);
-		int ms = calendar.get(Calendar.MILLISECOND);
+		String h = String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY));
+		String m = String.format("%02d", calendar.get(Calendar.MINUTE));
+		String s = String.format("%02d", calendar.get(Calendar.SECOND));
+		String ms = String.format("%03d", calendar.get(Calendar.MILLISECOND));
 
 		return h + ":" + m + ":" + s + ":" + ms;
 	}

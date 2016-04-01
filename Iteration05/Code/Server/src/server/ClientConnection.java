@@ -82,14 +82,15 @@ public class ClientConnection implements Connection {
       if (!clientTid.equals(new TransferId(receiveDatagram))) {
         handleInvalidTid(receiveDatagram);
         // recalculate the timeout
+        int newTimeout = 1;
         try {
-          int newTimeout = socket.getSoTimeout() - (int)(tsStop - tsStart);
+          newTimeout = socket.getSoTimeout() - (int)(tsStop - tsStart);
           socket.setSoTimeout(newTimeout);
         } catch (SocketException e) {
           e.printStackTrace();
         }
 
-        System.err.println("[CLIENT-CONNECTION] Waiting for another packet."); // Why is this an error message?
+        logger.log("Waiting for another packet, timeout " + newTimeout);
         receiveDatagram = null;
       }
     } while (receiveDatagram == null);

@@ -112,14 +112,15 @@ public class ServerConnection implements Connection {
 				handleInvalidTid(receiveDatagram);
 				
 				// recalculate the timeout
+				int newTimeout = 1;
 				try {
-					int newTimeout = socket.getSoTimeout() - (int) (tsStop - tsStart);
+					newTimeout = socket.getSoTimeout() - (int) (tsStop - tsStart);
 					socket.setSoTimeout(newTimeout);
 				} catch (SocketException e) {
 					e.printStackTrace();
 				}
 
-				logger.logError("Waiting for another packet.");
+				logger.logError("Waiting for another packet, timeout " + newTimeout);
 				receiveDatagram = null;
 			}
 		} while (receiveDatagram == null);

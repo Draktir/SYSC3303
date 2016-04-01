@@ -53,7 +53,8 @@ public class Client {
 		// TODO: for Iteration 5, ask the user for a server IP
 		InetAddress serverAddress = null;
 		try {
-			serverAddress = InetAddress.getLocalHost();
+			serverAddress = InetAddress.getByAddress(
+					new byte[] {(byte) 127, (byte) 0, (byte) 0, (byte) 1});
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 			scan.close();
@@ -167,7 +168,13 @@ public class Client {
 		int selected = -1;
 		do {
 			System.out.print(" > ");
-			selected = scan.nextInt();
+			try {
+				selected = scan.nextInt();
+			} catch (InputMismatchException e) {
+				scan.nextLine();
+				selected = -1;
+			}
+			
 		} while (selected < 0 || selected > files.size());
 		
 		if (selected == 0) {

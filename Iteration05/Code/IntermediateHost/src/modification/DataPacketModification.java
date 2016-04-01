@@ -1,6 +1,7 @@
 package modification;
 
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,9 +20,9 @@ public class DataPacketModification extends PacketModification {
   }
 
   @Override
-  public byte[] apply(Packet packet, int localReceivePort, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
+  public byte[] apply(Packet packet, int localReceivePort, InetAddress receiverAddress, int remoteReceivePort, Consumer<Packet> delayedPacketConsumer) {
     if (super.tidModification != null) {
-      super.performTidModification(packet, remoteReceivePort);
+      super.performTidModification(packet, receiverAddress, remoteReceivePort);
     }
     
     if (super.delayModification != null) {

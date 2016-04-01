@@ -13,6 +13,7 @@ package intermediate_host;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -33,6 +34,30 @@ import packet.Request;
 import packet.Request.RequestType;
 import packet.WriteRequest;
 import utils.PacketPrinter;
+import utils.UserIpInput;
+
+
+
+
+
+
+
+/*
+ * TODO: 
+ *  - What about TID modification of RRQ/WRQ?
+ *  - Delaying RRQ or WRQ always happens, not just for the first one
+ *    - probably happens again in TftpTransfer class
+ */
+
+
+
+
+
+
+
+
+
+
 
 public class IntermediateHost {
   private DatagramSocket clientSocket;
@@ -47,15 +72,18 @@ public class IntermediateHost {
   public static void main(String[] args) {
     IntermediateHost h = new IntermediateHost();
     Scanner scan = new Scanner(System.in);
+    
+    InetAddress serverAddress = UserIpInput.get(scan);
+    
     do {
-      h.go();
+      h.go(serverAddress);
       System.out.println("\nSimulation complete!\n");
       System.out.print("Do you want to simulate another error scenario? (y/n) ");
     } while (scan.next().equalsIgnoreCase("y"));
     scan.close();
   }
 
-  public void go() {
+  public void go(InetAddress serverAddress) {
     List<Thread> connectionThreads = new ArrayList<>();
     boolean hasRun = false;
     
@@ -109,7 +137,6 @@ public class IntermediateHost {
        * 
        */
       if (req != null) {
-      	
       	log(req.toString());
       	
       	/* 
@@ -120,7 +147,7 @@ public class IntermediateHost {
       		byte[] data = p.getPacketData();
           DatagramPacket dp = new DatagramPacket(data, data.length, 
               p.getRemoteHost(), p.getRemotePort());
-          Runnable tftpTransfer = new TftpTransfer(dp, packetModifier);
+          Runnable tftpTransfer = new TftpTransfer(dp, serverAddress, packetModifier);
           Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
           connectionThreads.add(t);
           t.start();
@@ -129,6 +156,7 @@ public class IntermediateHost {
       	
       	if (req.type() == RequestType.READ) {
       		ReadRequestModification rrqMod = packetModifier.getRrqModification();
+      		packetModifier.setRrqCount(packetModifier.getRrqCount() + 1);
       		
       		if (rrqMod != null) {
           	int recvPort = Configuration.get().INTERMEDIATE_PORT;
@@ -136,11 +164,13 @@ public class IntermediateHost {
             if (rrqMod.getDelayModification() != null) {
             	keepAlive.set(true);
             	rrqMod.performDelayPacketModification((ReadRequest) req, recvPort, delayedPacketConsumer);
+            	continue;
             } else if (rrqMod.getDuplicatePacketModification() != null) {
             	keepAlive.set(true);
-            	rrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);;
+            	rrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);
+            	continue;
             } else if (rrqMod.getDropModification() != null) {
-            	byte[] d = packetModifier.process((ReadRequest) req, recvPort, Configuration.get().SERVER_PORT, (p) -> {});
+            	byte[] d = packetModifier.process((ReadRequest) req, recvPort, serverAddress, Configuration.get().SERVER_PORT, (p) -> {});
             	if (d == null) {
             		continue;
             	}
@@ -148,6 +178,7 @@ public class IntermediateHost {
           }
         } else if (req.type() == RequestType.WRITE) {
         	WriteRequestModification wrqMod = packetModifier.getWrqModification();
+        	packetModifier.setWrqCount(packetModifier.getWrqCount() + 1);
         	
           if (packetModifier.getWrqModification() != null) {
             if (wrqMod != null) {
@@ -156,11 +187,13 @@ public class IntermediateHost {
             	if (wrqMod.getDelayModification() != null) {
             		keepAlive.set(true);
             		wrqMod.performDelayPacketModification((WriteRequest) req, recvPort, delayedPacketConsumer);
+            		continue;
             	} else if (wrqMod.getDuplicatePacketModification() != null) {
             		keepAlive.set(true);
             		wrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);
+            		continue;
             	} else if (wrqMod.getDelayModification() != null) {
-            		byte[] d = packetModifier.process((WriteRequest) req, recvPort, Configuration.get().SERVER_PORT, (p) -> {});
+            		byte[] d = packetModifier.process((WriteRequest) req, recvPort, serverAddress, Configuration.get().SERVER_PORT, (p) -> {});
             		if (d == null) {
               		continue;
               	}
@@ -175,7 +208,7 @@ public class IntermediateHost {
        */
       
       
-      Runnable tftpTransfer = new TftpTransfer(requestDatagram, packetModifier);
+      Runnable tftpTransfer = new TftpTransfer(requestDatagram, serverAddress, packetModifier);
       Thread t = new Thread(tftpTransfer, "#" + (connectionThreads.size() + 1));
       connectionThreads.add(t);
       t.start();
