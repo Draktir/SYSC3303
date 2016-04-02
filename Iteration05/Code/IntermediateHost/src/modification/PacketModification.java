@@ -69,8 +69,7 @@ public abstract class PacketModification {
     try {
       errPacket = parser.parseErrorPacket(receiveDatagram);
     } catch (InvalidErrorPacketException e) {
-      e.printStackTrace();
-      System.err.println("[Modification] Did not receive an error packet. Expected an error, code 5.");
+      System.err.println("[Modification] Did not receive an error packet: " + e.getMessage());
       tempSock.close();
       return;
     }
