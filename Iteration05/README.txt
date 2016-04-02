@@ -21,14 +21,6 @@ Diagrams/
   lost_delayed_TimingDiagrams/  - Lost/Delayed packet timing diagrams (iteration 3)
   UCMs/                         - Use Case maps (iteration 1)
   fileIO_TimingDiagrams/        - Error codes 1, 2, 3, 6 (iteration 4)
-    accessViolation_RRQ.png             - Access Violation during RRQ
-    accessViolation_WRQ.png             - Access Violation during WRQ
-    diskFullOrAllocationExceed_RRQ.png  - Disk Full during RRQ
-    diskFullOrAllocationExceed_WRQ.png  - Disk Full during WRQ
-    fileAlreadyExist_WRQ.png            - File Already exists on WRQ
-    fileNotFound_RRQ.png                - File not found beginning of RRQ
-    fileNotFound_RRQ2.png               - File not found during RRQ (file was moved)
-    fileNotFound_WRQ.png                - File not found during WRQ (file was moved)
 
 
 ==============================================
@@ -63,7 +55,7 @@ everything for a particular program.
 Debug Mode: Verbose output, use IntermediateHost
   - Verbose logging output
   - 5000ms socket timeout
-  - Make 3 attempts to send a packet in case of timeout
+  - Make 3 attempts to re-send a packet in case of timeout
   - Client connects to port 68 (intermediate port)
   - Intermediate listens on port 68
   - Server listens on port 69
@@ -73,7 +65,7 @@ Debug Mode: Verbose output, use IntermediateHost
 Test Mode: Verbose output, ignore IntermediateHost
   - Verbose logging output
   - 5000ms socket timeout
-  - Make 3 attempts to send a packet in case of timeout
+  - Make 3 attempts to re-send a packet in case of timeout
   - Client connects to port 69 (server port)
   - Intermediate listens on port 68
   - Server listens on port 69
@@ -84,7 +76,7 @@ Test Mode: Verbose output, ignore IntermediateHost
 Quiet Mode: very little logging output, ignore IntermediateHost
   - Very little logging
   - 5000ms socket timeout
-  - Make 3 attempts to send a packet in case of timeout
+  - Make 3 attempts to re-send a packet in case of timeout
   - Client connects to port 69 (server port)
   - Intermediate listens on port 68
   - Server listens on port 69
@@ -94,7 +86,7 @@ Quiet Mode: very little logging output, ignore IntermediateHost
 Linux Mode (for testing): verbose output, uses different ports to avoid permission problems
   - verbose logging output
   - 5000ms socket timeout
-  - Make 3 attempts to send a packet in case of timeout
+  - Make 3 attempts to re-send a packet in case of timeout
   - Client connects to port 6900 (server port)
   - Intermediate listens on port 6800
   - Server listens on port 6900
@@ -128,7 +120,7 @@ Transfer File locations
 
 
 ==============================================
-ERROR SCENARIOS
+ERROR SCENARIOS & TESTING
 ==============================================
 
 NOTE:
@@ -137,6 +129,36 @@ These files are named after their size (e.g. two-blocks will be slightly smaller
 two-blocks-eactly will be eactly 1024 bytes big).
 These files are identical on both the client and server, so you may need to delete them on either side
 to test successful transmissions.
+
+
+TESTING SETUP on separate machines:
+--------------------------------------
+1) On one machine start the Server and select a configuration
+2) On a second machine start the Client and IntermediateHost
+   - in the Client: enter 127.0.0.1 as the Server IP (or just hit enter)
+   - in the IntermediatHost: enter the IP of the first machine as the server IP
+
+
+Concurrent File Access:
+-----------------------
+The server allows only one Thread at a time to read or write from a file. This is a design decision
+we made to prevent any problems with concurrent file access. Thus, if one client is writing a file
+"x" to the server, and then another client tries to read the file "x" while it is still being written,
+the server wills end an error code 2 (Access Violation) to the second client.
+This is implemented using File locks.
+
+The same happens if two clients try to read from the same file on the server. Only one client can
+read from a file, the second one will receive an error code 2.
+
+This has some implications:
+   When duplicating a RRQ or WRQ there is a subtle race condition that cannot be avoided.
+   The server will simultaneously open two threads that both try to read or write to the same file.
+   One of the threads will succeed, while the other will fail to acquire a lock on the file.
+   The first thread will send a DataPacket or ACK to the client, the second thread will send an error
+   to the client.
+   If the client receives the DataPacket/ACK first, it will continue the transfer and ignore the
+   ErrorPacket from the second thread.
+   However, if the client receives the ErrorPacket first, it will abort the transfer completely.
 
 
 File Not Found:

@@ -111,9 +111,6 @@ public class IntermediateHost {
       log.logAlways("Received packet");
       PacketPrinter.print(requestDatagram);
   
-      /*
-       * START of DISGUSTINGNESS
-       */
       PacketParser parser = new PacketParser();
       Request req = null;
       try {
@@ -121,11 +118,6 @@ public class IntermediateHost {
       } catch (InvalidRequestException e) {}
       
       
-      /* 
-       * 
-       * This if block is DISGUSTING. If we have time we REALLY should make this better!
-       * 
-       */
       if (req != null) {
     	log.logAlways(req.toString());
       	
@@ -200,10 +192,6 @@ public class IntermediateHost {
           }
         }
       }
-
-      /*
-       * END of DISGUSTINGNESS
-       */
       
       
       Runnable tftpTransfer = new TftpTransfer(requestDatagram, serverAddress, packetModifier);
@@ -211,7 +199,7 @@ public class IntermediateHost {
       connectionThreads.add(t);
       t.start();
       hasRun = true;
-    } while (!hasRun || keepAlive.get() || connectionThreads.stream().anyMatch((t) -> t.isAlive()));
+    } while (!hasRun || keepAlive.get() || connectionThreads.stream().anyMatch((t) -> t != null && t.isAlive()));
     
     clientSocket.close();
     log.logAlways("All connections terminated");
