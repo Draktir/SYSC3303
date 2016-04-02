@@ -69,6 +69,7 @@ public class Client {
 			try {
 			  command = scan.nextInt();
 			} catch (InputMismatchException e) {
+		    scan.nextLine();
 			  command = -1;
 			}
 

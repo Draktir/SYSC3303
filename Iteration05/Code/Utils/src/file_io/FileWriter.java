@@ -109,8 +109,12 @@ public class FileWriter {
     }
     
     try { 
-    	this.fileLock.release();
-    	this.randomAccessFile.close(); 
+      if (fileLock != null) {
+        fileLock.release();
+      }
+      if (this.randomAccessFile != null) {
+        this.randomAccessFile.close();
+      }
   	} catch (IOException e) {}
     
     this.randomAccessFile = null;
