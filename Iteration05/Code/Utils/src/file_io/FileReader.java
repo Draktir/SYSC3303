@@ -105,8 +105,12 @@ public class FileReader {
 	public void close() {
 		if (this.randomAccessFile != null) {
 			try {
-				fileLock.release();
-				this.randomAccessFile.close();
+			  if (fileLock != null) {
+			    fileLock.release();
+			  }
+			  if (this.randomAccessFile != null) {
+			    this.randomAccessFile.close();
+			  }
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -158,21 +158,24 @@ public class IntermediateHost {
       	
       	if (req.type() == RequestType.READ) {
       		ReadRequestModification rrqMod = packetModifier.getRrqModification();
+      		
+      		// increase RRQ count by one
       		packetModifier.setRrqCount(packetModifier.getRrqCount() + 1);
       		
       		if (rrqMod != null) {
           	int recvPort = Configuration.get().INTERMEDIATE_PORT;
           	
-            if (rrqMod.getDelayModification() != null) {
+            if (rrqMod.getDelayModification() != null && packetModifier.getRrqCount() == rrqMod.getPacketNumber()) {
             	keepAlive.set(true);
             	rrqMod.performDelayPacketModification((ReadRequest) req, recvPort, delayedPacketConsumer);
             	continue;
-            } else if (rrqMod.getDuplicatePacketModification() != null) {
+            } else if (rrqMod.getDuplicatePacketModification() != null && packetModifier.getRrqCount() == rrqMod.getPacketNumber()) {
             	keepAlive.set(true);
-            	rrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);
-            	continue;
-            } else if (rrqMod.getDropModification() != null) {
-            	byte[] d = packetModifier.process((ReadRequest) req, recvPort, serverAddress, Configuration.get().SERVER_PORT, (p) -> {});
+            	rrqMod.performDuplicatePacketModification((ReadRequest) req, recvPort, delayedPacketConsumer);
+            } else if (rrqMod.getDropModification() != null && packetModifier.getRrqCount() == rrqMod.getPacketNumber()) {
+          	  // nasty, nasty hack
+              packetModifier.setRrqCount(packetModifier.getRrqCount() - 1);
+              byte[] d = packetModifier.process((ReadRequest) req, recvPort, serverAddress, Configuration.get().SERVER_PORT, (p) -> {});
             	if (d == null) {
             		continue;
             	}
@@ -180,27 +183,28 @@ public class IntermediateHost {
           }
         } else if (req.type() == RequestType.WRITE) {
         	WriteRequestModification wrqMod = packetModifier.getWrqModification();
-        	packetModifier.setWrqCount(packetModifier.getWrqCount() + 1);
         	
-          if (packetModifier.getWrqModification() != null) {
-            if (wrqMod != null) {
-            	int recvPort = Configuration.get().INTERMEDIATE_PORT;
-            	
-            	if (wrqMod.getDelayModification() != null) {
-            		keepAlive.set(true);
-            		wrqMod.performDelayPacketModification((WriteRequest) req, recvPort, delayedPacketConsumer);
+        	// increase WRQ count by one
+        	packetModifier.setWrqCount(packetModifier.getWrqCount() + 1);
+
+          if (wrqMod != null) {
+          	int recvPort = Configuration.get().INTERMEDIATE_PORT;
+          	
+          	if (wrqMod.getDelayModification() != null && packetModifier.getWrqCount() == wrqMod.getPacketNumber()) {
+          		keepAlive.set(true);
+          		wrqMod.performDelayPacketModification((WriteRequest) req, recvPort, delayedPacketConsumer);
+          		continue;
+          	} else if (wrqMod.getDuplicatePacketModification() != null && packetModifier.getWrqCount() == wrqMod.getPacketNumber()) {
+          		keepAlive.set(true);
+          		wrqMod.performDuplicatePacketModification((WriteRequest) req, recvPort, delayedPacketConsumer);
+          	} else if (wrqMod.getDropModification() != null && packetModifier.getWrqCount() == wrqMod.getPacketNumber()) {
+        		  // nasty, nasty hack
+          	  packetModifier.setWrqCount(packetModifier.getWrqCount() - 1);
+          	  byte[] d = packetModifier.process((WriteRequest) req, recvPort, serverAddress, Configuration.get().SERVER_PORT, (p) -> {});
+          		if (d == null) {
             		continue;
-            	} else if (wrqMod.getDuplicatePacketModification() != null) {
-            		keepAlive.set(true);
-            		wrqMod.performDuplicatePacketModification(req, recvPort, delayedPacketConsumer);
-            		continue;
-            	} else if (wrqMod.getDelayModification() != null) {
-            		byte[] d = packetModifier.process((WriteRequest) req, recvPort, serverAddress, Configuration.get().SERVER_PORT, (p) -> {});
-            		if (d == null) {
-              		continue;
-              	}
             	}
-            }
+          	}
           }
         }
       }
