@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import configuration.Configuration;
 import packet.*;
 import packet.Request.RequestType;
+import utils.Logger;
 
 public class TftpTransfer implements Runnable {
   private boolean transferComplete = false;
@@ -20,6 +21,7 @@ public class TftpTransfer implements Runnable {
   private final RequestBuffer serverSendBuffer = new RequestBuffer();
   private final DatagramPacket requestDatagram;
   private final PacketModifier packetModifier;
+  private final Logger log=new Logger("TftpTransfer");
 
   public TftpTransfer(DatagramPacket requestDatagram, InetAddress serverAddress, PacketModifier packetModifier) {
     this.packetModifier = packetModifier;
@@ -47,14 +49,14 @@ public class TftpTransfer implements Runnable {
     }
     
     if (recvdRequest.type() == RequestType.READ) {
-      log("Received valid ReadRequest:");
-      log(recvdRequest.toString());
+      log.logAlways("Received valid ReadRequest:");
+      log.logAlways(recvdRequest.toString());
     } else if (recvdRequest.type() == RequestType.WRITE) {
-      log("Received valid WriteRequest:");
-      log(recvdRequest.toString());
+      log.logAlways("Received valid WriteRequest:");
+      log.logAlways(recvdRequest.toString());
     }
     
-    log("Initiating new TFTP transfer");
+    log.logAlways("Initiating new TFTP transfer");
     
     // start the connection managers
     Thread clientConnectionThread = new Thread(clientConnection, "CLIENT-CONNECTION");
@@ -101,7 +103,7 @@ public class TftpTransfer implements Runnable {
     clientHandler.interrupt();
     serverHandler.interrupt();
     
-    log("Transfer has ended");
+    log.logAlways("Transfer has ended");
   }
  
   /**
@@ -115,7 +117,7 @@ public class TftpTransfer implements Runnable {
    * @param sendBuffer
    */
   private void handleRequest(ForwardRequest fwdRequest, ConnectionManager connection) {
-    log("Request received. Forwarding...");
+	log.logAlways("Request received. Forwarding...");
     final PacketParser packetParser = new PacketParser();
     final DatagramPacket datagramPacket = fwdRequest.getDatagramPacket();
     final int remotePort = connection.getRemotePort();
@@ -136,8 +138,8 @@ public class TftpTransfer implements Runnable {
       // delayed/duplicated RRQs are handled in the IntermediateHost class
       rawData = packetModifier.process(rrq, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, (p) -> {});
       if (rawData != null) {
-        log("Forwarding ReadRequest:");
-        log(rrq.toString());
+    	log.logAlways("Forwarding ReadRequest:");
+    	log.logAlways(rrq.toString());
       }
       
     } else if (packet instanceof WriteRequest) {
@@ -145,8 +147,8 @@ public class TftpTransfer implements Runnable {
       // delayed/duplicated WRQs are handled in the IntermediateHost class
       rawData = packetModifier.process(wrq, fwdRequest.getReceivingPort(), connection.getRemoteHost(), remotePort, (p) -> {});
       if (rawData != null) {
-        log("Forwarding WriteRequest:");
-        log(wrq.toString());
+    	log.logAlways("Forwarding WriteRequest:");
+    	log.logAlways(wrq.toString());
       }
 
     } else if (packet instanceof Acknowledgement) {
@@ -157,8 +159,8 @@ public class TftpTransfer implements Runnable {
         this.setTransferComplete(true);
       }
       if (rawData != null) {
-        log("Forwarding ACK:");
-        log(ack.toString());
+    	log.logAlways("Forwarding ACK:");
+        log.logAlways(ack.toString());
       }
 
     } else if (packet instanceof DataPacket) {
@@ -169,8 +171,8 @@ public class TftpTransfer implements Runnable {
         this.setLastBlockNumber(dp.getBlockNumber());
       }
       if (rawData != null) {
-        log("Forwarding DataPacket");
-        log(dp.toString());
+    	log.logAlways("Forwarding DataPacket");
+    	log.logAlways(dp.toString());
       }
 
     } else if (packet instanceof ErrorPacket) {
@@ -181,8 +183,8 @@ public class TftpTransfer implements Runnable {
         this.setTransferComplete(true);
       }
       if (rawData != null) {
-        log("Forwarding ErrorPacket");
-        log(errPacket.toString());
+    	log.logAlways("Forwarding ErrorPacket");
+    	log.logAlways(errPacket.toString());
       }
 
     }
@@ -190,7 +192,7 @@ public class TftpTransfer implements Runnable {
     if (rawData == null) {
       // we are not sending this packet
       // (it's either delayed or dropped)
-      log("Not sending " + packet.toString());
+      log.logAlways("Not sending " + packet.toString());
       return;
     }
 
@@ -228,10 +230,5 @@ public class TftpTransfer implements Runnable {
   
   private synchronized int getLastBlockNumber() {
     return this.lastBlockNumber;
-  }
-  
-  private void log(String msg) {
-    String name = Thread.currentThread().getName();
-    System.out.println("[TFTP: " + name + "] " + msg);
   }
 }

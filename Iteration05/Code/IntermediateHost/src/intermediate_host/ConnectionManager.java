@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.net.*;
 
 import utils.PacketPrinter;
+import utils.Logger;
 
 public class ConnectionManager implements Runnable {
   private DatagramSocket socket;
 
   private RequestBuffer receiveBuffer;
   private RequestBuffer sendBuffer;
+  private Logger log;
   InetAddress remoteHost;
   int remotePort;
 
@@ -19,7 +21,7 @@ public class ConnectionManager implements Runnable {
     this.sendBuffer = sendBuffer;
     this.remoteHost = remoteHost;
     this.remotePort = remotePort;
-    
+    this.log=new Logger("ConnectionManager");
     try {
       this.socket = new DatagramSocket();
     } catch (SocketException e) {
@@ -43,24 +45,23 @@ public class ConnectionManager implements Runnable {
     }
 
     this.socket.close(); // will cause the receive handler to shut down as well
-    log("Connection terminated.");
-    
+    log.logAlways("Connection terminated.");
   }
   
   private Runnable packetReceiver = () -> {
     while (!Thread.currentThread().isInterrupted()) {
       byte[] recvData = new byte[1024];
       DatagramPacket recvDatagram = new DatagramPacket(recvData, recvData.length);
-      log("Waiting to receive on port " + socket.getLocalPort());
+      log.logAlways("Waiting to receive on port " + socket.getLocalPort());
       try {
         socket.receive(recvDatagram);
       } catch (IOException e) {
-        log("ReceiveHandler shutting down");
+    	log.logError("ReceiveHandler shutting down");
         return;
       }
 
-      log("");
-      log("Received packet");
+      log.logAlways("");
+      log.logAlways("Received packet");
       PacketPrinter.print(recvDatagram);
 
       ForwardRequest receivedRequest = new ForwardRequest(recvDatagram, socket.getLocalAddress(), socket.getLocalPort());
@@ -77,7 +78,7 @@ public class ConnectionManager implements Runnable {
     DatagramPacket datagram = new DatagramPacket(forwardData, forwardData.length,
         this.getRemoteHost(), this.getRemotePort());
     
-    log("Forwarding Packet:");
+    log.logAlways("Forwarding Packet:");
     PacketPrinter.print(datagram);
 
     try {
@@ -85,11 +86,6 @@ public class ConnectionManager implements Runnable {
     } catch (IOException e) {
       e.printStackTrace();
     }
-  }
-
-  private void log(String msg) {
-    String name = Thread.currentThread().getName();
-    System.out.println("[" + name + "] " + msg);
   }
 
   public synchronized int getRemotePort() {

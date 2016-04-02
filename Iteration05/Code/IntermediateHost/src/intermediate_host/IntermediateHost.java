@@ -36,12 +36,14 @@ import packet.Request.RequestType;
 import packet.WriteRequest;
 import utils.PacketPrinter;
 import utils.UserIpInput;
+import utils.Logger;
 
 
 
 public class IntermediateHost {
   private DatagramSocket clientSocket;
   private PacketModifier packetModifier;
+  Logger log = new Logger("IntermediateHost");
 
   /**
    * Main method which creates an instance of IntermediateHost to forward and
@@ -91,7 +93,7 @@ public class IntermediateHost {
       return;
     }
 
-    log("Waiting for client requests on port " + Configuration.get().INTERMEDIATE_PORT);
+    log.logAlways("Waiting for client requests on port " + Configuration.get().INTERMEDIATE_PORT);
 
     AtomicBoolean keepAlive = new AtomicBoolean(false);
     
@@ -106,7 +108,7 @@ public class IntermediateHost {
         e.printStackTrace();
       }
       
-      log("Received packet");
+      log.logAlways("Received packet");
       PacketPrinter.print(requestDatagram);
   
       /*
@@ -125,7 +127,7 @@ public class IntermediateHost {
        * 
        */
       if (req != null) {
-      	log(req.toString());
+    	log.logAlways(req.toString());
       	
       	/* 
       	 * consumer that handles a delayed packet by starting a new TftpTransfer thread with
@@ -212,10 +214,6 @@ public class IntermediateHost {
     } while (!hasRun || keepAlive.get() || connectionThreads.stream().anyMatch((t) -> t.isAlive()));
     
     clientSocket.close();
-    log("All connections terminated");
-  }
-  
-  private void log(String msg) {
-    System.out.println("[INTERMEDIATE] " + msg);
+    log.logAlways("All connections terminated");
   }
 }
