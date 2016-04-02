@@ -16,6 +16,7 @@ import packet.ErrorPacket;
 import packet.InvalidErrorPacketException;
 import packet.Packet;
 import packet.PacketParser;
+import utils.PacketPrinter;
 
 public abstract class PacketModification {
   protected int packetNumber;
@@ -64,6 +65,7 @@ public abstract class PacketModification {
       return;
     }
     
+    PacketPrinter.print(receiveDatagram);
     PacketParser parser = new PacketParser();
     ErrorPacket errPacket = null;
     try {
@@ -74,6 +76,7 @@ public abstract class PacketModification {
       tempSock.close();
       return;
     }
+    
     
     System.out.println("[Modification] Error packet received: \n" + errPacket.toString() + "\n");
     tempSock.close();
