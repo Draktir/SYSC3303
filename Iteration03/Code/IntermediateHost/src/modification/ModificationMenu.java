@@ -120,7 +120,7 @@ public class ModificationMenu {
           break;
         case 9:
           readReqMod.setDropModification(dropMod);
-          System.out.println("Packet will be dropped");
+          System.out.println("Packet will be drop ped");
           break;
         case 10:
           readReqMod.setDuplicatePacketModification(duplicateMod);

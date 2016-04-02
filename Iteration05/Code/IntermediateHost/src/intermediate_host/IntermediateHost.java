@@ -39,22 +39,6 @@ import utils.UserIpInput;
 
 
 
-
-
-
-
-/*
- * TODO: 
- *  - What about TID modification of RRQ/WRQ?
- *  - Delaying RRQ or WRQ always happens, not just for the first one
- *    - probably happens again in TftpTransfer class
- */
-
-
-
-
-
-
 public class IntermediateHost {
   private DatagramSocket clientSocket;
   private PacketModifier packetModifier;
@@ -69,13 +53,16 @@ public class IntermediateHost {
     IntermediateHost h = new IntermediateHost();
     Scanner scan = new Scanner(System.in);
     
+    // let user choose a configuration
+    new ConfigurationMenu().show();
+    
     InetAddress serverAddress = null;
-		try {
-			serverAddress = UserIpInput.get(scan);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+	try {
+		serverAddress = UserIpInput.get(scan);
+	} catch (UnknownHostException e) {
+		e.printStackTrace();
+		System.exit(1);
+	}
     
     do {
       h.go(serverAddress);
@@ -89,8 +76,7 @@ public class IntermediateHost {
     List<Thread> connectionThreads = new ArrayList<>();
     boolean hasRun = false;
     
-    // let user choose a configuration
-    new ConfigurationMenu().show();
+
     
     // Show the Modification configuration menu
     ModificationMenu modMenu = new ModificationMenu();
