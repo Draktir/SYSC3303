@@ -2,6 +2,10 @@ package tftp_transfer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.RandomAccessFile;
+import java.io.IOException;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.function.Consumer;
@@ -44,7 +48,35 @@ public class FileOperations {
 		File f = new File(filepath);
 		logger.log("Deleting " + filepath);
 		if (f.exists()) {
-			f.delete();
+		  RandomAccessFile raf = null;
+		  try {
+		    raf = new RandomAccessFile(filepath, "rw");
+		  } catch (IOException e) {
+		    logger.log("Error deleting file " + filepath);
+		    return;
+		  }
+		  
+			FileLock lock = null;
+	    try {
+	      lock = raf.getChannel().lock();
+	    } catch (IOException e) {
+        logger.log("File is in use, cannot delete it.");
+        return;
+	    } catch (OverlappingFileLockException e) {
+	      logger.log("File is in use, cannot delete it.");
+	      return;
+	    } finally {
+	      try {
+	        if (lock != null) {
+	          lock.release();
+	        }
+	        if (raf != null) {
+	          raf.close();
+	        }
+	      } catch (IOException e) {} 
+	    }
+	    
+		  f.delete();
 		}
 	};
 	

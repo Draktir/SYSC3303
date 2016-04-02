@@ -165,6 +165,8 @@ public class IntermediateHost {
             	if (d == null) {
             		continue;
             	}
+            } else {
+              packetModifier.setRrqCount(packetModifier.getRrqCount() - 1);
             }
           }
         } else if (req.type() == RequestType.WRITE) {
@@ -190,6 +192,8 @@ public class IntermediateHost {
           		if (d == null) {
             		continue;
             	}
+          	} else {
+          	  packetModifier.setWrqCount(packetModifier.getWrqCount() - 1);
           	}
           }
         }
