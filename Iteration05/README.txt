@@ -1,8 +1,9 @@
 =================================
-           Group #4
+           Group 4
          
-         Iteration #4
+         Iteration #5
 =================================
+
 
 ==============================================
 Files:
@@ -13,14 +14,14 @@ Code/
   Client/           - Code for Client
   IntermediateHost/ - Code for IntermediateHost
   Server/           - Code for Server
-  Utils/            - Common code between Server,Client,IntermediateHost
+  Utils/            - Common code between Server, Client, IntermediateHost
 
 Diagrams/
   ClassDiagrams/                - Class Diagrams for the system
   errors_4_5_TimingDiagrams/    - Error codes 4 & 5 timing diagrams (iteration 2) 
   lost_delayed_TimingDiagrams/  - Lost/Delayed packet timing diagrams (iteration 3)
   UCMs/                         - Use Case maps (iteration 1)
-  fileIO_TimingDiagrams/        - Error codes 1, 2, 3, 6 (iteration 4)
+  fileIO_TimingDiagrams/        - Error codes 1, 2, 3, 6 timing diagrams (iteration 4)
 
 
 ==============================================
@@ -48,8 +49,8 @@ Run the program
 ==========================================================
 Select a Configuration for Client/Server/Intermediate
 ==========================================================
-Upon start the Client/Server/IntermediateHost will ask which configuration mode Vto use. The mode
-should always be the same between all of them, except when using Manual mode, which allows to modify
+Upon start the Client/Server/IntermediateHost will ask which configuration mode to use. The mode
+should always be the same in all three programs, except when using Manual mode, which allows to modify
 everything for a particular program.
 
 Debug Mode: Verbose output, use IntermediateHost
@@ -98,6 +99,7 @@ Manual Mode: Everything can be configured by the user
   - configure ports, timeouts, etc.
   - File path: Enter an absolute file path using. e.g. E:/testfolder
 
+
 ==============================================
 Configure the Intermediate Host
 ==============================================
@@ -118,16 +120,31 @@ Transfer File locations
   for a configuration mode when the program first starts.
 
 
+==============================================
+Included test files
+==============================================
+
+one-block			510      bytes
+one-block-exactly		512      bytes
+two-blocks			1020     bytes
+two-blocks-exactly		1024     bytes
+three-blocks			1530     bytes
+three-blocks-exactly		1536     bytes
+four-blocks 			2040     bytes
+four-blocks-exactly		2048     bytes
+large-file			51000    bytes
+huge-file			33551360 bytes
+too-big				33556480 bytes
+access-restricted-file		2040     bytes (Meant to be set to have no read permissions,
+                                                but that would mean we could not submit it.)
+
 
 ==============================================
 ERROR SCENARIOS & TESTING
 ==============================================
 
 NOTE:
-The Client and Server contain a number of test files in their respective default directories.
-These files are named after their size (e.g. two-blocks will be slightly smaller than 1024 bytes,
-two-blocks-eactly will be eactly 1024 bytes big).
-These files are identical on both the client and server, so you may need to delete them on either side
+The test files are identical on both the client and server, so you may need to delete some of them on either side
 to test successful transmissions.
 
 
@@ -264,7 +281,6 @@ Testing:
 
 
 
-
 ==============================================
 DESIGN DECISIONS
 ==============================================
@@ -273,7 +289,8 @@ DESIGN DECISIONS
 Overall Design:
 ---------------------
 After grappling with many subtle bugs, related to state inconsistencies in previous iterations,
-we decided to scrap most of the existing code on the Client and Server and start fresh.
+we decided to scrap most of the existing code on the Client and Server and start fresh on Iteration
+four.
 
 The goal was to minimize state to only the bare essentials. Thus we introduced a "TransferState"
 class that encapsulates all state needed for a particular transfer (Read or Write). Furthermore,
@@ -296,7 +313,7 @@ case a function will ALWAYS return a new state object containing new information
 is designed to only change a single aspect of the state, thus most of the old state can be cloned 
 and then new values are assigned to the new state object.
 Creating a new state object for every change may seem inefficient, but as it turns out, Java is
-pretty efficient in creating objects (who knew!?). Also, the state object is pretty small, containing
+pretty efficient in creating objects. Also, the state object is pretty small, containing
 only a few primitive types, and a number of references to other objects. These references are
 simply copied over to the new state object and do not require to re-instantiate the objects
 they refer to.
@@ -313,9 +330,9 @@ As such we have reached epic proportions of code reuse and maintainability.
 
 Note on ROP:
 -------------
-Railway Oriented Programming (ROP) is a new-ish concept used in Functional Programming that can aid in error
-handling. Essentially, all functions return a Result type which can either be a SUCCESS or a FAILURE. 
-When composing functions, as soon as one of them returns a FAILURE result, the rest of them are 
+Railway Oriented Programming (ROP) is a concept used in Functional Programming that can aid in error
+handling. Essentially, all functions return a Result object which can either be a SUCCESS or a FAILURE. 
+When composing functions, as soon as one of them returns a FAILURE result, the rest of the functions are 
 bypassed. The error is then handled in a single place afterwards. This makes the code much cleaner 
 and removes the need for exceptions in that situation.
 The Utils/rop package contains some helper functions to facilitate ROP in our project.
