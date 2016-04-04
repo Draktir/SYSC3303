@@ -1,0 +1,19 @@
+#!/bin/bash
+
+dd if=/dev/urandom of=./one-block.txt bs=510 count=1
+dd if=/dev/urandom of=./one-block-exactly.txt bs=512 count=1
+
+dd if=/dev/urandom of=./two-blocks.txt bs=510 count=2
+dd if=/dev/urandom of=./two-blocks-exactly.txt bs=512 count=2
+
+dd if=/dev/urandom of=./three-blocks.txt bs=510 count=3
+dd if=/dev/urandom of=./three-blocks-exactly.txt bs=512 count=3
+
+dd if=/dev/urandom of=./four-blocks.txt bs=510 count=4
+dd if=/dev/urandom of=./four-blocks-exactly.txt bs=512 count=4
+
+dd if=/dev/urandom of=./large-file.txt bs=510 count=100
+dd if=/dev/urandom of=./huge-file.txt bs=512 count=65530
+dd if=/dev/urandom of=./too-big.txt bs=512 count=65540
+
+dd if=/dev/urandom of=./access-restricted-file.txt bs=510 count=4
